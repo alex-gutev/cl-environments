@@ -25,6 +25,19 @@
 
 (in-package :cl-environments)
 
+(defun walk-declarations (decl ext-env)
+  "Walks the declare expressions in DECL and adds the information to
+   EXT-ENV."
+  
+  (labels ((walk-decl (decl)
+	     (walk-declaration (first decl) (rest decl) ext-env))
+	   
+	   (walk-declare (decl)
+	     (awhen (delete nil (mapcar #'walk-decl (rest decl)))
+	       (cons 'declare it))))
+    (delete nil (mapcar #'walk-declare decl))))
+
+
 (defgeneric walk-declaration (decl args ext-env &optional global)
   (:documentation
    "Walks the declaration DECL with arguments ARGS and adds the

@@ -105,13 +105,5 @@
 
 ;;; Declarations
 
-(defun walk-declarations (decl ext-env)
-  (labels ((walk-decl (decl)
-	     (walk-declaration (first decl) (rest decl) ext-env))
-	   
-	   (walk-declare (decl)
-	     (awhen (delete nil (mapcar #'walk-decl (rest decl)))
-	       (cons 'declare it))))
-    (delete nil (mapcar #'walk-declare decl))))
 
 
