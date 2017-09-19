@@ -32,11 +32,11 @@
   :license "MIT"
   :serial t
   :components ((:file "package")
+	       (:file "util")
                (:file "cl-environments")
 	       (:file "environment")
 	       (:file "declarations")
-	       (:file "walker")
-	       (:file "util"))
+	       (:file "walker"))
   :depends-on (:alexandria
 	       :anaphora
 	       :iterate

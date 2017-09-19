@@ -31,6 +31,11 @@
   '(speed safety compilation-speed space debug))
 
 
+(defun initial-declarations ()
+  (aprog1 (make-hash-table :test #'eq)
+    (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
+
+
 (defclass environment ()
   ((variables
     :initform (make-hash-table :test #'eq)
@@ -61,10 +66,6 @@
 		 :functions (copy-hash-table (functions env))
 		 :declarations (copy-hash-table (declarations env))
 		 :decl-functions (copy-hash-table (decl-functions env))))
-
-(defun initial-declarations ()
-  (aprog1 (make-hash-table :test #'eq)
-    (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
 
 
 ;;; Local Environments
