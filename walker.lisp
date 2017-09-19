@@ -110,20 +110,8 @@
 	     (walk-declaration (first decl) (rest decl) ext-env))
 	   
 	   (walk-declare (decl)
-	     (cons 'declare
-		   (mapcar #'walk-decl (rest decl)))))
-    (mapcar #'walk-declare decl)))
+	     (awhen (delete nil (mapcar #'walk-decl (rest decl)))
+	       (cons 'declare it))))
+    (delete nil (mapcar #'walk-declare decl))))
 
-
-(defgeneric walk-declaration (decl args ext-env))
-
-(defmethod walk-declaration ((decl (eql 'type)) args ext-env)
-  (destructuring-bind (type . vars) args
-    (mapc (rcurry #'add-var-info (cons 'type type) ext-env) vars)
-    (cons decl args)))
-
-(defmethod walk-declaration ((decl (eql 'special)) args ext-env)
-  (mapc (rcurry #'make-var-special ext-env) args)
-  (cons decl args))
-  
 

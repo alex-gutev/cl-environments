@@ -34,6 +34,7 @@
   :components ((:file "package")
                (:file "cl-environments")
 	       (:file "environment")
+	       (:file "declarations")
 	       (:file "walker")
 	       (:file "util"))
   :depends-on (:alexandria
