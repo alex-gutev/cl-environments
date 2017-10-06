@@ -33,6 +33,7 @@
   :serial t
   :components ((:file "package")
 	       (:file "util")
+	       (:file "macro-util")
                (:file "cl-environments")
 	       (:file "environment")
 	       (:file "declarations")
@@ -41,6 +42,7 @@
 	       :anaphora
 	       :iterate
 	       :optima
+	       :collectors
 	       :let-over-lambda
 	       :named-readtables))
 

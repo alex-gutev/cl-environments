@@ -125,18 +125,19 @@
 (defun add-variable (sym env &key (type :lexical) (local t))
   "Adds the variable named by SYM to the environment ENV. The binding
    type is either that given by TYPE or :SPECIAL if the variable is
-   currently declared special either in ENV or the global
-   environment (determined by SPECIALP). If a special variable binding
-   for SYM, in ENV, already exists the declaration information is
-   retained (will have to review whether this is the desired behaviour
-   according to CLTL2) otherwise it is replaced with NIL."
+   currently declared special in the global environment."
   
   (with-slots (variables) env
-    (let ((var-info (gethash sym variables)))
+    (destructuring-bind (&optional old-type localp . decl)
+	(gethash sym variables)
+      (declare (ignore decl))
+      
       (setf (gethash sym variables)
-	    (if (eq (first var-info) :special)
-		(list* :special local var-info)
-		(list (binding-type sym type) local)))))) 
+	    (list
+	     (if (and (not localp) (eq old-type :special))
+		 :special
+		 (binding-type sym type))
+	     local))))) 
 
 (defun env-ensure-variable (sym env)
   "Establish a new variable binding for SYM in ENV, unless there is

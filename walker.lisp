@@ -103,7 +103,27 @@
 	  (enclose-forms forms)))))
 
 
-;;; Declarations
+(defmethod walk-fn-form ((op (eql 'cl:let*)) args env)
+  (destructuring-bind (bindings . body) args
+    (multiple-value-bind (bindings env)
+	(walk-plet-bindings bindings (copy-environment (get-environment env)))
+      `(cl:let* ,bindings
+	 ,@(walk-body body env)))))
+
+(defun walk-plet-bindings (bindings env)
+  (flet ((enclose-binding (binding env)
+	   (match binding
+	     ((list var initform)
+	      `(,var ,(enclose-in-env env (list (enclose-form initform)))))
+	     (_ binding))))
+    (iter
+      (for ext-env initially env then (copy-environment ext-env))
+      (for binding in bindings)
+      (add-variable (ensure-car binding) ext-env)
+      (collect (enclose-binding binding ext-env) into new-bindings)
+      (finally (return (values new-bindings ext-env))))))
+    
+	     
 
 
 

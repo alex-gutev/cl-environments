@@ -27,13 +27,15 @@
   (:use :common-lisp
 	:alexandria
 	:anaphora
+	:optima
 	:named-readtables)
 
   (:import-from :let-over-lambda
 		:defmacro!
 		:lol-syntax)
 
-  (:export :let-if))
+  (:export :let-if
+	   :match-state))
 
 (defpackage :cl-environments
   (:use :common-lisp
@@ -42,5 +44,9 @@
 	:iterate
 	:optima
 
-	:cl-environments.util))
+	:cl-environments.util)
+
+  (:import-from :collectors
+		:make-simple-collector
+		:make-simple-collector-to-place))
 
