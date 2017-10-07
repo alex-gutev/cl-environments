@@ -76,52 +76,6 @@
        (cons op (enclose-forms args))))))
 
 
-;;; Let forms
-
-(defmethod walk-fn-form ((op (eql 'cl:let)) args env)
-  (destructuring-bind (bindings . body) args
-    (let* ((old-env (get-environment env))
-	   (new-env (copy-environment old-env)))
-      `(let ,(walk-let-bindings bindings new-env)
-	 ,@(walk-body body new-env)))))
-
-(defun walk-let-bindings (bindings env)
-  (flet ((enclose-binding (binding)
-	   (match binding
-	     ((list var initform)
-	      `(,var ,(enclose-form initform)))
-	     (_ binding))))
-    (iter (for binding in bindings)
-	  (add-variable (ensure-car binding) env)
-	  (collect (enclose-binding binding)))))
-
-(defun walk-body (body ext-env)
-  (multiple-value-bind (forms decl) (parse-body body)
-    `(,@(walk-declarations decl ext-env)
-	,(enclose-in-env
-	  ext-env
-	  (enclose-forms forms)))))
-
-
-(defmethod walk-fn-form ((op (eql 'cl:let*)) args env)
-  (destructuring-bind (bindings . body) args
-    (multiple-value-bind (bindings env)
-	(walk-plet-bindings bindings (copy-environment (get-environment env)))
-      `(cl:let* ,bindings
-	 ,@(walk-body body env)))))
-
-(defun walk-plet-bindings (bindings env)
-  (flet ((enclose-binding (binding env)
-	   (match binding
-	     ((list var initform)
-	      `(,var ,(enclose-in-env env (list (enclose-form initform)))))
-	     (_ binding))))
-    (iter
-      (for ext-env initially env then (copy-environment ext-env))
-      (for binding in bindings)
-      (add-variable (ensure-car binding) ext-env)
-      (collect (enclose-binding binding ext-env) into new-bindings)
-      (finally (return (values new-bindings ext-env))))))
     
 	     
 

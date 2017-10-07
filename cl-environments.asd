@@ -37,7 +37,9 @@
                (:file "cl-environments")
 	       (:file "environment")
 	       (:file "declarations")
-	       (:file "walker"))
+	       (:file "walker")
+	       (:file "lambda")
+	       (:file "let-forms"))
   :depends-on (:alexandria
 	       :anaphora
 	       :iterate
