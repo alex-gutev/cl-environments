@@ -141,7 +141,7 @@
 	  (required
 	   (guard
 	    (cons
-	     (list* var-list)
+	     (guard var-list (listp var-list))
 	     rest)
 	    destructurep)
 	   :from (:start (end :start) whole (end whole) required)
@@ -152,7 +152,7 @@
 	       (declare (special collector envp))
 	       (next var-list :start))
 	     (collect new-list))
-	   
+
 	   (next rest))
 
 	  (required

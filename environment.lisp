@@ -36,6 +36,55 @@
     (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
 
 
+;;; Bindings
+
+(defclass binding ()
+  ((type
+    :initarg :type
+    :initform nil
+    :reader type
+    :documentation "The type of binding.")
+   
+   (local
+    :initarg :local
+    :initform nil
+    :reader local
+    :documentation "True if there is a local definition.")
+   
+   (global
+    :initarg :global
+    :initform nil
+    :reader global
+    :documentation
+    "True if there is a global definition, this may be nil even if
+     LOCAL is nil.")
+
+   (declarations
+    :initform nil
+    :initarg :declarations
+    :reader declarations
+    :documentation "Association list of declaration key-value pairs.")))
+
+(defun make-binding (&rest args &key &allow-other-keys)
+  (apply #'make-instance 'binding args))  
+
+(defun add-binding-info (binding key value)
+  "Creates a new binding with the pair (KEY . VALUE) added to the
+   front of its DECLARATIONS slot."
+  
+  (let-if ((type (type binding))
+	   (local (local binding))
+	   (global (global binding))
+	   (declarations (declarations binding)))
+      binding
+    (make-binding :type type
+		  :local local
+		  :global global
+		  :declarations (acons key value declarations))))
+	  
+
+;;; Environments
+
 (defclass environment ()
   ((variables
     :initform (make-hash-table :test #'eq)
@@ -115,12 +164,6 @@
 	    (let ((,var 2))
 	      (eql ,var (,fn)))))))))
 
-(defun binding-type (var type)
-  "If var is declared special, as determined by SPECIALP,
-   then :special is returned otherwise TYPE is returned."
-  
-  (if (specialp var) :special type))
-
 
 (defun add-variable (sym env &key (type :lexical) (local t))
   "Adds the variable named by SYM to the environment ENV. The binding
@@ -128,40 +171,42 @@
    currently declared special in the global environment."
   
   (with-slots (variables) env
-    (destructuring-bind (&optional old-type localp . decl)
-	(gethash sym variables)
-      (declare (ignore decl))
-      
+    (let-if ((type :special type))
+	(aand (get-var-info sym env)
+	      (global it)
+	      (eq (type it) :special))
       (setf (gethash sym variables)
-	    (list
-	     (if (and (not localp) (eq old-type :special))
-		 :special
-		 (binding-type sym type))
-	     local))))) 
+	    (make-binding :type type :local local :global (not local)))))) 
 
 (defun env-ensure-variable (sym env)
-  "Establish a new variable binding for SYM in ENV, unless there is
-   already such a binding. The binding type, if a new binding is
-   established, is :SPECIAL if SYM names a special variable in the
-   global environment (determined by SPECIALP), otherwise it is
-   NIL. The value for the local flag is NIL."
-  
-  (ensure-gethash sym (variables env)
-		  (list (binding-type sym nil) nil)))
+  "Ensures that there is a variable binding for SYM in env. If ENV
+   does not have a binding for SYM, a new binding (of type NIL) is
+   created."
+
+  (or (get-var-info sym env)
+      (setf (gethash sym (variables env))
+	    (make-binding))))
+
+(defun add-symbol-macro (sym env &key (local t))
+  "Adds a new binding, of type :SYMBOL-MACRO, for SYM in ENV. If ENV
+   already has a binding for SYM it is replaced unless it is of
+   type :SPECIAL."
+
+  (unless (aand (get-var-info sym env) (eq (type it) :special))
+    (add-variable sym env :type :symbol-macro :local local)))
+
 
 (defun add-variable-info (var key value env)
   "Adds the pair (KEY . VALUE) to the variable information for VAR in
    the environment ENV. If no binding for VAR exists, a new binding is
    created."
-  
-  (destructuring-bind (type localp &rest info)
-      (env-ensure-variable var env)
-    (setf (gethash var (variables env))
-	  (list* type localp (cons (cons key value) info)))))
+
+  (setf (gethash var (variables env))
+	(add-binding-info (get-var-info var env) key value)))
 
 (defun add-variables-info (vars key value env)
   "Adds the pair (KEY . VALUE) to the variable information of each
-   variable that is an element of VARS."
+   symbol in VARS."
   
   (mapc (rcurry #'add-variable-info key value env) vars))
 
@@ -169,41 +214,107 @@
   "Ensures that the symbol VAR names a special variable in the
    environment ENV. If no binding for VAR exists, in ENV, a new
    binding of type :SPECIAL is created."
-  
-  (with-slots (variables) env
-    (let ((info (gethash var variables)))
-      (let ((localp (second info))
-	    (decl (third info)))
-	(setf (gethash var variables)
-	      (list* :special localp decl))))))
+
+  (let ((binding (get-var-info var env)))
+    (let-if ((local (local binding))
+	     (global (global binding))
+	     (declarations (declarations binding)))
+	binding
+      (setf (gethash var (variables env))
+	    (make-binding :type :special
+			  :local local
+			  :global global
+			  :declarations declarations)))))
+
 
 (defun get-var-info (var env)
-  "Returns the variable information for VAR. The first element is the
-   binding type, the second element is a flag for whether the binding
-   is a local binding, the rest of the elements contain the
-   declaration information applying to the variable."
-  
-  (gethash var (variables env)))
+  "Returns the binding for the variable VAR. If ENV does not have a
+   binding for VAR the binding for VAR in the global environment is
+   copied and added to ENV. If the global environment does not have a
+   binding for VAR however the variable is declared special in the
+   global Common Lisp environment a binding of type :SPECIAL is added
+   to ENV, otherwise NIL is returned."
+
+  (with-slots (variables) env
+    (acond
+      ((gethash var variables)
+       it)
+      
+      ((gethash var (variables *global-environment*))
+       (setf (gethash var variables) it))
+      
+      ((specialp var)
+       (setf (gethash var variables)
+	     (make-binding :type :special :global t))))))
 
 
 ;;; Functions
 
 (defun add-function (sym env &key (type :function) (local t))
+  "Adds a function binding for the symbol SYM to the environment ENV."
+  
   (with-slots (functions) env
     (setf (gethash sym functions)
-	  (list type local))))
+	  (make-binding :type type :local local :global (not local)))))
 
 (defun env-ensure-function (sym env)
-  (ensure-gethash sym (functions env) (list nil nil)))
+  "Ensures that there is a function binding for SYM in ENV. If ENV
+   does not have a binding for SYM, a new binding (of type NIL) is
+   created."
+
+  (or (get-function-info sym env)
+      (setf (gethash sym (functions env))
+	    (make-binding))))
 
 (defun add-function-info (fn key value env)
-  (destructuring-bind (type localp &rest info)
-      (env-ensure-function fn env)
-    (setf (gethash fn (functions env))
-	  (list* type localp (cons (cons key value) info)))))
+  "Adds the pair (KEY . VALUE) to the function information of FN in
+   the environment ENV. If no binding for FN exists a new binding is
+   created."
+
+  (setf (gethash fn (functions env))
+	(add-binding-info (get-function-info fn env) key value)))
 
 (defun add-functions-info (fns key value env)
+  "Adds the pair (KEY . VALUE) to the function information of each
+   symbol in FNS."
   (mapc (rcurry #'add-function-info key value env) fns))
+
+(defun get-function-info (fn env)
+  "Returns the function information for FN. If ENV does not have a
+   binding for FN, the binding for FN in the global environment is
+   copied and added to ENV. If the global environment does not have a
+   binding for FN, the function type of FN in the global Common Lisp
+   environment is determined (by GLOBAL-FUNCTION-TYPE) and a new
+   binding of that type is added to ENV. If FN is not declared in the
+   global CL environment NIL is returned."
+
+  (with-slots (functions) env
+    (acond
+      ((gethash fn functions)
+       it)
+      
+      ((gethash fn (functions *global-environment*))
+       (setf (gethash fn functions) it))
+      
+      ((global-function-type fn)
+       (setf (gethash fn functions)
+	     (make-binding :type it :global t))))))
+
+(defun global-function-type (fn)
+  "If FN is FBOUND, determines the type of the binding for FN in the
+   global Common Lisp environment. If FN has a macro function :MACRO
+   is returned, if FN names a special operator (checked using
+   SPECIAL-OPERATOR-P) and has no macro function :SPECIAL-FORM is
+   returned, otherwise :FUNCTION is returned. If FN is not FBOUND NIL
+   is returned."
+  
+  (when (fboundp fn)
+    (cond
+      ((macro-function fn)
+       :macro)
+      ((special-operator-p fn)
+       :special-form)
+      (t :function))))
 
 
 ;;; Declarations
@@ -226,6 +337,14 @@
 
 (defun variable-information (variable &optional env)
   (let* ((ext-env (get-environment env))
-	 (info (get-var-info variable ext-env))
-	 (type (if info (first info) (binding-type variable nil))))
-    (values type (second info) (cddr info))))
+	 (info (get-var-info variable ext-env)))
+    (when info
+      (with-slots (type local declarations) info
+	(values type local declarations)))))
+
+(defun function-information (function &optional env)
+  (let* ((ext-env (get-environment env))
+	 (info (get-function-info function ext-env)))
+    (when info
+      (with-slots (type local declarations) info
+	(values type local declarations)))))

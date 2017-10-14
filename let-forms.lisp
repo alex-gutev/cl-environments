@@ -61,6 +61,7 @@
       `(cl:let* ,bindings
 	 ,@(walk-body body env)))))
 
+;;; Declarations has to be extracted before walking bindings
 (defun walk-plet-bindings (bindings env)
   (flet ((enclose-binding (binding env)
 	   (match binding
@@ -78,21 +79,89 @@
 ;;; Destructuring Bind
 
 (defmethod walk-fn-form ((op (eql 'cl:destructuring-bind)) args env)
-  (destructuring-bind (lambda-list form . body) args
-    (multiple-value-bind (lambda-list env)
-	(walk-lambda-list lambda-list env :destructure t)
-      `(cl:destructuring-bind ,lambda-list ,form
-	 ,@(walk-body body env)))))
+  (let ((env (get-environment env)))
+    (destructuring-bind (lambda-list form . body) args
+      (multiple-value-bind (lambda-list env)
+	  (walk-lambda-list lambda-list env :destructure t)
+	`(cl:destructuring-bind ,lambda-list ,form
+	   ,@(walk-body body env))))))
 
 
 ;;; Lambda
 
 (defmethod walk-fn-form ((op (eql 'cl:lambda)) args env)
-  (destructuring-bind (lambda-list . body) args
+  (let ((env (get-environment env)))
+    (destructuring-bind (lambda-list . body) args
+      (multiple-value-bind (lambda-list env)
+	  (walk-lambda-list lambda-list env)
+	`(cl:lambda ,lambda-list
+	   ,@(walk-body body env))))))
+
+
+
+;;; Lexical functions
+
+(defmethod walk-fn-form ((op (eql 'cl:flet)) args env)
+  (let* ((env (get-environment env))
+	 (new-env (copy-environment env)))
+    (destructuring-bind (fns . body) args
+      `(flet ,(mapcar (rcurry #'walk-local-fn env new-env) fns)
+	 ,@(walk-body body new-env)))))
+
+;; TODO:
+;;
+;; inline/notinline declarations have to be extracted from body and
+;; applied to the bodies of the functions defined by the labels form.
+(defmethod walk-fn-form ((op (eql 'cl:labels)) args env)
+  (let ((env (copy-environment (get-environment env))))
+    (flet ((walk-local-fn (def)
+	     (cons (first def) (walk-fn-def def env))))
+      (destructuring-bind (fns . body) args
+	(mapc (compose (rcurry #'add-function env) #'first) fns)
+	`(cl:labels ,(mapcar #'walk-local-fn fns)
+	   ,@(walk-body body env))))))
+
+
+(defun walk-local-fn (def fn-env new-env)
+  (destructuring-bind (name . def) def
+    (add-function name new-env)
+    `(,name ,@(walk-fn-def def fn-env))))
+
+(defun walk-fn-def (def env)
+  (destructuring-bind (lambda-list . body) def
     (multiple-value-bind (lambda-list env)
 	(walk-lambda-list lambda-list env)
-      `(cl:lambda ,lambda-list
+      `(,lambda-list
+	,@(walk-body body env t)))))
+
+
+;;; Lexical Macros
+
+(defmethod walk-fn-form ((op (eql 'cl:macrolet)) args env)
+  (destructuring-bind (macros . body) args
+    (let* ((env (get-environment env))
+	   (new-env (copy-environment env)))
+      `(cl:macrolet ,(mapcar (rcurry #'walk-local-macro env new-env) macros)
+	 ,@(walk-body body new-env)))))
+
+(defun walk-local-macro (def mac-env new-env)
+  (destructuring-bind (name . def) def
+    (add-function name new-env :type :macro)
+    `(,name ,@(walk-macro-def def mac-env))))
+
+(defun walk-macro-def (def env)
+  (destructuring-bind (lambda-list . body) def
+    (multiple-value-bind (lambda-list env)
+	(walk-lambda-list lambda-list env :destructure t :env t)
+      `(,lambda-list
+	,@(walk-body body env t)))))
+
+
+;;; Lexical Symbol Macros
+
+(defmethod walk-fn-form ((op (eql 'cl:symbol-macrolet)) args env)
+  (destructuring-bind (macros . body) args
+    (let ((env (copy-environment (get-environment env))))
+      (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
+      `(cl:symbol-macrolet ,macros
 	 ,@(walk-body body env)))))
-
-
-;;; TODO: Add support for flet/labels, macrolet/symbol-macrolet
