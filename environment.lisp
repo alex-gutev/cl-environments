@@ -139,6 +139,19 @@
 
 ;;; Variables
 
+(defun variable-binding (sym env)
+  "Returns the `binding' object for the variable with symbol SYM, in
+   environment ENV."
+  
+  (gethash sym (variables env)))
+
+(defun (setf variable-binding) (binding sym env)
+  "Sets the binding for the variable with symbol SYM, in the
+   environment ENV, to the `binding' object BINDING."
+  
+  (setf (gethash sym (variables env)) binding))
+
+
 (defun specialp (var)
   "Tests whether a variable is declared special in the global
    environment. A test form is created and EVAL'd in which VAR is
@@ -249,6 +262,19 @@
 
 
 ;;; Functions
+
+(defun function-binding (sym env)
+  "Returns the `binding' object for the function with symbol SYM, in
+   environment ENV."
+  
+  (gethash sym (functions env)))
+
+(defun (setf function-binding) (binding sym env)
+  "Sets the binding for the function with symbol SYM, in the
+   environment ENV, to the `binding' object BINDING."
+  
+  (setf (gethash sym (functions env)) binding))
+
 
 (defun add-function (sym env &key (type :function) (local t))
   "Adds a function binding for the symbol SYM to the environment ENV."
