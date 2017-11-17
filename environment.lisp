@@ -28,10 +28,15 @@
 (in-package :cl-environments)
 
 (defconstant +optimize-qualities+
-  '(speed safety compilation-speed space debug))
+  '(speed safety compilation-speed space debug)  
+  "List of optimization qualities.")
 
 
 (defun initial-declarations ()
+  "Returns the list of initial declarations applying to a null
+   environment. This list contains the optimization qualities with
+   their default level 1."
+  
   (aprog1 (make-hash-table :test #'eq)
     (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
 
@@ -63,7 +68,16 @@
     :initform nil
     :initarg :declarations
     :reader declarations
-    :documentation "Association list of declaration key-value pairs.")))
+    :documentation
+    "Hash-table contain declaration information neither applying to
+     variable nor functions."))
+
+  (:documentation
+   "Stores information about bindings. Can be used both for function
+    and variables bindings"))
+
+
+;;; Constructor functions
 
 (defun make-binding (&rest args &key &allow-other-keys)
   (apply #'make-instance 'binding args))  
@@ -89,24 +103,40 @@
   ((variables
     :initform (make-hash-table :test #'eq)
     :initarg :variables
-    :accessor variables)
+    :accessor variables
+    :documentation
+    "Hash table mapping symbols to variable bindings.")
    
    (functions
     :initform (make-hash-table :test #'eq)
     :initarg :functions
-    :accessor functions)
+    :accessor functions
+    :documentation
+    "Hash table mapping functions to function bindings.")
    
    (declarations
     :initform (initial-declarations)
     :initarg :declarations
-    :accessor declarations)
+    :accessor declarations
+    :documentation
+    "Association list of declarations neither applying to variable nor functions.")
 
    (decl-functions
     :initform (make-hash-table :test #'eq)
     :initarg :decl-functions
-    :accessor decl-functions)))
+    :accessor decl-functions
+    :documentation
+    "Functions which handle user-defined declarations. Stored as a
+     hash table where the key is the user-defined declaration name
+     symbol and the value is the function which handles that
+     declaration."))
 
-(defvar *global-environment* (make-instance 'environment))
+  (:documentation
+   "The extendend environment class. Stores information about the
+    environment obtained via code walking."))
+
+(defvar *global-environment* (make-instance 'environment)
+  "The global null environment object.")
 
 
 (defun copy-environment (env)
@@ -119,20 +149,38 @@
 
 ;;; Local Environments
 
-(defvar *env-sym* (gensym "ENV"))
+(defvar *env-sym* (gensym "ENV")
+  "The symbol used to store the extended environment objects. The
+   objects are stored in a symbol macro, using symbol-macrolet, with
+   the name being this symbol, and expanding to the environment
+   object.")
 
 (defun get-environment (env)
+  "Returns the local extended environment object or the global null
+   environment if none is found. ENV is the implementation specific
+   lexical environment object, if it is NIL the global null
+   environment is returned."
+  
   (if (null env)
       *global-environment*
       (get-local-environment env)))
 
 (defun get-local-environment (env)
+  "Returns the extended enevironment object in the lexical environment
+   ENV. Macroexpands *ENV-SYM*, using MACROEXPAND, in the lexical
+   environment ENV, to obtain the extended environment. If there is no
+   expansion for *ENV-SYM* the global null environment is returned."
+  
   (let ((ext-env (macroexpand *env-sym* env)))
-    (if (eq ext-env *env-sym*) ; No local environment
-	*global-environment* ; For now simply return global environment
+    (if (eq ext-env *env-sym*)
+	*global-environment*
 	ext-env)))
 
 (defun enclose-in-env (env forms)
+  "Encloses FORMS in the extended environment object ENV. Returns
+   FORMS wrapped in a SYMBOL-MACROLET, declararing a symbol macro,
+   with symbol *ENV-SYM*, expanding to the environment object ENV."
+  
   `(symbol-macrolet ((,*env-sym* ,env))
      ,@forms))
 
@@ -330,7 +378,7 @@
   "If FN is FBOUND, determines the type of the binding for FN in the
    global Common Lisp environment. If FN has a macro function :MACRO
    is returned, if FN names a special operator (checked using
-   SPECIAL-OPERATOR-P) and has no macro function :SPECIAL-FORM is
+   SPECIAL-OPERATOR-P), and has no macro function, :SPECIAL-FORM is
    returned, otherwise :FUNCTION is returned. If FN is not FBOUND NIL
    is returned."
   
@@ -346,31 +394,44 @@
 ;;; Declarations
 
 (defun declaration-info (name env)
+  "Returns the declaration information for the KEY name."
   (gethash name (declarations env)))
 
 (defun (setf declaration-info) (value name env)
+  "Sets the declaration information for the key NAME."
   (setf (gethash name (declarations env)) value))
 
 
 (defun declaration-function (name env)
+  "Returns the declaration function for the user-defined declaration
+   NAME."
   (gethash name (decl-functions env)))
 
 (defun (setf declaration-function) (fn name env)
+  "Sets the declaration function for the user-defined declaration
+   NAME."
   (setf (gethash name (decl-functions env)) fn))
 
 
 ;;; CLTL2 Interface
 
+;;; TODO:
+;;;
+;;; The binding type is :CONSTANT for constants defined using
+;;; defconstant and keyword symbols.
+
 (defun variable-information (variable &optional env)
   (let* ((ext-env (get-environment env))
 	 (info (get-var-info variable ext-env)))
-    (when info
-      (with-slots (type local declarations) info
-	(values type local declarations)))))
+    (if info
+	(with-slots (type local declarations) info
+	  (values type local declarations))
+	(values nil nil nil))))
 
 (defun function-information (function &optional env)
   (let* ((ext-env (get-environment env))
 	 (info (get-function-info function ext-env)))
-    (when info
-      (with-slots (type local declarations) info
-	(values type local declarations)))))
+    (if info
+	(with-slots (type local declarations) info
+	  (values type local declarations))
+	(values nil nil nil))))
