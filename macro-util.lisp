@@ -81,3 +81,58 @@
 		      ,@(loop for state in body
 			   collect (make-clause state)))))
 	   (,g!next ,start ,arg))))))
+
+
+(defmacro! when-list (o!form &body body)
+  "If FORM evaluates to a list, the forms in BODY are executed and the
+   value of the last form is returned, as if in an implicit PROGN,
+   otheriwse the value of FORM is returned. NIL is considered a list."
+  
+  `(if (listp ,g!form)
+       (progn ,@body)
+       ,g!form))
+
+(defmacro! bind-if-list ((&rest lambda-list) o!form &body body)
+  "Like DESTRUCTURING-BIND except that it is checked first that FORM
+   actually produces a list, if not result returned by FORM is simply
+   returned."
+  
+  `(if (listp ,g!form)
+       (destructuring-bind (&optional ,@lambda-list) ,g!form
+	 ,@body)
+       ,g!form))
+
+(defmacro! match-list ((&rest list-pattern) o!form &body body)
+  (labels ((list->cons (list)
+	     (if (consp list)
+		 `(cons ,(list->cons (first list))
+			,(list->cons (rest list)))
+		 list)))
+    `(match ,g!form
+       (,(list->cons list-pattern)
+	 ,@body)
+       (_ ,g!form))))
+
+(defmacro! match-form (pattern o!form &body body)
+  (labels ((list->cons (list)
+	     (match list
+	       ((list '&rest var)
+		var)
+	       ((cons item rest)
+		`(cons ,(guard-list item)
+		       ,(list->cons rest)))
+	       (_ list)))
+	   
+	   (guard-list (item)
+	     (if (consp item)
+		 (add-guard (list->cons item))
+		 item))
+
+	   (add-guard (item)
+	     (if (listp item)
+		 item
+		 `(guard ,item (listp ,item)))))
+    `(match ,g!form
+       (,(guard-list pattern)
+	 ,@body)
+       (_ ,g!form))))

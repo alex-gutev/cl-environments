@@ -35,7 +35,12 @@
 		:lol-syntax)
 
   (:export :let-if
-	   :match-state))
+	   :match-state
+	   :when-list
+	   :bind-if-list
+	   :match-list
+
+	   :match-form))
 
 (defpackage :cl-environments
   (:use :common-lisp
