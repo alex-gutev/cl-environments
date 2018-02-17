@@ -35,13 +35,15 @@
   "Walks the lambda list LIST, augments the environment ENV with the
    bindings introduced by the lambda list, and encloses the initforms
    of the arguments in the environments augmented with the bindings
-   introduced till that argument in the lambda list. Returns the new
+   introduced before that argument in the lambda list. Returns the new
    lambda list and the augmented environment. The keyword
    argument :DESTRUCTURE indicates whether the lambda list should be
    treated as a destructuring lambda list, :ENV whether &ENVIRONMENT
    parameters are accepted and :GENERIC whether the lambda list is a
-   DEFMETHOD lambda list. The lambda lists are not checked for
-   correctness as that is left to the CL implementation."
+   DEFMETHOD lambda list. This function performs a best effort, that
+   is it does not check for all syntax errors and if a syntax error is
+   found, it simply returns the rest of the lambda list letting,
+   leaving the CL implementation to deal with the error."
   
   (declare (special envp))
   
@@ -157,13 +159,15 @@
 
 	  (required
 	   (cons
-	    (or (guard (list var _) genericp)
-		var)
+	    (and
+	     (or (guard (list var _) genericp)
+		 var)
+	     whole-var)
 	    rest)
 	   :from (:start (end :start) whole (end whole) required)
 
 	   (add-var var)
-	   (collect var)
+	   (collect whole-var)
 	   (next rest))
 
 	  (optional
@@ -195,11 +199,9 @@
 	  (keyword
 	   (cons
 	    (or (cons
-		 (and
-		  (or
-		   (list keyword var)
-		   var)
-		  arg)
+		 (and (or (list keyword var)
+			  var)
+		      arg)
 		 (or
 		  (list initform var-sp)
 		  (list initform)

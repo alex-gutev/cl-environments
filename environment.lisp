@@ -398,6 +398,16 @@
       (t :function))))
 
 
+(defun ensure-function-type (fn env &key type local)
+  (let ((binding (function-binding fn env)))
+    (let-if ((declarations (declarations binding)))
+	binding
+      (setf (function-binding fn env)
+	    (make-binding :type type
+			  :local local
+			  :global (not local)
+			  :declarations declarations)))))
+
 ;;; Declarations
 
 (defun declaration-info (name env)
