@@ -25,9 +25,12 @@
 
 (in-package :cl-environments)
 
-;;; Defun
+;;;; Code-walkers for the global function and macro definition forms:
+;;;; DEFUN, DEFGENERIC, DEFMETHOD, DEFMACRO.
 
-(defmethod walk-fn-form ((op (eql 'cl:defun)) args env)
+;;; DEFUN
+
+(defwalker cl:defun (args env)
   "Walks DEFUN forms, adds the functon to the global environment,
    creates a new local environment containing the function arguments
    and encloses the body in those arguments."
@@ -35,12 +38,12 @@
   (match-form (name . def) args
     (let ((env (get-environment env)))
       (ensure-function-type name *global-environment* :type :function :local nil)
-      `(cl:defun ,name ,@(walk-fn-def def env)))))
+      (cons name (walk-fn-def def env)))))
 
 
-;;; Defmacro
+;;; DEFMACRO
 
-(defmethod walk-fn-form ((op (eql 'cl:defmacro)) args env)
+(defwalker cl:defmacro (args env)
   "Walks DEFMACRO forms, adds the the macro to the global environment,
    creates a new local environment containing the macro arguments and
    encloses the body in those arguments."
@@ -48,14 +51,14 @@
   (match-form (name . def) args
     (let ((env (get-environment env)))
       (ensure-function-type name *global-environment* :type :macro :local nil)
-      `(cl:defmacro ,name ,@(walk-macro-def def env)))))
+      (cons name (walk-macro-def def env)))))
 
 
 ;;;; Generic Functions
 
-;;; Defgeneric
+;;; DEFGENERIC
 
-(defmethod walk-fn-form ((op (eql 'cl:defgeneric)) args env)
+(defwalker cl:defgeneric (args env)
   "Walks DEFGENERIC forms, adds a function binding to the global
    environment. The generic function options are walked, the body
    of :METHOD options are enclosed in an environment containing the
@@ -64,8 +67,8 @@
   (match-form (name lambda-list . options) args
     (let ((env (get-environment env)))
       (ensure-function-type name *global-environment* :type :function :local nil)
-      `(cl:defgeneric ,name ,lambda-list
-	 ,@(mapcar (rcurry #'walk-defgeneric-option env) options)))))
+      `(,name ,lambda-list
+	      ,@(mapcar (rcurry #'walk-defgeneric-option env) options)))))
 
 (defun walk-defgeneric-option (option env)
   "Walks a DEFGENERIC option. All options, except the :METHOD option,
@@ -78,9 +81,9 @@
     (_ option)))
 
 
-;;; Defmethod
+;;; DEFMETHOD
 
-(defmethod walk-fn-form ((op (eql 'cl:defmethod)) args env)
+(defwalker cl:defmethod (args env)
   "Walks DEFMETHOD forms. If the global environment does not contain a
    binding for the generic function, a binding is added to the global
    environment. The body is enclosed in an environment containing the
@@ -91,9 +94,9 @@
 			  :type :function
 			  :local nil)
     (let ((env (get-environment env)))
-      `(cl:defmethod ,name ,@(walk-method-def def env)))))
+      (cons name (walk-method-def def env)))))
 
-(defmethod walk-method-def (def env)
+(defun walk-method-def (def env)
   "Walks a method definition, where DEF is the rest of the DEFMETHOD
    form (or :METHOD option), where the first element is either the
    method lambda list or method type."

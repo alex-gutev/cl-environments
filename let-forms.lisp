@@ -25,9 +25,12 @@
 
 (in-package :cl-environments)
 
+;;;; Code-walkers for: LET, LET*, DESTRUCTURING-BIND, LAMBDA, FLET,
+;;;; LABELS, MACROLET, SYMBOL-MACROLET.
+
 ;;; LET forms
 
-(defmethod walk-fn-form ((op (eql 'cl:let)) args env)
+(defwalker cl:let (args env)
   "Walks LET binding forms, augments the environment ENV with the
    bindings introduced, adds the declaration information to the
    bindings and encloses the body of the LET form in the augmented
@@ -36,8 +39,8 @@
   (match-form ((&rest bindings) . body) args
     (let* ((old-env (get-environment env))
 	   (new-env (copy-environment old-env)))
-      `(let ,(walk-let-bindings bindings new-env)
-	 ,@(walk-body body new-env)))))
+      (cons (walk-let-bindings bindings new-env)
+	    (walk-body body new-env)))))
 
 (defun walk-let-bindings (bindings env)
   "Walks the bindings of a LET form. Adds the variable bindings to the
@@ -73,7 +76,7 @@
 
 ;;; LET* forms
 
-(defmethod walk-fn-form ((op (eql 'cl:let*)) args env)
+(defwalker cl:let* (args env)
   "Walks LET* binding forms: encloses each initform in an environment
    containing all the variables in the preceeding bindings. Encloses
    the body in an environment containing all the variable bindings
@@ -85,7 +88,7 @@
 	   (body (walk-body body body-env))
 	   (bindings (walk-let*-bindings bindings env body-env)))
 
-      `(cl:let* ,bindings ,@body))))
+      (cons bindings body))))
 
 (defun create-let*-env (bindings env)
   "Creates the lexical environment for the body of a LET* form, by
@@ -121,7 +124,7 @@
 
 ;;; Destructuring Bind
 
-(defmethod walk-fn-form ((op (eql 'cl:destructuring-bind)) args env)
+(defwalker cl:destructuring-bind (args env)
   "Walks DESTRUCTURING-BIND forms. The body of the DESTRUCTURING-BIND
    is enclosed in an environment containing all the variables in the
    lambda-list. The expression form is enclosed in the code walking
@@ -132,13 +135,12 @@
       
       (multiple-value-bind (lambda-list env)
 	  (walk-lambda-list lambda-list env :destructure t)
-	`(cl:destructuring-bind ,lambda-list ,(enclose-form form)
-	   ,@(walk-body body env))))))
+	`(,lambda-list ,(enclose-form form) ,@(walk-body body env))))))
 
 
 ;;; Lambda
 
-(defmethod walk-fn-form ((op (eql 'cl:lambda)) args env)
+(defwalker cl:lambda (args env)
   "Walks LAMBDA forms, the body is enclosed in an environment
    containing all the variables in the lambda-list."
   
@@ -147,14 +149,13 @@
       
       (multiple-value-bind (lambda-list env)
 	  (walk-lambda-list lambda-list env)
-	`(cl:lambda ,lambda-list
-	   ,@(walk-body body env))))))
+	(cons lambda-list (walk-body body env))))))
 
 
 
 ;;; Lexical functions
 
-(defmethod walk-fn-form ((op (eql 'cl:flet)) args env)
+(defwalker cl:flet (args env)
   "Walks FLET forms. The functions introduced by the FLET are added to
    a copy of the environment ENV, and the body, of the FLET form, is
    enclosed in this environment. The body of each function is enclosed
@@ -166,11 +167,11 @@
 	 (new-env (copy-environment env)))
 
     (match-form ((&rest fns) . body) args
-      `(flet ,(mapcar (rcurry #'walk-local-fn env new-env) fns)
-	 ,@(walk-body body new-env)))))
+      (cons (mapcar (rcurry #'walk-local-fn env new-env) fns)
+	    (walk-body body new-env)))))
 
 
-(defmethod walk-fn-form ((op (eql 'cl:labels)) args env)
+(defwalker cl:labels (args env)
   "Walks LABELS forms. The functions introduced by the LABELS are
    added to a copy of the environment ENV, and the body, of the LABELS
    form, is enclosed in this environment. The body of each function is
@@ -201,8 +202,8 @@
 	    (add-function name body-env)))
 	
 	(let ((body (walk-body body body-env)))
-	  `(cl:labels ,(walk-fns fns env body-env)
-	     ,@body))))))
+	  (cons (walk-fns fns env body-env)
+		body))))))
 
 
 (defun walk-local-fn (def fn-env new-env)
@@ -234,7 +235,7 @@
 
 ;;; Lexical Macros
 
-(defmethod walk-fn-form ((op (eql 'cl:macrolet)) args env)
+(defwalker cl:macrolet (args env)
   "Walks MACROLET forms. Each macro is added to a copy of the
    environment ENV, and the body of the MACROLET form is enclosed in
    this environment. The body of each macro is enclosed in an
@@ -246,8 +247,8 @@
     (let* ((env (get-environment env))
 	   (new-env (copy-environment env)))
       
-      `(cl:macrolet ,(mapcar (rcurry #'walk-local-macro env new-env) macros)
-	 ,@(walk-body body new-env)))))
+      (cons (mapcar (rcurry #'walk-local-macro env new-env) macros)
+	    (walk-body body new-env)))))
 
 (defun walk-local-macro (def mac-env new-env)
   "Walks a lexical macro, defined using MACROLET. Adds the macro to
@@ -277,7 +278,7 @@
 
 ;;; Lexical Symbol Macros
 
-(defmethod walk-fn-form ((op (eql 'cl:symbol-macrolet)) args env)
+(defwalker cl:symbol-macrolet (args env)
   "Walks SYMBOL-MACROLET forms. Each symbol macro is added to a copy
    of the environment ENV, and the body is enclosed in this
    environment."
@@ -285,5 +286,5 @@
   (match-form ((&rest macros) . body) args
     (let ((env (copy-environment (get-environment env))))
       (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
-      `(cl:symbol-macrolet ,macros
-	 ,@(walk-body body env)))))
+      (cons macros
+	    (walk-body body env)))))

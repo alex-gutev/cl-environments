@@ -34,7 +34,8 @@
   `(walk-form-macro ,form))
 
 (defun enclose-forms (forms)
-  (mapcar #'enclose-form forms))
+  (when-list forms
+    (mapcar #'enclose-form forms)))
 
 
 
@@ -76,8 +77,21 @@
        (cons op (enclose-forms args))))))
 
 
+;;; Code walker definition macro
+
+(defmacro! defwalker (op (arg-var &optional (env-var (gensym))) &body body)
+  "Defines a code-walker method for the operator OP. ARG-VAR is bound
+   to the operator arguments and ENV-VAR is bound to the lexical
+   environment in which the operator appears. The forms in BODY,
+   enclosed in an implicit PROGN, should return the new operator
+   arguments. The result returned by the walker method is the form
+   with the operator OP and the arguments returned by the forms in
+   BODY, effectively (CONS ,OP (PROGN ,@BODY))."
+  
+  (multiple-value-bind (body decl doc)
+      (parse-body body :documentation t)
     
-	     
-
-
-
+    `(defmethod walk-fn-form ((,g!op (eql ',op)) ,arg-var (,env-var t))
+       ,doc ,@decl
+       (cons ,g!op (progn ,@body)))))
+     

@@ -39,7 +39,9 @@
 	       (:file "declarations")
 	       (:file "walker")
 	       (:file "lambda")
-	       (:file "let-forms"))
+	       (:file "let-forms")
+	       (:file "def-forms")
+	       (:file "special-forms"))
   :depends-on (:alexandria
 	       :anaphora
 	       :iterate

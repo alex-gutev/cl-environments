@@ -51,6 +51,9 @@
 
 	:cl-environments.util)
 
+  (:import-from :let-over-lambda
+		:defmacro!)
+
   (:import-from :collectors
 		:make-simple-collector
 		:make-simple-collector-to-place))
