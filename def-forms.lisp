@@ -25,8 +25,8 @@
 
 (in-package :cl-environments)
 
-;;;; Code-walkers for the global function and macro definition forms:
-;;;; DEFUN, DEFGENERIC, DEFMETHOD, DEFMACRO.
+;;;; Code-walkers for global variable, function and macro definition
+;;;; forms: DEFUN, DEFGENERIC, DEFMETHOD, DEFMACRO.
 
 ;;; DEFUN
 
@@ -39,19 +39,6 @@
     (let ((env (get-environment env)))
       (ensure-function-type name *global-environment* :type :function :local nil)
       (cons name (walk-fn-def def env)))))
-
-
-;;; DEFMACRO
-
-(defwalker cl:defmacro (args env)
-  "Walks DEFMACRO forms, adds the the macro to the global environment,
-   creates a new local environment containing the macro arguments and
-   encloses the body in those arguments."
-  
-  (match-form (name . def) args
-    (let ((env (get-environment env)))
-      (ensure-function-type name *global-environment* :type :macro :local nil)
-      (cons name (walk-macro-def def env)))))
 
 
 ;;;; Generic Functions
@@ -113,3 +100,76 @@
     
     (_ def)))
 	   
+
+;;;; Variable Definitions
+
+(defwalker cl:defparameter (args)
+  "Walks DEFPARAMETER forms. Encloses the init-form in the
+   code-walking macro and adds the variable (with type :SPECIAL) to
+   the global environment."
+  
+  (match-form (name init-form . doc) args
+    (ensure-variable-type name
+			  *global-environment*
+			  :type :special
+			  :local nil)
+    (list* name (enclose-form init-form) doc)))
+
+(defwalker cl:defvar (args)
+  "Walks DEFVAR forms. Encloses the init-form in the code-waling macro
+   and adds the variable (with type :SPECIAL) to the global
+   environment."
+  
+  (match-form (name . args) args
+    (ensure-variable-type name
+			  *global-environment*
+			  :type :special
+			  :local nil)
+    (cons name
+	  (destructuring-bind (&optional (init-form nil init-p) &rest doc) args
+	    (when init-p
+	      (cons (enclose-form init-form) doc))))))
+
+
+;;;; Constant Definitions
+
+(defwalker cl:defconstant (args)
+  "Walks DEFCONSTANT forms. Encloses the init-form in the code-walking
+   macro and adds the constant (with type :CONSTANT) to the global
+   environment."
+  
+  (match-form (name init-form . doc) args
+    (ensure-variable-type name
+			  *global-environment*
+			  :type :constant
+			  :local nil)
+    (list* name (enclose-form init-form) doc)))
+
+
+;;;; Macros
+
+;;; DEFMACRO
+
+(defwalker cl:defmacro (args env)
+  "Walks DEFMACRO forms, adds the the macro to the global environment,
+   creates a new local environment containing the macro arguments and
+   encloses the body in those arguments."
+  
+  (match-form (name . def) args
+    (let ((env (get-environment env)))
+      (ensure-function-type name *global-environment* :type :macro :local nil)
+      (cons name (walk-macro-def def env)))))
+
+
+;;; DEFINE-SYMBOL-MACRO
+
+(defwalker cl:define-symbol-macro (args env)
+  "Walks DEFINE-SYMBOL-MACRO forms. Adds the symbol macro to the
+   global environment"
+  
+  (match-form (name init-form . doc) args
+    (ensure-variable-type name
+			  *global-environment*
+			  :type :symbol-macro
+			  :local nil)
+    (list* name (enclose-form init-form) doc)))

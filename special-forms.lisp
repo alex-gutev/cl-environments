@@ -27,8 +27,7 @@
 
 ;;;; Code-walkers for the standard Common Lisp forms, which are not
 ;;;; macros, excluding the lexical binding forms (LET, FLET, etc)
-;;;; which are implemented in let-forms.lisp and the set forms (SETQ,
-;;;; SETF) which are implemented in set-forms lisp.
+;;;; which are implemented in let-forms.lisp.
 
 ;;; BLOCK
 
@@ -165,6 +164,20 @@
   "Walks QUOTE forms. Simply returns the form unchanged."
 
   args)
+
+
+;;; SETQ
+
+(defwalker cl:setq (args)
+  "Walks SETQ forms. Encloses the value forms in the code walking
+   macros. Does not expand symbol macros occuring in the variable
+   symbol positions."
+  
+  (when-list args
+    (iter
+      (for pair in (group args 2))
+      (collect (match-form (var form) pair
+		 `(,var ,(enclose-form form)))))))
 
 
 ;;; TAGBODY

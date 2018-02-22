@@ -290,6 +290,15 @@
 			  :global global
 			  :declarations declarations)))))
 
+(defun ensure-variable-type (var env &key type local)
+  (let ((binding (variable-binding var env)))
+    (let-if ((declarations (declarations binding)))
+	binding
+      (setf (variable-binding var env)
+	    (make-binding :type type
+			  :local local
+			  :global (not local)
+			  :declarations declarations)))))
 
 (defun get-var-info (var env)
   "Returns the binding for the variable VAR. If ENV does not have a
