@@ -47,3 +47,16 @@
        (let
        	   ,(mapcar #2`(,(first a1) ,a2) bindings gensyms)
 	 ,@body))))
+
+(defmacro! slot-values ((&rest slots) o!form &body body)
+  (flet ((parse-slot (slot)
+	  (if (listp slot)
+	      slot
+	      (list slot slot))))
+    `(let-if
+	 ,(loop
+	     for slot in slots
+	     for (var slot-name) = (parse-slot slot)
+	     collect `(,var (slot-value ,g!form ',slot-name)))
+	 ,g!form
+       ,@body)))

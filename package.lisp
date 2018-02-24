@@ -35,6 +35,8 @@
 		:lol-syntax)
 
   (:export :let-if
+	   :slot-values
+	   
 	   :match-state
 	   :when-list
 	   :bind-if-list

@@ -62,7 +62,9 @@
     :reader global
     :documentation
     "True if there is a global definition, this may be nil even if
-     LOCAL is nil, indicating there is no definition.")
+     LOCAL is nil, indicating there is no definition. Similarly GLOBAL
+     may be true even if local is true indicating that there is both a
+     global and local definition.")
 
    (declarations
     :initform nil
@@ -96,6 +98,24 @@
 		  :global global
 		  :declarations (acons key value declarations))))
 	  
+
+(defun change-binding-type (binding &key (type nil type-sp) (local nil local-sp) (global nil global-sp) (declarations nil decl-sp))
+  "Creates a new `binding' which is a copy of BINDING, with binding
+   type set to TYPE and local flag set to LOCAL. If the TYPE, LOCAL,
+   GLOBAL or DECLARATIONS argument is not provided, the slot value of
+   the existing `binding' object is copied to the new binding, or NIL
+   if there is no exisiting binding."
+  
+  (let-if ((old-type (type binding))
+	   (old-local (local binding))
+	   (old-global (global binding))
+	   (old-declarations (declarations binding)))
+      binding
+    (make-binding :type (if type-sp type old-type)
+		  :local (if local-sp local old-local)
+		  :global (if global-sp global old-global)
+		  :declarations (if decl-sp declarations old-declarations))))
+
 
 ;;; Environments
 
@@ -233,23 +253,35 @@
   "Adds the variable named by SYM to the environment ENV. The binding
    type is either that given by TYPE or :SPECIAL if the variable is
    currently declared special in the global environment."
-  
-  (with-slots (variables) env
-    (let-if ((type :special type))
-	(aand (get-var-info sym env)
-	      (global it)
-	      (eq (type it) :special))
-      (setf (gethash sym variables)
-	    (make-binding :type type :local local :global (not local)))))) 
 
-(defun env-ensure-variable (sym env)
+  (with-slots (variables) env
+    (let* ((binding (get-var-info sym env))
+	   (old-type (and binding (type binding)))
+	   (global (and binding (global binding)))
+	   (type (if (and global (eq old-type :special)) :special type)))
+	   
+      (setf (gethash sym variables)
+	    (change-binding-type binding
+				 :type type
+				 :local local
+				 :declarations nil)))))
+
+(defun ensure-variable-type (sym env &rest args &key &allow-other-keys)
   "Ensures that there is a variable binding for SYM in env. If ENV
    does not have a binding for SYM, a new binding (of type NIL) is
    created."
+  
+  (setf (gethash sym (variables env))
+	(apply #'change-binding-type (get-var-info sym env) args)))
 
-  (or (get-var-info sym env)
-      (setf (gethash sym (variables env))
-	    (make-binding))))
+(defun ensure-special-variable (var env)
+  "Ensures that the symbol VAR names a special variable in the
+   environment ENV. If no binding for VAR exists, in ENV, a new
+   binding of type :SPECIAL is created."
+
+  (ensure-variable-type var env :type :special))
+
+
 
 (defun add-symbol-macro (sym env &key (local t))
   "Adds a new binding, of type :SYMBOL-MACRO, for SYM in ENV. If ENV
@@ -274,31 +306,6 @@
   
   (mapc (rcurry #'add-variable-info key value env) vars))
 
-(defun ensure-special-variable (var env)
-  "Ensures that the symbol VAR names a special variable in the
-   environment ENV. If no binding for VAR exists, in ENV, a new
-   binding of type :SPECIAL is created."
-
-  (let ((binding (get-var-info var env)))
-    (let-if ((local (local binding))
-	     (global (global binding))
-	     (declarations (declarations binding)))
-	binding
-      (setf (gethash var (variables env))
-	    (make-binding :type :special
-			  :local local
-			  :global global
-			  :declarations declarations)))))
-
-(defun ensure-variable-type (var env &key type local)
-  (let ((binding (variable-binding var env)))
-    (let-if ((declarations (declarations binding)))
-	binding
-      (setf (variable-binding var env)
-	    (make-binding :type type
-			  :local local
-			  :global (not local)
-			  :declarations declarations)))))
 
 (defun get-var-info (var env)
   "Returns the binding for the variable VAR. If ENV does not have a
@@ -347,14 +354,14 @@
     (setf (gethash sym functions)
 	  (make-binding :type type :local local :global (not local)))))
 
-(defun env-ensure-function (sym env &rest args &key &allow-other-keys)
+(defun ensure-function-type (sym env &rest args &key &allow-other-keys)
   "Ensures that there is a function binding for SYM in ENV. If ENV
    does not have a binding for SYM, a new binding (of type NIL) is
    created."
+  
+  (setf (gethash sym (functions env))
+	(apply #'change-binding-type (get-var-info sym env) args)))
 
-  (or (get-function-info sym env)
-      (setf (gethash sym (functions env))
-	    (apply #'make-binding args))))
 
 (defun add-function-info (fn key value env)
   "Adds the pair (KEY . VALUE) to the function information of FN in
@@ -406,16 +413,6 @@
        :special-form)
       (t :function))))
 
-
-(defun ensure-function-type (fn env &key type local)
-  (let ((binding (function-binding fn env)))
-    (let-if ((declarations (declarations binding)))
-	binding
-      (setf (function-binding fn env)
-	    (make-binding :type type
-			  :local local
-			  :global (not local)
-			  :declarations declarations)))))
 
 ;;; Declarations
 

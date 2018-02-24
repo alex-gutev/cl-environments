@@ -167,18 +167,18 @@
 
 (defmethod walk-declaration (decl args ext-env &optional global)
   "If there is a declaration function (defined using
-   DEFINE-DECLARATION) in EXT-ENV, it is called, the information
-   returned by the function is added to the environment and NIL is
-   returned. If there is no function for DECL then DECL is assumed to
-   be an implementation specific declaration and is simply returned."
+   DEFINE-DECLARATION) in EXT-ENV, it is called and the information
+   returned by the function is added to the environment. The
+   declaration is always returned, since (DECLAIM (DECLARATION DECL))
+   to indicate to the compiler that the declaration is a potentially
+   valid declaration"
   
   (declare (ignore global))
-  
-  (acond
-    ((declaration-function decl ext-env)
-     (multiple-value-call #'add-decl-info (funcall it args ext-env) ext-env))
-    (t
-     (cons decl args))))
+
+  (awhen (declaration-function decl ext-env)
+    (multiple-value-call #'add-decl-info (funcall it args ext-env) ext-env))
+
+  (cons decl args))
 
 (defun add-decl-info (type info ext-env)
   "Adds the information returned by a declaration function to the

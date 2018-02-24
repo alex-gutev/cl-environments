@@ -25,8 +25,10 @@
 
 (in-package :cl-environments)
 
-;;;; Code-walkers for global variable, function and macro definition
-;;;; forms: DEFUN, DEFGENERIC, DEFMETHOD, DEFMACRO.
+;;;; Code-walkers for forms which modify the global environment such
+;;;; as global function, variable and macro definition forms and
+;;;; global declaration (DECLAIM) forms.
+
 
 ;;; DEFUN
 
@@ -37,7 +39,7 @@
   
   (match-form (name . def) args
     (let ((env (get-environment env)))
-      (ensure-function-type name *global-environment* :type :function :local nil)
+      (add-global-function name)
       (cons name (walk-fn-def def env)))))
 
 
@@ -53,7 +55,7 @@
   
   (match-form (name lambda-list . options) args
     (let ((env (get-environment env)))
-      (ensure-function-type name *global-environment* :type :function :local nil)
+      (add-global-function name)
       `(,name ,lambda-list
 	      ,@(mapcar (rcurry #'walk-defgeneric-option env) options)))))
 
@@ -77,9 +79,7 @@
    method arguments."
   
   (match-form (name . def) args
-    (ensure-function-type name *global-environment*
-			  :type :function
-			  :local nil)
+    (add-global-function name)
     (let ((env (get-environment env)))
       (cons name (walk-method-def def env)))))
 
@@ -109,10 +109,7 @@
    the global environment."
   
   (match-form (name init-form . doc) args
-    (ensure-variable-type name
-			  *global-environment*
-			  :type :special
-			  :local nil)
+    (add-global-variable name)
     (list* name (enclose-form init-form) doc)))
 
 (defwalker cl:defvar (args)
@@ -121,10 +118,7 @@
    environment."
   
   (match-form (name . args) args
-    (ensure-variable-type name
-			  *global-environment*
-			  :type :special
-			  :local nil)
+    (add-global-variable name)
     (cons name
 	  (destructuring-bind (&optional (init-form nil init-p) &rest doc) args
 	    (when init-p
@@ -139,10 +133,7 @@
    environment."
   
   (match-form (name init-form . doc) args
-    (ensure-variable-type name
-			  *global-environment*
-			  :type :constant
-			  :local nil)
+    (add-global-variable name :constant)
     (list* name (enclose-form init-form) doc)))
 
 
@@ -157,7 +148,7 @@
   
   (match-form (name . def) args
     (let ((env (get-environment env)))
-      (ensure-function-type name *global-environment* :type :macro :local nil)
+      (add-global-function name :macro)
       (cons name (walk-macro-def def env)))))
 
 
@@ -168,8 +159,25 @@
    global environment"
   
   (match-form (name init-form . doc) args
-    (ensure-variable-type name
-			  *global-environment*
-			  :type :symbol-macro
-			  :local nil)
+    (add-global-variable :symbol-macro)
     (list* name (enclose-form init-form) doc)))
+
+
+;;; Global Declarations (DECLAIM)
+
+(defwalker cl:declaim (args)
+  (when (listp args)
+    (iter
+      (for arg in args)
+      (match-form (decl &rest args) arg
+	(walk-declaration decl args *global-environment* t))))
+  args)
+
+
+;;; Utility Functions
+
+(defun add-global-function (sym &optional (type :function))
+  (ensure-function-type sym *global-environment* :type type :local nil :global t))
+
+(defun add-global-variable (sym &optional (type :special))
+  (ensure-variable-type sym *global-environment* :type type :local nil :global t))
