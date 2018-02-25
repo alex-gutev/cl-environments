@@ -31,17 +31,19 @@
   :author "Alexander Gutev"
   :license "MIT"
   :serial t
-  :components ((:file "package")
-	       (:file "util")
-	       (:file "macro-util")
-               (:file "cl-environments")
-	       (:file "environment")
-	       (:file "declarations")
-	       (:file "walker")
-	       (:file "lambda")
-	       (:file "let-forms")
-	       (:file "def-forms")
-	       (:file "special-forms"))
+  :components ((:module "src"
+	        :components
+		((:file "package")
+		 (:file "util")
+		 (:file "macro-util")
+		 (:file "cl-environments")
+		 (:file "environment")
+		 (:file "declarations")
+		 (:file "walker")
+		 (:file "lambda")
+		 (:file "let-forms")
+		 (:file "def-forms")
+		 (:file "special-forms"))))
   :depends-on (:alexandria
 	       :anaphora
 	       :iterate
