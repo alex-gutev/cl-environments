@@ -1,6 +1,6 @@
-;;;; package.lisp
+;;;; declarations.lisp
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2018 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,45 +23,28 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments.util
-  (:use :common-lisp
-	:alexandria
-	:anaphora
-	:optima
-	:named-readtables)
+(in-package :cl-environments.test)
 
-  (:import-from :let-over-lambda
-		:defmacro!
-		:lol-syntax)
+(plan 9)
 
-  (:export :let-if
-	   :slot-values
 
-	   :mapc-ite
-	   :dolist-ite
-	   :ignore-type-errors
+(let ((env (make-instance 'environment)))
+  (flet ((test-binding (var type var-type)
+	   (let ((binding (variable-binding var env)))	     
+	     (ok binding (format nil "Variable binding ~s added" var))
+
+	     (when binding
+	       (is (type binding) type (format nil "Binding type of ~s is ~s" var type))
+	       (is (cdr (assoc 'type (declarations binding))) var-type
+		   (format nil "Declared type of ~s is ~s" var var-type))))))
 	   
-	   :match-state
-	   :when-list
-	   :bind-if-list
-	   :match-list
+    (add-variable 'x env :type :lexical :local t)
+  
+    (walk-declaration 'type '(number x y z) env)
 
-	   :match-form))
+    (test-binding 'x :lexical 'number)
+    (test-binding 'y nil 'number)
+    (test-binding 'z nil 'number)))
 
-(defpackage :cl-environments
-  (:use :common-lisp
-	:alexandria
-	:anaphora
-	:iterate
-	:optima
 
-	:cl-environments.util)
-
-  (:import-from :let-over-lambda
-		:defmacro!
-		:group)
-
-  (:import-from :collectors
-		:make-simple-collector
-		:make-simple-collector-to-place))
-
+(finalize)

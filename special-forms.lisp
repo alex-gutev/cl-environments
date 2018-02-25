@@ -1,4 +1,4 @@
-;;;; let-forms.lisp
+;;;; special-forms.lisp
 ;;;;
 ;;;; Copyright 2017 Alexander Gutev
 ;;;;

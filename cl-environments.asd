@@ -48,5 +48,19 @@
 	       :optima
 	       :collectors
 	       :let-over-lambda
-	       :named-readtables))
+	       :named-readtables)
+  :in-order-to ((asdf:test-op (asdf:test-op :cl-environments-test))))
 
+(asdf:defsystem #:cl-environments-test
+  :description "Tests for cl-environments."
+  :author "Alexander Gutev"
+  :license "MIT"
+  :serial t
+  :depends-on (:cl-environments :prove)
+  :defsystem-depends-on (:prove-asdf)
+  :components ((:module "test"
+		:components
+		((:file "package")
+		 (:test-file "declarations"))))
+  :perform (asdf:test-op :after (op c)
+			 (funcall (intern #.(string :run) :prove) c)))

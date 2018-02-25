@@ -30,12 +30,14 @@
    EXT-ENV."
   
   (labels ((walk-decl (decl)
-	     (walk-declaration (first decl) (rest decl) ext-env))
+	     (match decl
+	       ((list* decl args)
+		(walk-declaration decl args ext-env))))
 	   
 	   (walk-declare (decl)
-	     (awhen (delete nil (mapcar #'walk-decl (rest decl)))
-	       (cons 'declare it))))
-    (delete nil (mapcar #'walk-declare decl))))
+	     (mapc-ite #'walk-decl decl)))
+
+    (mapc-ite #'walk-declare decl)))
 
 
 (defgeneric walk-declaration (decl args ext-env &optional global)
@@ -52,17 +54,21 @@
   "Adds type information to the information list of the variables in ARGS."
   
   (declare (ignore global))
-  (destructuring-bind (type . vars) args
-    (add-variables-info vars 'type type ext-env))
-  (cons decl args))
+  
+  (match args
+    ((list* type vars)
+     (ignore-type-errors ()
+       (add-variables-info vars 'type type ext-env)))))
 
 (defmethod walk-declaration ((decl (eql 'ftype)) args ext-env &optional global)
   "Adds type information to the information list of the functions in ARGS."
   
   (declare (ignore global))
-  (destructuring-bind (type . fns) args
-    (add-functions-info fns 'ftype type ext-env))
-  (cons decl args))
+
+  (match args
+    ((list* type fns)
+     (ignore-type-errors ()
+       (add-functions-info fns 'ftype type ext-env)))))
 
 
 ;;; Special declarations
@@ -73,8 +79,7 @@
    binding type :SPECIAL is added."
   
   (declare (ignore global))
-  (mapc (rcurry #'ensure-special-variable ext-env) args)
-  (cons decl args))
+  (mapc-ite (rcurry #'ensure-special-variable ext-env) args))
 
 
 ;;; Dynamic extent declarations
@@ -84,13 +89,12 @@
    and functions in ARGS."
   
   (unless global
-    (dolist (arg args)
+    (dolist-ite (arg args)
       (match arg
 	((list 'function fn)
 	 (add-function-info fn 'dynamic-extent t ext-env))
-	(var
-	 (add-function-info var 'dyanmic-extent t ext-env)))))
-  (cons decl args))
+	((guard var #'symbolp)
+	 (add-variable-info var 'dynamic-extent t ext-env))))))
 
 
 ;;; Ignore declarations
@@ -99,15 +103,14 @@
   "Adds (IGNORE . T) to the information list of the variables in ARGS."
   
   (unless global
-    (add-variables-info args 'ignore t ext-env))
-  (cons decl args))
+    (ignore-type-errors ()
+      (add-variables-info args 'ignore t ext-env))))
 
 (defmethod walk-declaration ((decl (eql 'ignorable)) args ext-env &optional global)
   "Currently does nothing (other than simply returning the
    declaration) as IGNORABLE declarations are not mentioned in CLTL2."
   
-  (declare (ignore ext-env global))
-  (cons decl args))
+  (declare (ignore args ext-env global)))
 
 
 ;;; Inlining declarations
@@ -116,16 +119,16 @@
   "Adds (INLINE . INLINE) to the information list of the functions in ARGS."
   
   (declare (ignore global))
-  (add-functions-info args 'inline 'inline ext-env)
-  (cons decl args))
+  (ignore-type-errors ()
+    (add-functions-info args 'inline 'inline ext-env)))
 
 ;; Local and global
 (defmethod walk-declaration ((decl (eql 'notinline)) args ext-env &optional global)
   "Adds (INLINE . NOTINLINE) to the information list of the functions in ARGS."
   
   (declare (ignore global))
-  (add-functions-info args 'inline 'notinline ext-env)
-  (cons decl args))
+  (ignore-type-errors ()
+    (add-functions-info args 'inline 'notinline ext-env)))
 
 
 ;;; Optimization declarations
@@ -139,20 +142,26 @@
    instead."
   
   (declare (ignore global))
-  (labels ((find-assoc (item list)
-	     (find item list :key #'ensure-car))
-	   (priority (quality)
-	     (or (find-assoc quality args)
-		 (get-declaration-info 'optimize ext-env)))
-	   (ensure-quality (quality)
-	     (if (symbolp quality)
-		 (list quality 3)
-		 quality))
-	   (get-priority (quality)
-	     (ensure-quality (priority quality))))
-    (setf (declaration-info 'optimize ext-env)
-	  (mapcar #'get-priority +optimize-qualities+)))
-  (cons decl args))
+
+  (ignore-type-errors ()
+    (let ((info (declaration-info 'optimize ext-env)))
+      (labels ((find-assoc (item list)
+		 (find item list :key #'ensure-car))
+	   
+	       (priority (quality)
+		 (or (find-assoc quality args)
+		     (find-assoc quality info)))
+	     
+	       (ensure-quality (quality)
+		 (if (symbolp quality)
+		     (list quality 3)
+		     quality))
+	   
+	       (get-priority (quality)
+		 (ensure-quality (priority quality))))
+    
+	(setf (declaration-info 'optimize ext-env)
+	      (mapcar #'get-priority +optimize-qualities+))))))
 
 
 ;;; Non-standard and user-defined declarations
@@ -161,24 +170,19 @@
   "Adds the declaration to the list of valid declarations."
 
   (when global
-    (unionf (declaration-info 'declaration ext-env) args :test #'eq))
-  (cons decl args))
+    (ignore-type-errors ()
+      (unionf (declaration-info 'declaration ext-env) args :test #'eq))))
 
 
 (defmethod walk-declaration (decl args ext-env &optional global)
   "If there is a declaration function (defined using
    DEFINE-DECLARATION) in EXT-ENV, it is called and the information
-   returned by the function is added to the environment. The
-   declaration is always returned, since (DECLAIM (DECLARATION DECL))
-   to indicate to the compiler that the declaration is a potentially
-   valid declaration"
+   returned by the function is added to the environment."
   
   (declare (ignore global))
 
   (awhen (declaration-function decl ext-env)
-    (multiple-value-call #'add-decl-info (funcall it args ext-env) ext-env))
-
-  (cons decl args))
+    (multiple-value-call #'add-decl-info (funcall it args ext-env) ext-env)))
 
 (defun add-decl-info (type info ext-env)
   "Adds the information returned by a declaration function to the

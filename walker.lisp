@@ -34,7 +34,7 @@
   `(walk-form-macro ,form))
 
 (defun enclose-forms (forms)
-  (when-list forms
+  (ignore-type-errors (forms)
     (mapcar #'enclose-form forms)))
 
 
@@ -93,5 +93,5 @@
     
     `(defmethod walk-fn-form ((,g!op (eql ',op)) ,arg-var (,env-var t))
        ,doc ,@decl
-       (cons ,g!op (progn ,@body)))))
+       (cons ,g!op (ignore-type-errors (,arg-var) ,@body)))))
      

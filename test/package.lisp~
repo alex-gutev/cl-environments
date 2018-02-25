@@ -1,6 +1,6 @@
 ;;;; package.lisp
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2018 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,45 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments.util
+(defpackage :cl-environments.test
   (:use :common-lisp
-	:alexandria
-	:anaphora
-	:optima
-	:named-readtables)
-
-  (:import-from :let-over-lambda
-		:defmacro!
-		:lol-syntax)
-
-  (:export :let-if
-	   :slot-values
-
-	   :mapc-ite
-	   :dolist-ite
-	   :ignore-type-errors
-	   
-	   :match-state
-	   :when-list
-	   :bind-if-list
-	   :match-list
-
-	   :match-form))
-
-(defpackage :cl-environments
-  (:use :common-lisp
-	:alexandria
-	:anaphora
-	:iterate
-	:optima
-
-	:cl-environments.util)
-
-  (:import-from :let-over-lambda
-		:defmacro!
-		:group)
-
-  (:import-from :collectors
-		:make-simple-collector
-		:make-simple-collector-to-place))
-
+	:prove
+	:cl-environments))
