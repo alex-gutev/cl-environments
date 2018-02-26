@@ -77,9 +77,12 @@
   "Changes the binding types of the variables in ARGS to :SPECIAL. If
    a variable does not exist in the environment a new variable with
    binding type :SPECIAL is added."
-  
-  (declare (ignore global))
-  (mapc-ite (rcurry #'ensure-special-variable ext-env) args))
+
+  (mapc-ite
+   (if global
+       (rcurry #'ensure-variable-type ext-env :type :special :global t)
+       (rcurry #'ensure-special-variable ext-env))
+   args))
 
 
 ;;; Dynamic extent declarations
