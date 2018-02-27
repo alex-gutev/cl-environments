@@ -288,4 +288,24 @@
 
       (is (declaration-info 'gc-policy env) 1 "GC-POLICY is (1)"))))
 
+
+;;; Test that multiple DECLARE expressions containing multiple
+;;; declarations are parsed and processed correctly.
+
+(subtest "Walking DECLARE expressions"
+  (let ((env (make-instance 'environment)))
+    (flet ((test-binding (var binding-type var-type)
+	     (let ((binding (variable-binding var env)))
+	       (with-slots (type declarations) binding
+		 (is type binding-type
+		     (format nil "Binding type of ~s is ~s" var binding-type))
+		 (is (cdr (assoc 'type declarations)) var-type
+		     (format nil "~s is of type: ~s" var var-type))))))
+      
+      (walk-declarations '((declare (special x y) (type number x))
+			   (declare (type string y))) env)
+
+      (test-binding 'x :special 'number)
+      (test-binding 'y :special 'string))))
+
 (finalize)
