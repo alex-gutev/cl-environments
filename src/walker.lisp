@@ -93,5 +93,8 @@
     
     `(defmethod walk-fn-form ((,g!op (eql ',op)) ,arg-var (,env-var t))
        ,doc ,@decl
-       (cons ,g!op (ignore-type-errors (,arg-var) ,@body)))))
+
+       (flet ((call-next-walker ()
+		(call-next-method)))
+	 (cons ,g!op (ignore-type-errors (,arg-var) ,@body))))))
      

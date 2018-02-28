@@ -43,7 +43,9 @@
 		 (:file "lambda")
 		 (:file "let-forms")
 		 (:file "def-forms")
-		 (:file "special-forms"))))
+		 (:file "special-forms")
+
+		 #+ccl (:file "ccl-forms"))))
   :depends-on (:alexandria
 	       :anaphora
 	       :iterate

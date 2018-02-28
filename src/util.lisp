@@ -28,7 +28,7 @@
 (in-readtable lol-syntax)
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (defvar *debug-type-errors* t
+  (defvar *debug-type-errors* nil
     "If true the IGNORE-TYPE-ERRORS macro will simply expand into a
      PROGN thus type-errors occurring within the body of the macro
      will not be ignored. This is used to debug type-errors not

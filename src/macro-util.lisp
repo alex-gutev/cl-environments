@@ -118,6 +118,10 @@
 	     (match list
 	       ((list '&rest var)
 		var)
+	       
+	       ((list 'quote args)
+		(list 'quote args))
+	       
 	       ((cons item rest)
 		`(cons ,(guard-list item)
 		       ,(list->cons rest)))

@@ -29,18 +29,20 @@
 ;;;; as global function, variable and macro definition forms and
 ;;;; global declaration (DECLAIM) forms.
 
+;;;; The code-walkers for function and macro definition forms serve
+;;;; only to add the function/macro to the global environment. The
+;;;; actual code-walking of the lambda lists and bodies is done on the
+;;;; macro expansion of the definition forms.
 
 ;;; DEFUN
 
 (defwalker cl:defun (args env)
-  "Walks DEFUN forms, adds the functon to the global environment,
-   creates a new local environment containing the function arguments
-   and encloses the body in those arguments."
-  
-  (match-form (name . def) args
-    (let ((env (get-environment env)))
-      (add-global-function name)
-      (cons name (walk-fn-def def env)))))
+  "Walks DEFUN forms, adds the functon to the global environment."
+
+  (when (listp args)
+    (add-global-function (first args)))
+
+  (call-next-walker))
 
 
 ;;;; Generic Functions
@@ -48,26 +50,14 @@
 ;;; DEFGENERIC
 
 (defwalker cl:defgeneric (args env)
-  "Walks DEFGENERIC forms, adds a function binding to the global
-   environment. The generic function options are walked, the body
-   of :METHOD options are enclosed in an environment containing the
-   method arguments."
-  
-  (match-form (name lambda-list . options) args
-    (let ((env (get-environment env)))
-      (add-global-function name)
-      `(,name ,lambda-list
-	      ,@(mapcar (rcurry #'walk-defgeneric-option env) options)))))
+  "Walks DEFGENERIC forms, adds the function to the global
+   environment."
 
-(defun walk-defgeneric-option (option env)
-  "Walks a DEFGENERIC option. All options, except the :METHOD option,
-   are simply returned. The bodies of :METHOD options are enclosed in
-   a local environment containing the method arguments."
-  
-  (match option
-    ((list* :method def)
-     `(:method ,@(walk-method-def def env)))
-    (_ option)))
+  (when (listp args)
+    (add-global-function (first args)))
+
+  (call-next-walker))
+
 
 
 ;;; DEFMETHOD
@@ -77,28 +67,11 @@
    binding for the generic function, a binding is added to the global
    environment. The body is enclosed in an environment containing the
    method arguments."
-  
-  (match-form (name . def) args
-    (add-global-function name)
-    (let ((env (get-environment env)))
-      (cons name (walk-method-def def env)))))
 
-(defun walk-method-def (def env)
-  "Walks a method definition, where DEF is the rest of the DEFMETHOD
-   form (or :METHOD option), where the first element is either the
-   method lambda list or method type."
-  
-  (match def
-    ((or
-      (list* (list* args) body)
-      (list* type args body))
-     
-     (multiple-value-bind (lambda-list env)
-	 (walk-lambda-list args env :generic t)
-       `(,lambda-list
-	 ,@(walk-body body env t))))
-    
-    (_ def)))
+  (when (listp args)
+    (add-global-function (first args)))
+
+  (call-next-walker))
 	   
 
 ;;;; Variable Definitions
@@ -142,14 +115,13 @@
 ;;; DEFMACRO
 
 (defwalker cl:defmacro (args env)
-  "Walks DEFMACRO forms, adds the the macro to the global environment,
-   creates a new local environment containing the macro arguments and
-   encloses the body in those arguments."
-  
-  (match-form (name . def) args
-    (let ((env (get-environment env)))
-      (add-global-function name :macro)
-      (cons name (walk-macro-def def env)))))
+  "Walks DEFMACRO forms, adds the the macro to the global
+   environment."
+
+  (when (listp args)
+    (add-global-function (first args) :macro))
+
+  (call-next-walker))
 
 
 ;;; DEFINE-SYMBOL-MACRO
