@@ -33,19 +33,25 @@
   :serial t
   :components ((:module "src"
 	        :components
-		((:file "package")
-		 (:file "util")
-		 (:file "macro-util")
-		 (:file "cl-environments")
-		 (:file "environment")
-		 (:file "declarations")
-		 (:file "walker")
-		 (:file "lambda")
-		 (:file "let-forms")
-		 (:file "def-forms")
-		 (:file "special-forms")
 
-		 #+ccl (:file "ccl-forms"))))
+		((:module "common"
+		  :components
+		  ((:file "package")
+		   (:file "util")
+		   (:file "macro-util")))
+
+		 (:module "generic"
+		  :components
+		  ((:file "package")
+		   (:file "cl-environments")
+		   (:file "environment")
+		   (:file "declarations")
+		   (:file "walker")
+		   (:file "lambda")
+		   (:file "let-forms")
+		   (:file "def-forms")
+		   (:file "special-forms"))))))
+  
   :depends-on (:alexandria
 	       :anaphora
 	       :iterate
@@ -64,7 +70,9 @@
   :defsystem-depends-on (:prove-asdf)
   :components ((:module "test"
 		:components
-		((:file "package")
-		 (:test-file "declarations"))))
+		((:module "generic"
+		  :components
+		  ((:file "package")
+		   (:test-file "declarations"))))))
   :perform (asdf:test-op :after (op c)
 			 (funcall (intern #.(string :run) :prove) c)))

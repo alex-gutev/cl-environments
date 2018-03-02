@@ -1,6 +1,6 @@
-;;;; ccl-forms.lisp
+;;;; package.lisp
 ;;;;
-;;;; Copyright 2018 Alexander Gutev
+;;;; Copyright 2017 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,14 +23,22 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(defpackage :cl-environments
+  (:use :common-lisp
+	:alexandria
+	:anaphora
+	:iterate
+	:optima
 
-;;;; Code-walkers for CCL specific special forms.
+	:cl-environments.util)
 
-(defwalker ccl::nfunction (args env)
-  (match-form (name ('cl:lambda . lambda-args)) args
-    (list name (walk-fn-form 'cl:lambda lambda-args env))))
+  (:shadow :macro-function)
 
-(defwalker ccl::compiler-let (args env)
-  (match-form (bindings . body) args
-    (cons bindings (enclose-forms body))))
+  (:import-from :let-over-lambda
+		:defmacro!
+		:group)
+
+  (:import-from :collectors
+		:make-simple-collector
+		:make-simple-collector-to-place))
+

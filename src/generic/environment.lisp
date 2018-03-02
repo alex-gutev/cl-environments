@@ -146,7 +146,27 @@
     :documentation
     "Functions which handle user-defined declarations. Stored as a
      hash table where the key is the user-defined declaration name and
-     the value is the function."))
+     the value is the function.")
+
+   (macro-functions
+    :initform (make-hash-table :test #'eq)
+    :initarg :macro-functions
+    :accessor macro-functions
+    :documentation
+    "Macro expansion functions. Stores a hash table where the keys are
+     the symbols naming the macros and the values are the
+     corresponding macro functions. Only macro functions manually
+     added, using AUGMENT-ENVIRONMENT, are stored.")
+
+   (macro-forms
+    :initform (make-hash-table :test #'eq)
+    :initarg :macro-forms
+    :accessor macro-forms
+    :documentation
+    "Symbol macro expansion forms. Stores a hash table where the keys
+     are the macro symbols and the values are the corresponding
+     expansion forms. Only symbol macros manually added, using
+     AUGMENT-ENVIRONMENT, are stored."))
 
   (:documentation
    "The extendend environment class. Stores information about the
@@ -432,34 +452,31 @@
   (setf (gethash name (decl-functions env)) fn))
 
 
-;;; CLTL2 Interface
+;;; Macro functions
 
-(defun variable-information (variable &optional env)
-  "Returns information about the variable binding for the symbol
-   VARIABLE, in the environment ENV. ENV is the implementation
-   specific lexical environment, passed as the &ENVIRONMENT parameter
-   to macros, not the extended environment object. Returns three
-   values: the first value is the binding type
-   nil, :SPECIAL, :LEXICAL, :SYMBOL-MACRO or :CONSTANT, the second
-   value is true if there is a local binding and the third value is
-   the association list of the declaration information."
-  
-  (let* ((ext-env (get-environment env)))
-    (slot-values (type local declarations)
-	(variable-binding variable ext-env)
-      (values type local declarations))))
+(defun macro-fn (symbol env)
+  "Returns the macro expansion function associated with SYMBOL in the
+   environment ENV."
 
-(defun function-information (function &optional env)
-  "Returns information about the function binding for the symbol
-   FUNCTION in the environment ENV. ENV is the implementation specific
-   lexical environment, passed as the &ENVIRONMENT parameter to
-   macros, not the extended environment object. Returns three values:
-   the first value is the binding type nil, :FUNCTION, :MACRO
-   or :SPECIAL-FORM, the second value is true if there is a local
-   binding and the third value is the association list of the
-   declaration information."
-  
-  (let* ((ext-env (get-environment env)))
-    (slot-values (type local declarations)
-	(function-binding function ext-env)
-      (values type local declarations))))
+  (gethash symbol (macro-functions env)))
+
+(defun (setf macro-fn) (fn symbol env)
+  "Sets the macro expansion function associated with SYMBOL in the
+   environment ENV."
+
+  (check-type fn function)
+
+  (setf (gethash symbol (macro-functions env)) fn))
+
+
+(defun macro-form (symbol env)
+  "Returns the symbol macro expansion form associated with SYMBOL in
+   the environment ENV."
+
+  (gethash symbol (macro-forms env)))
+
+(defun (setf macro-form) (form symbol env)
+  "Sets the symbol macro expansion form associated with SYMBOL in the
+   environment ENV."
+
+  (setf (gethash symbol (macro-forms env)) form))
