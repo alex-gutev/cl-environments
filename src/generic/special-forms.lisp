@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.walker)
 
 ;;;; Code-walkers for the standard Common Lisp forms, which are not
 ;;;; macros, excluding the lexical binding forms (LET, FLET, etc)

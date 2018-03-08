@@ -25,7 +25,7 @@
 
 ;;;; Extended environment implementation.
 
-(in-package :cl-environments)
+(in-package :cl-environments.walker)
 
 (defconstant +optimize-qualities+
   '(speed safety compilation-speed space debug)  
@@ -166,7 +166,15 @@
     "Symbol macro expansion forms. Stores a hash table where the keys
      are the macro symbols and the values are the corresponding
      expansion forms. Only symbol macros manually added, using
-     AUGMENT-ENVIRONMENT, are stored."))
+     AUGMENT-ENVIRONMENT, are stored.")
+
+   (lexical-environment
+    :initform nil
+    :initarg :lexical-environment
+    :accessor lexical-environment
+    :documentation
+    "The implementation-specific environment in which this environment
+     is contained."))
 
   (:documentation
    "The extendend environment class. Stores information about the
@@ -181,12 +189,24 @@
    tables containing the mappings between symbols and bindings is
    performed, that is the `binding' objects themselves are not
    copied."
+
+  (with-slots (variables
+	       functions
+	       declarations
+	       decl-functions
+	       macro-functions
+	       macro-forms
+	       lexical-environment) env
   
-  (make-instance 'environment
-		 :variables (copy-hash-table (variables env))
-		 :functions (copy-hash-table (functions env))
-		 :declarations (copy-hash-table (declarations env))
-		 :decl-functions (copy-hash-table (decl-functions env))))
+    (make-instance 'environment
+		   :variables (copy-hash-table variables)
+		   :functions (copy-hash-table functions)
+		   :declarations (copy-hash-table declarations)
+		   :decl-functions (copy-hash-table decl-functions)
+
+		   :macro-functions (copy-hash-table macro-functions)
+		   :macro-forms (copy-hash-table macro-forms)
+		   :lexical-environment lexical-environment)))
 
 
 ;;; Local Environments

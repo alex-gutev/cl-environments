@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.walker)
 
 (defun walk-declarations (decl ext-env)
   "Walks the declare expressions in DECL and adds the information to

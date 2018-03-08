@@ -67,20 +67,20 @@
 	     (make-clause (state)
 	       (destructuring-bind (name pattern . body) state
 		 (multiple-value-bind (from body) (extract-from body)
-		   `((,from ,pattern)
-		     (flet ((,next (,g!arg &optional (,g!from ',name))
-			      (,g!next ,g!from ,g!arg)))
+		   `(((guard ,from (not (and ,g!force (eq ,from-state ',state)))) ,pattern)
+		     (flet ((,next (,g!arg &key force (from ',name))
+			      (,g!next from force ,g!arg)))
 		       ,@body))))))
 
       (let-if ((start (second states) :start)
 	       (body (cddr states) states))
 	  (eq (first states) :start)
       
-	`(labels ((,g!next (,from-state ,g!arg)
+	`(labels ((,g!next (,from-state ,g!force ,g!arg)
 		    (multiple-value-match (values ,from-state ,g!arg)
 		      ,@(loop for state in body
 			   collect (make-clause state)))))
-	   (,g!next ,start ,arg))))))
+	   (,g!next ,start nil ,arg))))))
 
 
 (defmacro! when-list (o!form &body body)

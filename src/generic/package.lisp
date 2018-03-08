@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments
+(defpackage :cl-environments.walker
   (:use :common-lisp
 	:alexandria
 	:anaphora
@@ -32,10 +32,68 @@
 
 	:cl-environments.util)
 
-  (:shadow :macro-function)
+  (:import-from :let-over-lambda
+		:defmacro!
+		:defun!
+		:group)
+
+  (:import-from :collectors
+		:make-simple-collector
+		:make-simple-collector-to-place)
+
+  (:export
+
+   :binding
+   :type
+   :local
+   :global
+   :declarations
+   :lexical-environment
+   
+   :environment
+   :*global-environment*
+   :copy-environment
+   :get-environment
+
+   :enclose-in-env
+
+   :variable-binding
+   :function-binding
+   :declaration-info
+   :macro-fn
+   :macro-form
+
+   :add-variable
+   :add-function
+   :add-symbol-macro
+
+   :enclose-form
+   :walk-form
+   :walk-declaration
+
+   :map-lambda-list))
+   
+
+(defpackage :cl-environments
+  (:use :common-lisp
+	:alexandria
+	:anaphora
+	:iterate
+	:optima
+
+	:cl-environments.util
+	:cl-environments.walker)
+
+  (:shadow :macroexpand
+	   :macroexpand-1
+
+	   :macro-function
+	   :compiler-macro-function
+	   :get-setf-expansion)
 
   (:import-from :let-over-lambda
 		:defmacro!
+		:defun!
 		:group)
 
   (:import-from :collectors

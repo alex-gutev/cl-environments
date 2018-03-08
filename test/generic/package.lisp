@@ -30,7 +30,7 @@
 	:cl-environments)
 
   (:import-from
-   :cl-environments
+   :cl-environments.walker
 
    :+optimize-qualities+
    :environment
