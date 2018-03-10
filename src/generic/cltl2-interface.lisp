@@ -91,14 +91,25 @@
     (setf (lexical-environment it) env)))
 
 
+;;; TODO: According to CLTL2 (DECLARE (TYPE ... X)) where X is a symbol
+;;; macro should result in the symbol macro form being enclosed in a
+;;; THE form
+
 (defmethod augment-environment ((env environment) &key variable symbol-macro function macro declare)
-  ;; TODO: Validate arguments
+  (when (or (set-difference variable symbol-macro)
+	    (set-difference function macro))
+    (error 'program-error))
+  
   (let ((new-env (copy-environment env)))
     (mapc (rcurry #'add-variable new-env) variable)
     (mapc (rcurry #'add-function new-env) function)
 
     (loop for (decl . args) in declare
        do
+	 (when (and (eq decl 'special)
+		    (set-difference args symbol-macro))
+	   (error 'program-error))
+	   
 	 (walk-declaration decl args new-env))
     
     (loop for (name def) in macro
