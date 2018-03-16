@@ -146,9 +146,8 @@
 
 
 (defun enclose (lambda-expr &optional env)
-  ;; Macro expand body of lambda-expr entirely
-  lambda-expr
-  )
+  (match-form ('cl:lambda . def) lambda-expr
+    (compile nil (cons 'lambda (expand-fn-def def env)))))
 
 
 (defmacro define-declaration (decl-name lambda-list &body body)
