@@ -27,12 +27,6 @@
 
 (in-readtable lol-syntax)
 
-(eval-when (:compile-toplevel :load-toplevel)
-  (defvar *debug-type-errors* nil
-    "If true the IGNORE-TYPE-ERRORS macro will simply expand into a
-     PROGN thus type-errors occurring within the body of the macro
-     will not be ignored. This is used to debug type-errors not
-     related to malformed lists in the code being walked."))
 
 (defun gensyms (syms &key (key #'identity))
   (mapcar (compose #'gensym #'symbol-name (curry #'funcall key)) syms))
@@ -67,31 +61,3 @@
 	     collect `(,var (slot-value ,g!form ',slot-name)))
 	 ,g!form
        ,@body)))
-
-
-(defmacro! ignore-type-errors ((&optional fail-result) &body forms)
-  "Catches error conditions of type TYPE-ERROR signalled from FORMS
-   and returns FAIL-RESULT. If no error condition is signaled the
-   value returned by the last form in FORMS is returned."
-
-  (if *debug-type-errors*
-      `(progn ,@forms)
-      
-      `(handler-case
-	   (progn ,@forms)
-	 (type-error () ,fail-result))))
-
-
-(defun mapc-ite (fn list &rest more-lists)
-  "Same as MAPC however ignores type errors."
-
-  (ignore-type-errors (list)
-    (apply #'mapc fn list more-lists)))
-
-
-(defmacro! dolist-ite ((var list &optional o!result) &body forms)
-  "Same as DOLIST however ignores type errors."
-
-  `(ignore-type-errors (,g!result)
-     (dolist (,var ,list ,g!result)
-       ,@forms)))

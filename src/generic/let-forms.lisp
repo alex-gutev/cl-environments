@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments.walker)
+(in-package :cl-environments)
 
 ;;;; Code-walkers for: LET, LET*, DESTRUCTURING-BIND, LAMBDA, FLET,
 ;;;; LABELS, MACROLET, SYMBOL-MACROLET.
@@ -52,21 +52,22 @@
 	     ((list var initform)
 	      `(,var ,(enclose-form initform)))
 	     (_ binding))))
-    
-    (ignore-type-errors (bindings)
-      (iter (for binding in bindings)
-	    (add-variable (ensure-car binding) env)
-	    (collect (enclose-binding binding))))))
+
+    (loop
+       for binding in bindings
+       collect (enclose-binding binding)
+       do
+	 (add-variable (ensure-car binding) env))))
 
 (defun walk-body (body ext-env &optional documentation)
   "Walks the body of forms which create a local environment, such as
    LET forms, LAMBDA, DEFUN, LOCALLY. Adds the declaration information
    to the bindings in the environment EXT-ENV, and encloses the body
    in the augmented environment. If DOCUMENTATION is true the body may
-   contain a documentation string preceeding or following the
+   contain a documentation string preceding or following the
    declarations."
 
-  (when-list body
+  (check-list body
     (multiple-value-bind (forms decl docstring)
 	(parse-body body :documentation documentation)
       (walk-declarations decl ext-env)
@@ -80,8 +81,8 @@
 ;;; LET* forms
 
 (defwalker cl:let* (args env)
-  "Walks LET* binding forms: encloses each initform in an environment
-   containing all the variables in the preceeding bindings. Encloses
+  "Walks LET* binding forms: encloses each init-form in an environment
+   containing all the variables in the preceding bindings. Encloses
    the body in an environment containing all the variable bindings
    introduced by the LET*."
 
@@ -98,14 +99,14 @@
    adding the BINDINGS to a copy of the environment ENV."
 
   (let ((env (copy-environment env)))
-    (dolist-ite (binding bindings env)
+    (dolist (binding bindings env)
       (add-variable (ensure-car binding) env))))
 
 (defun walk-let*-bindings (bindings env body-env)
   "Walks the bindings of a LET*. ENV is the environment containing the
    LET* form and BODY-ENV is the environment in which the body of the
    LET* form is enclosed, i.e. the environment containing all the
-   bindings introduced by the LET*. Each initform is enclosed in an
+   bindings introduced by the LET*. Each init-form is enclosed in an
    environment which contains all the previous bindings copied from
    BODY-ENV."
   
@@ -114,31 +115,15 @@
 	     ((list var initform)
 	      `(,var ,(enclose-in-env env (list (enclose-form initform)))))
 	     (_ binding))))
-    
-    (ignore-type-errors (bindings)
-      (iter
-	(for binding in bindings)
-	(collect (enclose-binding binding env))
-      
-	(setf env (copy-environment env))
-	(let ((var (ensure-car binding)))
-	  (setf (variable-binding var env) ; Copy binding in BODY-ENV to ENV
-		(variable-binding var body-env)))))))
 
-
-;;; Lambda
-
-(defwalker cl:lambda (args env)
-  "Walks LAMBDA forms, the body is enclosed in an environment
-   containing all the variables in the lambda-list."
-  
-  (let ((env (get-environment env)))
-    (match-form	((&rest lambda-list) . body) args
-      
-      (multiple-value-bind (lambda-list env)
-	  (walk-lambda-list lambda-list env)
-	(cons lambda-list (walk-body body env))))))
-
+    (loop
+       for binding in bindings
+       collect (enclose-binding binding env)
+       do
+	 (setf env (copy-environment env))
+	 (let ((var (ensure-car binding)))
+	   (setf (variable-binding var env) ; Copy binding in BODY-ENV to ENV
+		 (variable-binding var body-env))))))
 
 
 ;;; Lexical functions
@@ -158,7 +143,6 @@
       (cons (mapcar (rcurry #'walk-local-fn env new-env) fns)
 	    (walk-body body new-env)))))
 
-
 (defwalker cl:labels (args env)
   "Walks LABELS forms. The functions introduced by the LABELS are
    added to a copy of the environment ENV, and the body, of the LABELS
@@ -173,22 +157,21 @@
     
     (flet
 	((walk-fns (fns env body-env)
-	   (ignore-type-errors (fns)
-	     (iter
-	       (for fn in fns)
-	       (collect
-		   (match-form (name . def) fn
-		     (setf env (copy-environment env))
-		     (setf (function-binding name env)
-			   (function-binding name body-env))
-		     (cons name (walk-fn-def def env))))))))
+	   (loop
+	      for fn in fns
+	      collect
+		(match-form (name . def) fn
+		  (setf env (copy-environment env))
+		  (setf (function-binding name env)
+			(function-binding name body-env))
+		  (cons name (walk-fn-def def env))))))
 
       (match-form ((&rest fns) . body) args
-	(ignore-type-errors ()
-	  (iter
-	    (for fn in fns)
-	    (match-form (name . _) fn
-	      (add-function name body-env))))
+	(loop
+	   for fn in fns
+	   do
+	     (match-form (name . _) fn
+	       (add-function name body-env)))
 	
 	(let ((body (walk-body body body-env)))
 	  (cons (walk-fns fns env body-env)
@@ -203,22 +186,21 @@
 
   (match-form (name . def) def
     (add-function name new-env)
-    `(,name ,@(walk-fn-def def fn-env))))
+    `(,name ,@(walk-fn-def def fn-env t))))
 
-(defun walk-fn-def (def env)
+(defun walk-fn-def (def env &optional documentation)
   "Walks a function definition, DEF is a list where the first element
    is the function's lambda-list and the rest of the elements are the
    forms making up the function's body. The variables introduced by
    the lambda-list are added to a copy of the environment ENV, the
    body is enclosed in this environment. The new lambda-list and body
-   is returned. This function can be used both for lexical function
+   are returned. This function can be used both for lexical function
    definitions and for global function definitions."
   
-  (match-form ((&rest lambda-list) . body) def
+  (match-form (lambda-list . body) def
     (multiple-value-bind (lambda-list env)
 	(walk-lambda-list lambda-list env)
-      `(,lambda-list
-	,@(walk-body body env t)))))
+      (cons lambda-list (walk-body body env documentation)))))
 
 
 ;;; Lexical Macros
@@ -246,7 +228,7 @@
 
   (match-form (name . def) def
     (add-function name new-env :type :macro)
-    `(,name ,@(walk-macro-def def mac-env))))
+    (cons name (walk-macro-def def mac-env))))
 
 (defun walk-macro-def (def env)
   "Walks a macro definition, DEF is a list where the first element is
@@ -257,11 +239,11 @@
    returned. This function can be used both for lexical macro
    definitions and for global macro definitions."
 
-  (match-form ((&rest lambda-list) . body) def
+  (match-form (lambda-list . body) def
     (multiple-value-bind (lambda-list env)
 	(walk-lambda-list lambda-list env :destructure t :env t)
-      `(,lambda-list
-	,@(walk-body body env t)))))
+      
+      (cons lambda-list (walk-body body env t)))))
 
 
 ;;; Lexical Symbol Macros
@@ -273,5 +255,5 @@
 
   (match-form ((&rest macros) . body) args
     (let ((env (copy-environment (get-environment env))))
-      (mapc-ite (compose (rcurry #'add-symbol-macro env) #'first) macros)
+      (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
       (cons macros (walk-body body env)))))

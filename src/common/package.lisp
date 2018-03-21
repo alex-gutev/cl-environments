@@ -23,31 +23,17 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments.test
+(defpackage :cl-environments.util
   (:use :common-lisp
 	:alexandria
-	:prove
-	:cl-environments)
+	:anaphora
+	:optima
+	:named-readtables)
 
-  (:import-from
-   :cl-environments
+  (:import-from :let-over-lambda
+		:defmacro!
+		:lol-syntax)
 
-   :+optimize-qualities+
-   :environment
-   
-   :binding
-   :type
-   :local
-   :global
-   :declarations
-
-   :variable-binding
-   :function-binding
-   :add-variable
-   :add-function
-
-   :declaration-info
-   :declaration-function
-
-   :walk-declarations
-   :walk-declaration))
+  (:export :let-if
+	   :slot-values
+	   :match-state))

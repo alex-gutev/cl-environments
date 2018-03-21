@@ -30,13 +30,11 @@
 
 (defun variable-information (variable &optional env)
   "Returns information about the variable binding for the symbol
-   VARIABLE, in the environment ENV. ENV is the implementation
-   specific lexical environment, passed as the &ENVIRONMENT parameter
-   to macros, not the extended environment object. Returns three
-   values: the first value is the binding type
-   nil, :SPECIAL, :LEXICAL, :SYMBOL-MACRO or :CONSTANT, the second
-   value is true if there is a local binding and the third value is
-   the association list of the declaration information."
+   VARIABLE, in the environment ENV. Returns three values: the first
+   value is the binding type nil, :SPECIAL, :LEXICAL, :SYMBOL-MACRO
+   or :CONSTANT, the second value is true if there is a local binding
+   and the third value is the association list of the declaration
+   information."
 
   (typecase env
     (environment
@@ -45,17 +43,14 @@
 	   (variable-binding variable ext-env)
 	 (values type local declarations))))
 
-    (otherwise (values nil nil nil))))
+    (otherwise (variable-information variable (get-environment env)))))
 
 (defun function-information (function &optional env)
   "Returns information about the function binding for the symbol
-   FUNCTION in the environment ENV. ENV is the implementation specific
-   lexical environment, passed as the &ENVIRONMENT parameter to
-   macros, not the extended environment object. Returns three values:
-   the first value is the binding type nil, :FUNCTION, :MACRO
-   or :SPECIAL-FORM, the second value is true if there is a local
-   binding and the third value is the association list of the
-   declaration information."
+   FUNCTION in the environment ENV. Returns three values: the first
+   value is the binding type nil, :FUNCTION, :MACRO or :SPECIAL-FORM,
+   the second value is true if there is a local binding and the third
+   value is the association list of the declaration information."
 
   (typecase env
     (environment
@@ -65,15 +60,19 @@
 	   (function-binding function ext-env)
 	 (values type local declarations))))
 
-    (otherwise (values nil nil nil))))
+    (otherwise (function-information function (get-environment env)))))
 
 
 (defun declaration-information (decl-name &optional env)
   "Returns information about the declaration DECL-NAME in the
    environment ENV."
 
-  (when (typep env 'environment)
-    (declaration-info decl-name (get-environment env))))
+  (typecase env
+    (environment 
+     (declaration-info decl-name (get-environment env)))
+
+    (otherwise
+     (declaration-information decl-name (get-environment env)))))
 
 
 ;;; Augmenting Environments
@@ -123,17 +122,14 @@
 	 (setf (macro-form name new-env) def))))
 
 (defun! parse-macro (name lambda-list body &optional env)
-  ;; TODO: Add greater error checking for arguments themselves
-
   (let ((env-arg (gensym "ENV")))
     (flet ((map-arg (type arg)
 	     (cond
-	       ((eq type 'environment)
+	       ((eq type :environment)
 		(setf env-arg arg)
 		nil)
 	       
-	       ((not (eq arg '&environment))
-		arg))))
+	       (t arg))))
 
       (let ((list (map-lambda-list #'map-arg lambda-list :destructure t :env t)))
 	(enclose

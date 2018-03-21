@@ -41,16 +41,21 @@
 		   (:file "macro-util")))
 
 		 (:module "generic"
+		  :serial t
 		  :components
 		  ((:file "package")
+		   (:file "util")
 		   (:file "cl-environments")
 		   (:file "environment")
+		   (:file "cl-overrides")
 		   (:file "declarations")
 		   (:file "walker")
 		   (:file "lambda")
 		   (:file "let-forms")
 		   (:file "def-forms")
-		   (:file "special-forms"))))))
+		   (:file "special-forms")
+		   (:file "macroexpand-all")
+		   (:file "cltl2-interface"))))))
   
   :depends-on (:alexandria
 	       :anaphora
@@ -59,6 +64,7 @@
 	       :collectors
 	       :let-over-lambda
 	       :named-readtables)
+  
   :in-order-to ((asdf:test-op (asdf:test-op :cl-environments-test))))
 
 (asdf:defsystem #:cl-environments-test

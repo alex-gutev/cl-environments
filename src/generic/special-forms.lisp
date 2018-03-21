@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments.walker)
+(in-package :cl-environments)
 
 ;;;; Code-walkers for the standard Common Lisp forms, which are not
 ;;;; macros, excluding the lexical binding forms (LET, FLET, etc)
@@ -35,7 +35,7 @@
   "Walks CATCH forms. Encloses the body of the BLOCK form (excluding
    the block name symbol) in the code walking macro."
 
-  (match-form (name . forms) args
+  (match-form (name &rest forms) args
     `(,name ,@(enclose-forms forms))))
 
 (defwalker cl:return-from (args)
@@ -52,7 +52,8 @@
   "Walks CATCH forms. Encloses the CATCH tag form and
    body in the code-walking macro."
 
-  (enclose-forms args))
+  (check-list args
+    (enclose-forms args)))
 
 (defwalker cl:throw (args)
   "Walks THROW forms. Encloses the CATCH tag form and result form in
@@ -68,7 +69,7 @@
   "Walks EVAL-WHEN forms. Encloses the body in the code-walking
    macro."
   
-  (match-form (situation . forms) args
+  (match-form (situation &rest forms) args
     (cons situation (enclose-forms forms))))
 
 
@@ -82,8 +83,8 @@
    simply returned as is."
 
   (match args
-    ((list* 'cl:lambda l-args)
-     (walk-fn-form 'cl:lambda l-args env))
+    ((list* 'cl:lambda expr)
+     (cons 'cl:lambda (walk-fn-def expr (get-environment env))))
     (_ args)))
 
 
@@ -92,7 +93,8 @@
 (defwalker cl:if (args)
   "Walks IF forms. Encloses all body forms in the code-walking macro."
 
-  (enclose-forms args))
+  (check-list
+    (enclose-forms args)))
 
 
 ;;; LOAD-TIME-VALUE
@@ -101,19 +103,16 @@
   "Walks LOAD-TIME-VALUE forms. Encloses the form in the global
    environment."
 
-  (match args
-    ((or (list form read-only-p)
-	 (list form))
-     `(,(enclose-in-env *global-environment* (list form)) ,read-only-p))
-    (_ args)))
+  (match-form (form &optional read-only-p) args
+    `(,(enclose-in-env *global-environment* (list form)) ,read-only-p)))
 
 
 ;;; LOCALLY
 
 (defwalker cl:locally (args env)
   "Walks LOCALLY forms. Creates a copy of the extended lexical
-   environment object in ENV, adds the declaration information to the
-   environment and encloses the body of the form in this environment."
+   environment object in ENV, which is augmented with the declaration
+   information and encloses the body of the form in this environment."
   
   (let ((ext-env (copy-environment (get-environment env))))
     (walk-body args ext-env)))
@@ -126,7 +125,8 @@
   "Walks MULTIPLE-VALUE-CALL forms. Encloses the function form and the
    argument forms in the code-walking macro."
 
-  (enclose-forms args))
+  (check-list args
+    (enclose-forms args)))
 
 
 ;;; MULTIPLE-VALUE-PROG1
@@ -135,7 +135,8 @@
   "Walks MULTIPLE-VALUE-PROG1 forms. Encloses the expression form and
    body forms in the code-walking macro."
 
-  (enclose-forms args))
+  (check-list args
+    (enclose-forms args)))
 
 
 ;;; PROGN
@@ -144,7 +145,8 @@
   "Walks PROGN forms. Encloses the body of the PROGN in the code
    walking macro."
 
-  (enclose-forms args))
+  (check-list args
+    (enclose-forms args)))
 
 
 ;;; PROGV
@@ -155,7 +157,8 @@
    anything to the lexical environment as the variable symbols are
    only known at run-time."
 
-  (enclose-forms args))
+  (check-list args
+    (enclose-forms args)))
 
 
 ;;; QUOTE
@@ -170,14 +173,12 @@
 
 (defwalker cl:setq (args)
   "Walks SETQ forms. Encloses the value forms in the code walking
-   macros. Does not expand symbol macros occuring in the variable
+   macros. Does not expand symbol macros occurring in the variable
    symbol positions."
-  
-  (when-list args
-    (iter
-      (for pair in (group args 2))
-      (collect (match-form (var form) pair
-		 `(,var ,(enclose-form form)))))))
+
+  (check-list args
+    (loop for (var form) on args by #'next-2
+       nconc (list var (enclose-form form)))))
 
 
 ;;; TAGBODY
@@ -190,7 +191,8 @@
 	   (if (atom form)
 	       form
 	       (enclose-form form))))
-    (when-list args
+    
+    (check-list args
       (mapcar #'enclose-form args))))
 
 
@@ -215,4 +217,5 @@
   "Walks UNWIND-PROTECT forms. Encloses the protected form and cleanup
    forms in the code-walking macro."
 
-  (enclose-forms args))
+  (check-list args
+    (enclose-forms args)))

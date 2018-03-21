@@ -49,7 +49,7 @@
      (setf (cl:macro-function symbol env) fn))))
 
 
-;;; MACROEXPAND
+;;; MACROEXPAND and MACREXPAND-1
 
 (defun macroexpand (form &optional env)
   (expand-macro form env))
@@ -71,6 +71,7 @@
 
 (defmethod expand-macro (form env)
   (cl:macroexpand form env))
+
 
 (defgeneric expand-macro-1 (form env))
 

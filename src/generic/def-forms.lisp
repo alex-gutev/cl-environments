@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments.walker)
+(in-package :cl-environments)
 
 ;;;; Code-walkers for forms which modify the global environment such
 ;;;; as global function, variable and macro definition forms and
@@ -39,9 +39,7 @@
 (defwalker cl:defun (args env)
   "Walks DEFUN forms, adds the functon to the global environment."
 
-  (when (listp args)
-    (add-global-function (first args)))
-
+  (walk-global-function args :function)
   (call-next-walker))
 
 
@@ -53,9 +51,7 @@
   "Walks DEFGENERIC forms, adds the function to the global
    environment."
 
-  (when (listp args)
-    (add-global-function (first args)))
-
+  (walk-global-function args :function)
   (call-next-walker))
 
 
@@ -68,11 +64,9 @@
    environment. The body is enclosed in an environment containing the
    method arguments."
 
-  (when (listp args)
-    (add-global-function (first args)))
-
+  (walk-global-function args :function)
   (call-next-walker))
-	   
+
 
 ;;;; Variable Definitions
 
@@ -86,7 +80,7 @@
     (list* name (enclose-form init-form) doc)))
 
 (defwalker cl:defvar (args)
-  "Walks DEFVAR forms. Encloses the init-form in the code-waling macro
+  "Walks DEFVAR forms. Encloses the init-form in the code-walking macro
    and adds the variable (with type :SPECIAL) to the global
    environment."
   
@@ -118,9 +112,7 @@
   "Walks DEFMACRO forms, adds the the macro to the global
    environment."
 
-  (when (listp args)
-    (add-global-function (first args) :macro))
-
+  (walk-global-function args :macro)
   (call-next-walker))
 
 
@@ -130,23 +122,28 @@
   "Walks DEFINE-SYMBOL-MACRO forms. Adds the symbol macro to the
    global environment"
   
-  (match-form (name init-form . doc) args
+  (match-form (name form . doc) args
     (add-global-variable :symbol-macro)
-    (list* name (enclose-form init-form) doc)))
+    (list* name (enclose-form form) doc)))
 
 
 ;;; Global Declarations (DECLAIM)
 
 (defwalker cl:declaim (args)
-  (when (listp args)
-    (iter
-      (for arg in args)
-      (match-form (decl &rest args) arg
-	(walk-declaration decl args *global-environment* t))))
+  (check-list args
+    (loop
+       for arg in args
+       do
+	 (match-form (decl &rest args) arg
+	   (walk-declaration decl args *global-environment* t))))
   args)
 
 
 ;;; Utility Functions
+
+(defun walk-global-function (args type)
+  (when (consp args)
+    (add-global-function (first args) type)))
 
 (defun add-global-function (sym &optional (type :function))
   (ensure-function-type sym *global-environment* :type type :local nil :global t))

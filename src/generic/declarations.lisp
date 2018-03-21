@@ -23,29 +23,29 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments.walker)
+(in-package :cl-environments)
 
 (defun walk-declarations (decl ext-env)
   "Walks the declare expressions in DECL and adds the information to
    EXT-ENV."
   
   (labels ((walk-decl (decl)
-	     (match decl
-	       ((list* decl args)
-		(walk-declaration decl args ext-env))))
+	     (match-form (decl . args) decl
+	       (walk-declaration decl args ext-env)))
 	   
 	   (walk-declare (decl)
-	     (mapc-ite #'walk-decl decl)))
+	     (match-form ('cl:declare &rest decl) decl
+	       (mapc #'walk-decl decl))))
 
-    (mapc-ite #'walk-declare decl)))
-
+    (check-list decl
+      (mapc #'walk-declare decl))))
 
 (defgeneric walk-declaration (decl args ext-env &optional global)
   (:documentation
    "Walks the declaration DECL with arguments ARGS and adds the
     information to EXT-ENV. If GLOBAL is true, the declarations are
     treated as global declarations and only declarations which can
-    appears as GLOBAL are processed."))
+    appears as global declarations are processed."))
 
 
 ;;; Type Declarations
@@ -54,21 +54,17 @@
   "Adds type information to the information list of the variables in ARGS."
   
   (declare (ignore global))
-  
-  (match args
-    ((list* type vars)
-     (ignore-type-errors ()
-       (add-variables-info vars 'type type ext-env)))))
+
+  (match-form (type &rest vars) args
+    (add-variables-info vars 'type type ext-env)))
 
 (defmethod walk-declaration ((decl (eql 'ftype)) args ext-env &optional global)
   "Adds type information to the information list of the functions in ARGS."
   
   (declare (ignore global))
 
-  (match args
-    ((list* type fns)
-     (ignore-type-errors ()
-       (add-functions-info fns 'ftype type ext-env)))))
+  (match-form (type &rest fns) args
+    (add-functions-info fns 'ftype type ext-env)))
 
 
 ;;; Special declarations
@@ -78,11 +74,12 @@
    a variable does not exist in the environment a new variable with
    binding type :SPECIAL is added."
 
-  (mapc-ite
-   (if global
-       (rcurry #'ensure-variable-type ext-env :type :special :global t)
-       (rcurry #'ensure-special-variable ext-env))
-   args))
+  (check-list args
+    (mapc
+     (if global
+	 (rcurry #'ensure-variable-type ext-env :type :special :global t)
+	 (rcurry #'ensure-special-variable ext-env))
+     args)))
 
 
 ;;; Dynamic extent declarations
@@ -92,12 +89,13 @@
    and functions in ARGS."
   
   (unless global
-    (dolist-ite (arg args)
-      (match arg
-	((list 'function fn)
-	 (add-function-info fn 'dynamic-extent t ext-env))
-	((guard var #'symbolp)
-	 (add-variable-info var 'dynamic-extent t ext-env))))))
+    (check-list args
+      (dolist (arg args)
+	(match arg
+	  ((list 'function fn)
+	   (add-function-info fn 'dynamic-extent t ext-env))
+	  ((guard var #'symbolp)
+	   (add-variable-info var 'dynamic-extent t ext-env)))))))
 
 
 ;;; Ignore declarations
@@ -106,12 +104,12 @@
   "Adds (IGNORE . T) to the information list of the variables in ARGS."
   
   (unless global
-    (ignore-type-errors ()
+    (check-list args
       (add-variables-info args 'ignore t ext-env))))
 
 (defmethod walk-declaration ((decl (eql 'ignorable)) args ext-env &optional global)
-  "Currently does nothing (other than simply returning the
-   declaration) as IGNORABLE declarations are not mentioned in CLTL2."
+  "Currently does nothing as IGNORABLE declarations are not mentioned
+   in CLTL2."
   
   (declare (ignore args ext-env global)))
 
@@ -122,7 +120,7 @@
   "Adds (INLINE . INLINE) to the information list of the functions in ARGS."
   
   (declare (ignore global))
-  (ignore-type-errors ()
+  (check-list args
     (add-functions-info args 'inline 'inline ext-env)))
 
 ;; Local and global
@@ -130,7 +128,7 @@
   "Adds (INLINE . NOTINLINE) to the information list of the functions in ARGS."
   
   (declare (ignore global))
-  (ignore-type-errors ()
+  (check-list args
     (add-functions-info args 'inline 'notinline ext-env)))
 
 
@@ -146,7 +144,7 @@
   
   (declare (ignore global))
 
-  (ignore-type-errors ()
+  (check-list args
     (let ((info (declaration-info 'optimize ext-env)))
       (labels ((find-assoc (item list)
 		 (find item list :key #'ensure-car))
@@ -173,7 +171,7 @@
   "Adds the declaration to the list of valid declarations."
 
   (when global
-    (ignore-type-errors ()
+    (check-list args
       (unionf (declaration-info 'declaration ext-env) args :test #'eq))))
 
 

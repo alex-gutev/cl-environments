@@ -25,7 +25,7 @@
 
 ;;;; Extended environment implementation.
 
-(in-package :cl-environments.walker)
+(in-package :cl-environments)
 
 (defconstant +optimize-qualities+
   '(speed safety compilation-speed space debug)  
@@ -33,9 +33,9 @@
 
 
 (defun initial-declarations ()
-  "Returns the list of initial declarations applying to a null
-   environment. This list contains the optimization qualities with
-   their default level 1."
+  "Returns the initial declaration information applying to a null
+   environment. This contains the optimization qualities with their
+   default level 1."
   
   (aprog1 (make-hash-table :test #'eq)
     (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
@@ -97,10 +97,11 @@
 	  
 
 (defun change-binding-type (binding &key (type nil type-sp) (local nil local-sp) (global nil global-sp) (declarations nil decl-sp))
-  "Creates a new `binding' which is a copy of BINDING, with binding
-   type set to TYPE and local flag set to LOCAL. If the TYPE, LOCAL,
-   GLOBAL or DECLARATIONS argument is not provided, the slot value of
-   BINDING is copied to the new binding, or NIL if BINDING is NIL."
+  "Creates a new `binding' which is a copy of BINDING, with the
+   binding type set to TYPE and local flag set to LOCAL. If the TYPE,
+   LOCAL, GLOBAL or DECLARATIONS argument is not provided, the slot
+   value of BINDING is copied to the new binding, or NIL if BINDING is
+   NIL."
 
   (slot-values ((old-type type)
 		(old-local local)
@@ -240,8 +241,8 @@
   (multiple-value-bind (ext-env expanded)
       (macroexpand *env-sym* env)
     (if expanded
-	*global-environment*
-	ext-env)))
+	ext-env
+	*global-environment*)))
 
 (defun enclose-in-env (env forms)
   "Encloses FORMS in the extended environment object ENV. Returns
