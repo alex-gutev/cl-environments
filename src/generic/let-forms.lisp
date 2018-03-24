@@ -25,8 +25,8 @@
 
 (in-package :cl-environments)
 
-;;;; Code-walkers for: LET, LET*, DESTRUCTURING-BIND, LAMBDA, FLET,
-;;;; LABELS, MACROLET, SYMBOL-MACROLET.
+;;;; Code-walkers for: LET, LET*, FLET, LABELS, MACROLET and
+;;;; SYMBOL-MACROLET.
 
 ;;; LET forms
 
@@ -38,7 +38,7 @@
 
   (match-form ((&rest bindings) . body) args
     (let* ((old-env (get-environment env))
-	   (new-env (copy-environment old-env)))
+	   (new-env (copy-environment old-env env)))
       (cons (walk-let-bindings bindings new-env)
 	    (walk-body body new-env)))))
 
@@ -87,18 +87,18 @@
    introduced by the LET*."
 
   (match-form ((&rest bindings) . body) args
-    (let* ((env (get-environment env))
-	   (body-env (create-let*-env bindings env))
+    (let* ((old-env (get-environment env))
+	   (body-env (create-let*-env bindings old-env env))
 	   (body (walk-body body body-env))
-	   (bindings (walk-let*-bindings bindings env body-env)))
+	   (bindings (walk-let*-bindings bindings old-env body-env)))
 
       (cons bindings body))))
 
-(defun create-let*-env (bindings env)
+(defun create-let*-env (bindings env lex-env)
   "Creates the lexical environment for the body of a LET* form, by
    adding the BINDINGS to a copy of the environment ENV."
 
-  (let ((env (copy-environment env)))
+  (let ((env (copy-environment env lex-env)))
     (dolist (binding bindings env)
       (add-variable (ensure-car binding) env))))
 
@@ -136,7 +136,7 @@
    list, the environment however does not contain the functions
    themselves."
   
-  (let* ((env (get-environment env))
+  (let* ((env (enclose-environment (get-environment env) env))
 	 (new-env (copy-environment env)))
 
     (match-form ((&rest fns) . body) args
@@ -152,7 +152,7 @@
    lambda list. All declarations, bound to the functions introudced by
    the LABELS, are added to the environments of the function bodies."
   
-  (let* ((env (get-environment env))
+  (let* ((env (enclose-environment (get-environment env) env))
 	 (body-env (copy-environment env)))
     
     (flet
@@ -214,7 +214,7 @@
 
   (match-form ((&rest macros) . body) args
     
-    (let* ((env (get-environment env))
+    (let* ((env (enclose-environment (get-environment env) env))
 	   (new-env (copy-environment env)))
       
       (cons (mapcar (rcurry #'walk-local-macro env new-env) macros)
@@ -254,6 +254,6 @@
    environment."
 
   (match-form ((&rest macros) . body) args
-    (let ((env (copy-environment (get-environment env))))
+    (let ((env (copy-environment (get-environment env) env)))
       (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
       (cons macros (walk-body body env)))))

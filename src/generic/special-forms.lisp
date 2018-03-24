@@ -84,7 +84,7 @@
 
   (match args
     ((list* 'cl:lambda expr)
-     (cons 'cl:lambda (walk-fn-def expr (get-environment env))))
+     (cons 'cl:lambda (walk-fn-def expr (enclose-environment (get-environment env) env))))
     (_ args)))
 
 
@@ -114,7 +114,7 @@
    environment object in ENV, which is augmented with the declaration
    information and encloses the body of the form in this environment."
   
-  (let ((ext-env (copy-environment (get-environment env))))
+  (let ((ext-env (copy-environment (get-environment env) env)))
     (walk-body args ext-env)))
 
 

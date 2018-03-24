@@ -185,7 +185,7 @@
   "The global null environment object.")
 
 
-(defun copy-environment (env)
+(defun copy-environment (env &optional (lex-env (lexical-environment env)))
   "Copies the environment object ENV. A shallow copy of the hash
    tables containing the mappings between symbols and bindings is
    performed, that is the `binding' objects themselves are not
@@ -196,8 +196,7 @@
 	       declarations
 	       decl-functions
 	       macro-functions
-	       macro-forms
-	       lexical-environment) env
+	       macro-forms) env
   
     (make-instance 'environment
 		   :variables (copy-hash-table variables)
@@ -207,7 +206,28 @@
 
 		   :macro-functions (copy-hash-table macro-functions)
 		   :macro-forms (copy-hash-table macro-forms)
-		   :lexical-environment lexical-environment)))
+		   :lexical-environment lex-env)))
+
+(defun enclose-environment (env lex-env)
+  "Creates a shallow copy of the environment ENV and sets its
+   LEXICAL-ENVIRONMENT slot to LEX-ENV."
+  
+  (with-slots (variables
+	       functions
+	       declarations
+	       decl-functions
+	       macro-functions
+	       macro-forms) env
+  
+    (make-instance 'environment
+		   :variables variables
+		   :functions functions
+		   :declarations declarations
+		   :decl-functions decl-functions
+
+		   :macro-functions macro-functions
+		   :macro-forms macro-forms
+		   :lexical-environment lex-env)))
 
 
 ;;; Local Environments
