@@ -23,99 +23,83 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; Contains implementations of standard CL functions which work on
-;;;; extended environment objects.
-
 (in-package :cl-environments)
 
 
-;;; MACRO-FUNCTION
+(eval-when (:compile-toplevel :load-toplevel :execute)  
+  (defun add-form-macros (ops)
+    (dolist (cl-op ops)
+      (shadow cl-op :cl-environments)
+      (setf (macro-function (intern (symbol-name cl-op) :cl-environments))
+	    (lambda (form env)
+	      (declare (ignore env))
+	      (cons cl-op (rest form))))))
+
+  (add-form-macros
+   '(block
+     catch
+     eval-when
+     flet
+     function
+     go
+     if
+     labels
+     let
+     let*
+     load-time-value
+     locally
+     macrolet
+     multiple-value-call
+     multiple-value-prog1
+     progn
+     progv
+     return-from
+     setq
+     symbol-macrolet
+     tagbody
+     the
+     throw
+     unwind-protect)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  ;; Shadow CL functions which take an optional environment parameter
+  
+  (shadow '(macro-function
+	    macroexpand-1
+	    macroexpand
+	    get-setf-expansion
+	    compiler-macro-function) :cl-environments))
+
+
+;;; The functions implemented below simply call the CL functions,
+;;; however if the environment passed is an `environment' object, the
+;;; implementation specific environment stored in the
+;;; LEXICAL-ENVIRONMENT slot is passed as the environment parameter
+;;; instead.
+
 
 (defun macro-function (symbol &optional env)
-  (typecase env
-    (environment
-     (or (macro-fn symbol env)
-	 (cl:macro-function symbol (lexical-environment env))))
-    
-    (otherwise
-     (cl:macro-function symbol env))))
+  (cl:macro-function symbol (lexical-environment env)))
 
 (defun (setf macro-function) (fn symbol &optional env)
-  (typecase env
-    (environment
-     (setf (macro-fn symbol env) fn))
+  (setf (cl:macro-function symbol (lexical-environment env)) fn))
 
-    (otherwise
-     (setf (cl:macro-function symbol env) fn))))
-
-
-;;; MACROEXPAND and MACREXPAND-1
-
-(defun macroexpand (form &optional env)
-  (expand-macro form env))
 
 (defun macroexpand-1 (form &optional env)
-  (expand-macro-1 form env))
+  (cl:macroexpand-1 form (lexical-environment env)))
 
+(defun macroexpand (form &optional env)
+  (cl:macroexpand form (lexical-environment env)))
 
-(defgeneric expand-macro (form env))
-
-(defmethod expand-macro (form (env environment))
-  (labels ((expand (form expanded)
-	     (multiple-value-bind (expansion expandedp)
-		 (expand-macro-1 form env)
-	       (if expandedp
-		   (expand expansion t)
-		   (values form expanded)))))
-    (expand form nil)))
-
-(defmethod expand-macro (form env)
-  (cl:macroexpand form env))
-
-
-(defgeneric expand-macro-1 (form env))
-
-(defmethod expand-macro-1 (form (env environment))
-  (match form
-    ((list* macro _)
-     (aif (macro-fn macro env)
-	  (values (funcall it form env) t)
-	  (cl:macroexpand-1 form (lexical-environment env))))
-    
-    ((guard sym (symbolp sym))
-     (aif (macro-form sym env)
-	  (values it t)
-	  (cl:macroexpand-1 form (lexical-environment env))))
-    
-    (_ (values form nil))))
-
-(defmethod expand-macro-1 (form env)
-  (cl:macroexpand-1 form env))
-
-
-;;; GET-SETF-EXPANSION
 
 (defun get-setf-expansion (place &optional env)
-  (cl:get-setf-expansion
-   place
-   
-   (typecase env
-     (environment (lexical-environment env))
-     (otherwise env))))
+  (cl:get-setf-expansion place (lexical-environment env)))
 
-
-;;; COMPILER-MACRO-FUNCTION
 
 (defun compiler-macro-function (name &optional env)
-  (cl:compiler-macro-function
-   name
-
-   (typecase env
-     (environment (lexical-environment env))
-     (otherwise env))))
+  (cl:compiler-macro-function name (lexical-environment env)))
 
 (defun (setf compiler-macro-function) (fn name &optional (env nil env-sp))
-  (unless (typep env 'environment)
-    (if env-sp ; This is to prevent errors on some CL implementations
-	(setf (compiler-macro-function name env) fn)
-	(setf (compiler-macro-function name) fn))))
+  (if env-sp
+      (setf (cl:compiler-macro-function name env) fn)
+      (setf (cl:compiler-macro-function name) fn)))

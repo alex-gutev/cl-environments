@@ -45,17 +45,15 @@
 		  :components
 		  ((:file "package")
 		   (:file "util")
-		   (:file "cl-environments")
 		   (:file "environment")
-		   (:file "cl-overrides")
 		   (:file "declarations")
 		   (:file "walker")
 		   (:file "lambda")
 		   (:file "let-forms")
 		   (:file "def-forms")
 		   (:file "special-forms")
-		   (:file "macroexpand-all")
-		   (:file "cltl2-interface"))))))
+		   (:file "cltl2-interface")
+		   (:file "cl-overrides"))))))
   
   :depends-on (:alexandria
 	       :anaphora

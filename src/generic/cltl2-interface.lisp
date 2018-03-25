@@ -23,8 +23,9 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-;;;; Implements the environment access API described in Common Lisp
-;;;; the Language 2 (CLTL2)
+;;;; Implements the VARIABLE-INFORMATION, FUNCTION-INFORMATION and
+;;;; DECLARATION-INFORMATION FUNCTIONS as specified in Common Lisp the
+;;;; Language 2 (CLTL2)
 
 (in-package :cl-environments)
 
@@ -73,77 +74,6 @@
 
     (otherwise
      (declaration-information decl-name (get-environment env)))))
-
-
-;;; Augmenting Environments
-
-(defgeneric augment-environment (env &key variable symbol-macro function macro declare))
-
-(defmethod augment-environment (env &key variable symbol-macro function macro declare)
-  (aprog1
-      (augment-environment (get-environment env)
-			   :variable variable
-			   :symbol-macro symbol-macro
-			   :function function
-			   :macro macro
-			   :declare declare)
-    (setf (lexical-environment it) env)))
-
-
-;;; TODO: According to CLTL2 (DECLARE (TYPE ... X)) where X is a symbol
-;;; macro should result in the symbol macro form being enclosed in a
-;;; THE form
-
-(defmethod augment-environment ((env environment) &key variable symbol-macro function macro declare)
-  (when (or (set-difference variable symbol-macro)
-	    (set-difference function macro))
-    (error 'program-error))
-  
-  (let ((new-env (copy-environment env)))
-    (mapc (rcurry #'add-variable new-env) variable)
-    (mapc (rcurry #'add-function new-env) function)
-
-    (loop for (decl . args) in declare
-       do
-	 (when (and (eq decl 'special)
-		    (set-difference args symbol-macro))
-	   (error 'program-error))
-	   
-	 (walk-declaration decl args new-env))
-    
-    (loop for (name def) in macro
-       do
-	 (add-function name new-env :type :macro :local t)
-	 (setf (macro-fn name new-env) def))
-
-    (loop for (name def) in symbol-macro
-       do
-	 (add-symbol-macro name new-env :local t)
-	 (setf (macro-form name new-env) def))))
-
-(defun! parse-macro (name lambda-list body &optional env)
-  (let ((env-arg (gensym "ENV")))
-    (flet ((map-arg (type arg)
-	     (cond
-	       ((eq type :environment)
-		(setf env-arg arg)
-		nil)
-	       
-	       (t arg))))
-
-      (let ((list (map-lambda-list #'map-arg lambda-list :destructure t :env t)))
-	(enclose
-	 `(lambda (,g!whole ,env-arg)
-	    (declare (ignorable ,g!whole ,env-arg))
-	    (block ,name
-	      (destructuring-bind ,list ,g!whole
-		,@body)))
-	 env)))))
-
-
-(defun enclose (lambda-expr &optional env)
-  (match-form ('cl:lambda . def) lambda-expr
-    (compile nil (cons 'lambda (expand-fn-def def env)))))
 
 
 (defmacro define-declaration (decl-name lambda-list &body body)

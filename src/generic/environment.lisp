@@ -149,26 +149,6 @@
      hash table where the key is the user-defined declaration name and
      the value is the function.")
 
-   (macro-functions
-    :initform (make-hash-table :test #'eq)
-    :initarg :macro-functions
-    :accessor macro-functions
-    :documentation
-    "Macro expansion functions. Stores a hash table where the keys are
-     the symbols naming the macros and the values are the
-     corresponding macro functions. Only macro functions manually
-     added, using AUGMENT-ENVIRONMENT, are stored.")
-
-   (macro-forms
-    :initform (make-hash-table :test #'eq)
-    :initarg :macro-forms
-    :accessor macro-forms
-    :documentation
-    "Symbol macro expansion forms. Stores a hash table where the keys
-     are the macro symbols and the values are the corresponding
-     expansion forms. Only symbol macros manually added, using
-     AUGMENT-ENVIRONMENT, are stored.")
-
    (lexical-environment
     :initform nil
     :initarg :lexical-environment
@@ -180,6 +160,13 @@
   (:documentation
    "The extendend environment class. Stores information about the
     environment obtained via code walking."))
+
+(defmethod lexical-environment (env)
+  "Non-specialized method, simply returns ENV. This allows this
+   accessor to be used with both `environment' objects and
+   implementation-specific lexical environments."
+  
+  env)
 
 (defvar *global-environment* (make-instance 'environment)
   "The global null environment object.")
@@ -194,18 +181,13 @@
   (with-slots (variables
 	       functions
 	       declarations
-	       decl-functions
-	       macro-functions
-	       macro-forms) env
+	       decl-functions) env
   
     (make-instance 'environment
 		   :variables (copy-hash-table variables)
 		   :functions (copy-hash-table functions)
 		   :declarations (copy-hash-table declarations)
 		   :decl-functions (copy-hash-table decl-functions)
-
-		   :macro-functions (copy-hash-table macro-functions)
-		   :macro-forms (copy-hash-table macro-forms)
 		   :lexical-environment lex-env)))
 
 (defun enclose-environment (env lex-env)
@@ -215,18 +197,13 @@
   (with-slots (variables
 	       functions
 	       declarations
-	       decl-functions
-	       macro-functions
-	       macro-forms) env
+	       decl-functions) env
   
     (make-instance 'environment
 		   :variables variables
 		   :functions functions
 		   :declarations declarations
 		   :decl-functions decl-functions
-
-		   :macro-functions macro-functions
-		   :macro-forms macro-forms
 		   :lexical-environment lex-env)))
 
 
@@ -491,33 +468,3 @@
   "Sets the declaration function for the user-defined declaration
    NAME."
   (setf (gethash name (decl-functions env)) fn))
-
-
-;;; Macro functions
-
-(defun macro-fn (symbol env)
-  "Returns the macro expansion function associated with SYMBOL in the
-   environment ENV."
-
-  (gethash symbol (macro-functions env)))
-
-(defun (setf macro-fn) (fn symbol env)
-  "Sets the macro expansion function associated with SYMBOL in the
-   environment ENV."
-
-  (check-type fn function)
-
-  (setf (gethash symbol (macro-functions env)) fn))
-
-
-(defun macro-form (symbol env)
-  "Returns the symbol macro expansion form associated with SYMBOL in
-   the environment ENV."
-
-  (gethash symbol (macro-forms env)))
-
-(defun (setf macro-form) (form symbol env)
-  "Sets the symbol macro expansion form associated with SYMBOL in the
-   environment ENV."
-
-  (setf (gethash symbol (macro-forms env)) form))

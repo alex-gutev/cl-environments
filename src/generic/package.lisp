@@ -39,13 +39,6 @@
 
   (:import-from :collectors
 		:make-simple-collector
-		:make-simple-collector-to-place)
-
-  (:shadow :macroexpand
-	   :macroexpand-1
-
-	   :macro-function
-	   :compiler-macro-function
-	   :get-setf-expansion))
+		:make-simple-collector-to-place))
 
 
