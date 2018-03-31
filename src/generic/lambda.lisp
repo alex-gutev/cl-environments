@@ -228,9 +228,11 @@
 
       (handler-bind
 	  ((malformed-lambda-list #'skip-walk))
-	(map-lambda-list #'walk-arg list
-			 :destructure destructurep
-			 :env envp)))))
+	(values
+	 (map-lambda-list #'walk-arg list
+			  :destructure destructurep
+			  :env envp)
+	 env)))))
 
 (defgeneric walk-lambda-list-arg (type arg env))
 

@@ -36,8 +36,12 @@
 
 (defun enclose-form (form)
   "Encloses FORM in the code-walker macro."
-  
-  `(%walk-form ,form))
+
+  (match form
+    ((not (list* '%walk-form _))
+     `(%walk-form ,form))
+    
+    (_ form)))
 
 (defun enclose-forms (forms)
   "Encloses each form, in FORMS, in the code-walker macro."
@@ -52,12 +56,15 @@
    macro. When walking forms which create a lexical environment, an
    `environment' object is created containing the lexical binding and
    declaration information."
-  
+
   (match form
     ((cons op args)
      (walk-fn-form op args env))
 
     (_ (walk-atom-form form env))))
+
+(defun walk-forms (forms env)
+  (mapcar (rcurry #'walk-form env) forms))
 
 
 ;;; Walking atom forms
@@ -69,7 +76,7 @@
   
   (multiple-value-bind (form expanded-p) (macroexpand-1 form env)
     (if expanded-p
-	(enclose-form form)
+	(walk-form form env)
 	form)))
 
 
@@ -79,7 +86,6 @@
   (:documentation
    "Walks a function call expression with function/macro/special
     operator OP and arguments ARGS."))
-
 
 (defmethod walk-fn-form (op args env)
   "Walks a function call expression which is not one of the recognized
@@ -94,13 +100,13 @@
   (multiple-value-bind (form expanded-p) (macroexpand-1 (cons op args) env)
     (cond
       (expanded-p
-       (enclose-form form))
+       form) ; Not walked as that should be already done by *macroexpand-hook*
       ((special-operator-p op)
        (cons op args)) ; Cannot be walked
       (t
        (cons op
 	     (if (proper-list-p args)
-		 (enclose-forms args)
+		 (walk-forms args env)
 		 args))))))
 
 
@@ -123,5 +129,7 @@
 
        (flet ((call-next-walker ()
 		(call-next-method)))
-	 (cons ,g!op (skip-walk-errors ,@body))))))
+	 (cons ,g!op (skip-walk-errors
+		       (restart-case (progn ,@body)
+			(skip-walk () ,arg-var))))))))
      

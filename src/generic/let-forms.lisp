@@ -39,10 +39,10 @@
   (match-form ((&rest bindings) . body) args
     (let* ((old-env (get-environment env))
 	   (new-env (copy-environment old-env env)))
-      (cons (walk-let-bindings bindings new-env)
+      (cons (walk-let-bindings bindings new-env env)
 	    (walk-body body new-env)))))
 
-(defun walk-let-bindings (bindings env)
+(defun walk-let-bindings (bindings env lex-env)
   "Walks the bindings of a LET form. Adds the variable bindings to the
    environment ENV and encloses the initforms of the bindings (if any)
    in the code walking macro. Returns the new bindings list."
@@ -50,7 +50,7 @@
   (flet ((enclose-binding (binding)
 	   (match binding
 	     ((list var initform)
-	      `(,var ,(enclose-form initform)))
+	      `(,var ,(walk-form initform lex-env)))
 	     (_ binding))))
 
     (loop
@@ -75,7 +75,7 @@
 	  ,@decl
 	  ,(enclose-in-env
 	    ext-env
-	    (enclose-forms forms))))))
+	    forms)))))
 
 
 ;;; LET* forms
@@ -113,7 +113,7 @@
   (flet ((enclose-binding (binding env)
 	   (match binding
 	     ((list var initform)
-	      `(,var ,(enclose-in-env env (list (enclose-form initform)))))
+	      `(,var ,(enclose-in-env env (list initform))))
 	     (_ binding))))
 
     (loop
@@ -254,6 +254,8 @@
    environment."
 
   (match-form ((&rest macros) . body) args
-    (let ((env (copy-environment (get-environment env) env)))
-      (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
-      (cons macros (walk-body body env)))))
+    (if (not (eq (caar macros) *env-sym*))
+	(let ((env (copy-environment (get-environment env) env)))
+	  (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
+	  (cons macros (walk-body body env)))
+	args)))

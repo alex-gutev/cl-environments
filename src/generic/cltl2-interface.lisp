@@ -39,10 +39,9 @@
 
   (typecase env
     (environment
-     (let ((ext-env (get-environment env)))
-       (slot-values (type local declarations)
-	   (variable-binding variable ext-env)
-	 (values type local declarations))))
+     (slot-values (type local declarations)
+	 (variable-binding variable env)
+       (values type local declarations)))
 
     (otherwise (variable-information variable (get-environment env)))))
 
@@ -56,10 +55,9 @@
   (typecase env
     (environment
   
-     (let ((ext-env (get-environment env)))
-       (slot-values (type local declarations)
-	   (function-binding function ext-env)
-	 (values type local declarations))))
+     (slot-values (type local declarations)
+	 (function-binding function env)
+       (values type local declarations)))
 
     (otherwise (function-information function (get-environment env)))))
 
@@ -70,7 +68,7 @@
 
   (typecase env
     (environment 
-     (declaration-info decl-name (get-environment env)))
+     (declaration-info decl-name env))
 
     (otherwise
      (declaration-information decl-name (get-environment env)))))

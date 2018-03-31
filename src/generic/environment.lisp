@@ -27,6 +27,9 @@
 
 (in-package :cl-environments)
 
+(defvar *old-macroexpand-hook* *macroexpand-hook*)  
+
+
 (defconstant +optimize-qualities+
   '(speed safety compilation-speed space debug)  
   "List of optimization qualities.")
@@ -241,13 +244,19 @@
 	ext-env
 	*global-environment*)))
 
+
 (defun enclose-in-env (env forms)
   "Encloses FORMS in the extended environment object ENV. Returns
    FORMS wrapped in a SYMBOL-MACROLET, declararing a symbol macro,
    *ENV-SYM*, which expands to the environment object ENV."
-  
-  `(symbol-macrolet ((,*env-sym* ,env))
-     ,@forms))
+
+  (match forms
+    ((list (and body (list* 'cl:symbol-macrolet (list (list (eql *env-sym*) _)) _)))
+     body)
+    
+    (_
+     `(cl:symbol-macrolet ((,*env-sym* ,env))
+	,@(enclose-forms forms)))))
 
 
 ;;; Variables
@@ -300,14 +309,16 @@
    however this is not guaranteed to work and may itself cause
    warnings/errors. Furtheremore this will not return true for
    variables declared special in the same file."
-  
-  (with-gensyms (fn)
-    (eval
-     `(locally (declare (type t ,var))
-	(let ((,var 1))
-	  (flet ((,fn () ,var))
-	    (let ((,var 2))
-	      (eql ,var (,fn)))))))))
+
+  (let ((*macroexpand-hook* *old-macroexpand-hook*))
+    (with-gensyms (fn)
+      (with-open-stream (*standard-output* (make-broadcast-stream)) ; Suppress output
+	(eval
+	 `(locally (declare (type t ,var))
+	    (let ((,var 1))
+	      (flet ((,fn () ,var))
+		(let ((,var 2))
+		  (eql ,var (,fn)))))))))))
 
 
 (defun add-variable (sym env &key (type :lexical) (local t))

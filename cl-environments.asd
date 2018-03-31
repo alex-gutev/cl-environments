@@ -53,7 +53,8 @@
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "cl-overrides"))))))
+		   (:file "cl-overrides")
+		   (:file "hook"))))))
   
   :depends-on (:alexandria
 	       :anaphora

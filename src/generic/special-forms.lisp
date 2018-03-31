@@ -31,46 +31,46 @@
 
 ;;; BLOCK
 
-(defwalker cl:block (args)
+(defwalker cl:block (args env)
   "Walks CATCH forms. Encloses the body of the BLOCK form (excluding
    the block name symbol) in the code walking macro."
 
   (match-form (name &rest forms) args
-    `(,name ,@(enclose-forms forms))))
+    `(,name ,@(walk-forms forms env))))
 
-(defwalker cl:return-from (args)
+(defwalker cl:return-from (args env)
   "Walks RETURN-FROM forms. Encloses the result expression form in the
    code-walking macro."
 
   (match-form (name form) args
-    `(,name ,@(enclose-form form))))
+    `(,name ,(walk-form form env))))
 
 
 ;;; CATCH
 
-(defwalker cl:catch (args)
+(defwalker cl:catch (args env)
   "Walks CATCH forms. Encloses the CATCH tag form and
    body in the code-walking macro."
 
   (check-list args
-    (enclose-forms args)))
+    (walk-forms args env)))
 
-(defwalker cl:throw (args)
+(defwalker cl:throw (args env)
   "Walks THROW forms. Encloses the CATCH tag form and result form in
    the code-walking macro."
 
   (match-form (tag result) args
-    `(,(enclose-form tag) ,(enclose-form result))))
+    `(,(walk-form tag env) ,(walk-form result env))))
 
 
 ;;; EVAL-WHEN
 
-(defwalker cl:eval-when (args)
+(defwalker cl:eval-when (args env)
   "Walks EVAL-WHEN forms. Encloses the body in the code-walking
    macro."
   
   (match-form (situation &rest forms) args
-    (cons situation (enclose-forms forms))))
+    (cons situation (walk-forms forms env))))
 
 
 ;;; FUNCTION
@@ -83,18 +83,18 @@
    simply returned as is."
 
   (match args
-    ((list* 'cl:lambda expr)
-     (cons 'cl:lambda (walk-fn-def expr (enclose-environment (get-environment env) env))))
+    ((list (list* 'cl:lambda expr))
+     (list (cons 'cl:lambda (walk-fn-def expr (enclose-environment (get-environment env) env)))))
     (_ args)))
 
 
 ;;; IF
 
-(defwalker cl:if (args)
+(defwalker cl:if (args env)
   "Walks IF forms. Encloses all body forms in the code-walking macro."
 
-  (check-list
-    (enclose-forms args)))
+  (check-list args
+    (walk-forms args env)))
 
 
 ;;; LOAD-TIME-VALUE
@@ -121,44 +121,44 @@
 
 ;;; MULTIPLE-VALUE-CALL
 
-(defwalker cl:multiple-value-call (args)
+(defwalker cl:multiple-value-call (args env)
   "Walks MULTIPLE-VALUE-CALL forms. Encloses the function form and the
    argument forms in the code-walking macro."
 
   (check-list args
-    (enclose-forms args)))
+    (walk-forms args env)))
 
 
 ;;; MULTIPLE-VALUE-PROG1
 
-(defwalker cl:multiple-value-prog1 (args)
+(defwalker cl:multiple-value-prog1 (args env)
   "Walks MULTIPLE-VALUE-PROG1 forms. Encloses the expression form and
    body forms in the code-walking macro."
 
   (check-list args
-    (enclose-forms args)))
+    (walk-forms args env)))
 
 
 ;;; PROGN
 
-(defwalker cl:progn (args)
+(defwalker cl:progn (args env)
   "Walks PROGN forms. Encloses the body of the PROGN in the code
    walking macro."
 
   (check-list args
-    (enclose-forms args)))
+    (walk-forms args env)))
 
 
 ;;; PROGV
 
-(defwalker cl:progv (args)
+(defwalker cl:progv (args env)
   "Walks PROGV forms. Encloses the symbols list form, the values list
    form, and the body forms in the code-walking macro. Does not add
    anything to the lexical environment as the variable symbols are
    only known at run-time."
 
   (check-list args
-    (enclose-forms args)))
+    (walk-forms args env)))
 
 
 ;;; QUOTE
@@ -171,26 +171,26 @@
 
 ;;; SETQ
 
-(defwalker cl:setq (args)
+(defwalker cl:setq (args env)
   "Walks SETQ forms. Encloses the value forms in the code walking
    macros. Does not expand symbol macros occurring in the variable
    symbol positions."
 
   (check-list args
     (loop for (var form) on args by #'next-2
-       nconc (list var (enclose-form form)))))
+       nconc (list var (walk-form form env)))))
 
 
 ;;; TAGBODY
 
-(defwalker cl:tagbody (args)
+(defwalker cl:tagbody (args env)
   "Walks TAGBODY forms. Encloses function forms, in the body of the
    TAGBODY, in the code-walking macro. Does not enclose atom forms."
 
   (flet ((enclose-form (form)
 	   (if (atom form)
 	       form
-	       (enclose-form form))))
+	       (walk-form form env))))
     
     (check-list args
       (mapcar #'enclose-form args))))
@@ -203,19 +203,19 @@
 
 ;;; THE
 
-(defwalker cl:the (args)
+(defwalker cl:the (args env)
   "Walks THE forms. Encloses the form in the code-walking macro."
 
   (match-form (type form) args
-    `(,type ,(enclose-form form))))
+    `(,type ,(walk-form form env))))
 
 
 
 ;;; UNWIND-PROTECT
 
-(defwalker cl:unwind-protect (args)
+(defwalker cl:unwind-protect (args env)
   "Walks UNWIND-PROTECT forms. Encloses the protected form and cleanup
    forms in the code-walking macro."
 
   (check-list args
-    (enclose-forms args)))
+    (walk-forms args env)))

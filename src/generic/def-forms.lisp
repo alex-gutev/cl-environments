@@ -36,50 +36,50 @@
 
 ;;; DEFUN
 
-(defwalker cl:defun (args env)
+(defwalker cl:defun (args)
   "Walks DEFUN forms, adds the functon to the global environment."
 
   (walk-global-function args :function)
-  (call-next-walker))
+  args)
 
 
 ;;;; Generic Functions
 
 ;;; DEFGENERIC
 
-(defwalker cl:defgeneric (args env)
+(defwalker cl:defgeneric (args)
   "Walks DEFGENERIC forms, adds the function to the global
    environment."
 
   (walk-global-function args :function)
-  (call-next-walker))
+  args)
 
 
 
 ;;; DEFMETHOD
 
-(defwalker cl:defmethod (args env)
+(defwalker cl:defmethod (args)
   "Walks DEFMETHOD forms. If the global environment does not contain a
    binding for the generic function, a binding is added to the global
    environment. The body is enclosed in an environment containing the
    method arguments."
 
   (walk-global-function args :function)
-  (call-next-walker))
+  args)
 
 
 ;;;; Variable Definitions
 
-(defwalker cl:defparameter (args)
+(defwalker cl:defparameter (args env)
   "Walks DEFPARAMETER forms. Encloses the init-form in the
    code-walking macro and adds the variable (with type :SPECIAL) to
    the global environment."
   
   (match-form (name init-form . doc) args
     (add-global-variable name)
-    (list* name (enclose-form init-form) doc)))
+    (list* name (walk-form init-form env) doc)))
 
-(defwalker cl:defvar (args)
+(defwalker cl:defvar (args env)
   "Walks DEFVAR forms. Encloses the init-form in the code-walking macro
    and adds the variable (with type :SPECIAL) to the global
    environment."
@@ -89,31 +89,31 @@
     (cons name
 	  (destructuring-bind (&optional (init-form nil init-p) &rest doc) args
 	    (when init-p
-	      (cons (enclose-form init-form) doc))))))
+	      (cons (walk-form init-form env) doc))))))
 
 
 ;;;; Constant Definitions
 
-(defwalker cl:defconstant (args)
+(defwalker cl:defconstant (args env)
   "Walks DEFCONSTANT forms. Encloses the init-form in the code-walking
    macro and adds the constant (with type :CONSTANT) to the global
    environment."
   
   (match-form (name init-form . doc) args
     (add-global-variable name :constant)
-    (list* name (enclose-form init-form) doc)))
+    (list* name (walk-form init-form env) doc)))
 
 
 ;;;; Macros
 
 ;;; DEFMACRO
 
-(defwalker cl:defmacro (args env)
+(defwalker cl:defmacro (args)
   "Walks DEFMACRO forms, adds the the macro to the global
    environment."
 
   (walk-global-function args :macro)
-  (call-next-walker))
+  args)
 
 
 ;;; DEFINE-SYMBOL-MACRO
@@ -122,9 +122,9 @@
   "Walks DEFINE-SYMBOL-MACRO forms. Adds the symbol macro to the
    global environment"
   
-  (match-form (name form . doc) args
+  (match-form (name form) args
     (add-global-variable :symbol-macro)
-    (list* name (enclose-form form) doc)))
+    (list name (walk-form form env))))
 
 
 ;;; Global Declarations (DECLAIM)
