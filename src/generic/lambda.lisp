@@ -239,52 +239,36 @@
 (defmethod walk-lambda-list-arg ((type (eql nil)) keyword env)
   (values keyword env))
 
-(defmethod walk-lambda-list-arg ((type (eql :optional)) arg env)
-  (match arg
-    ((or (list var initform var-sp)
-	 (list var initform)
-	 (list var)
-	 var)
 
+(defmethod walk-lambda-list-arg ((type (eql :optional)) arg env)
+  (match (ensure-list arg)
+    ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
      (values
-      `(,var ,(enclose-in-env env (list initform)) ,var-sp)
+      `(,var ,(enclose-in-env env (list initform)) ,@rest)
       (aprog1 (copy-environment env)
 	(add-variable var it)
-	(when var-sp (add-variable var-sp it)))))
-
-    (_ (values arg env))))
+	(when var-sp (add-variable var-sp it)))))))
 
 (defmethod walk-lambda-list-arg ((type (eql :key)) arg env)
-  (match arg
-    ((or (cons
-	   (and (or (list keyword var)
-		    var)
-		arg)
-	   (or
-	    (list initform var-sp)
-	    (list initform)
-	    nil))
-	  (and var arg))
+  (match (ensure-list arg)
+    ((cons
+      (and (or (list _ var) var) arg)
+      (optional (cons initform (and rest (optional (list var-sp))))))
 
      (values
-      `(,arg ,(enclose-in-env env (list initform)) ,var-sp)
+      `(,arg ,(enclose-in-env env (list initform)) ,@rest)
       (aprog1 (copy-environment env)
 	(add-variable var it)
-	(when var-sp (add-variable var-sp it)))))
-    
-    (_ (values arg env))))
+	(when var-sp (add-variable var-sp it)))))))
 
 (defmethod walk-lambda-list-arg ((type (eql :aux)) arg env)
-  (match arg
-    ((or (list var initform)
-	 (list var)
-	 var)
+  (match (ensure-list arg)
+    ((cons var (optional (list initform)))
 
      (values
       `(,var ,(enclose-in-env env (list initform)))
       (aprog1 (copy-environment env)
-	(add-variable var it))))
-    (_ (values arg env))))
+	(add-variable var it))))))
 
 (defmethod walk-lambda-list-arg ((type t) arg env)
   (add-variable arg env)

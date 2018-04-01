@@ -104,7 +104,7 @@
    environment."
 
   (match-form (form &optional read-only-p) args
-    `(,(enclose-in-env *global-environment* (list form)) ,read-only-p)))
+    `(,(walk-form form nil) ,read-only-p)))
 
 
 ;;; LOCALLY

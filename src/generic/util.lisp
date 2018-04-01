@@ -68,6 +68,11 @@
 
 
 
+;;; Optima Patterns
+
+(defpattern optional (arg)
+  `(or ,arg nil))
+
 ;;; Macros
 
 (defmacro! skip-walk-errors (&body body)

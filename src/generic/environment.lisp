@@ -47,10 +47,10 @@
 ;;; Bindings
 
 (defclass binding ()
-  ((type
-    :initarg :type
+  ((binding-type
+    :initarg :binding-type
     :initform nil
-    :reader type
+    :reader binding-type
     :documentation "The type of binding.")
    
    (local
@@ -91,27 +91,27 @@
   "Creates a new binding with the pair (KEY . VALUE) added to the
    front of its DECLARATIONS list"
 
-  (slot-values (type local global declarations)
+  (slot-values (binding-type local global declarations)
       binding
-    (make-binding :type type
+    (make-binding :binding-type binding-type
 		  :local local
 		  :global global
 		  :declarations (acons key value declarations))))
 	  
 
-(defun change-binding-type (binding &key (type nil type-sp) (local nil local-sp) (global nil global-sp) (declarations nil decl-sp))
+(defun change-binding-type (binding &key (binding-type nil binding-type-sp) (local nil local-sp) (global nil global-sp) (declarations nil decl-sp))
   "Creates a new `binding' which is a copy of BINDING, with the
    binding type set to TYPE and local flag set to LOCAL. If the TYPE,
    LOCAL, GLOBAL or DECLARATIONS argument is not provided, the slot
    value of BINDING is copied to the new binding, or NIL if BINDING is
    NIL."
 
-  (slot-values ((old-type type)
+  (slot-values ((old-type binding-type)
 		(old-local local)
 		(old-global global)
 		(old-declarations declarations))
       binding
-    (make-binding :type (if type-sp type old-type)
+    (make-binding :binding-type (if binding-type-sp binding-type old-type)
 		  :local (if local-sp local old-local)
 		  :global (if global-sp global old-global)
 		  :declarations (if decl-sp declarations old-declarations))))
@@ -164,12 +164,6 @@
    "The extendend environment class. Stores information about the
     environment obtained via code walking."))
 
-(defmethod lexical-environment (env)
-  "Non-specialized method, simply returns ENV. This allows this
-   accessor to be used with both `environment' objects and
-   implementation-specific lexical environments."
-  
-  env)
 
 (defvar *global-environment* (make-instance 'environment)
   "The global null environment object.")
@@ -280,11 +274,11 @@
 
       ((constantp sym)
        (setf (gethash sym variables)
-	     (make-binding :type :constant :global t)))
+	     (make-binding :binding-type :constant :global t)))
       
       ((specialp sym)
        (setf (gethash sym variables)
-	     (make-binding :type :special :global t))))))
+	     (make-binding :binding-type :special :global t))))))
 
 (defun (setf variable-binding) (binding sym env)
   "Sets the binding for the variable with symbol SYM, in the
@@ -321,17 +315,17 @@
 		  (eql ,var (,fn)))))))))))
 
 
-(defun add-variable (sym env &key (type :lexical) (local t))
+(defun add-variable (sym env &key (binding-type :lexical) (local t))
   "Adds the variable named by SYM to the environment ENV. The binding
    type is either that given by TYPE or :SPECIAL if the variable is
    currently declared special in the global environment."
 
-  (slot-values ((old-type type) global)
+  (slot-values ((old-type binding-type) global)
       (variable-binding sym env)
 
-    (let ((type (if (and global (eq old-type :special)) :special type)))
+    (let ((binding-type (if (and global (eq old-type :special)) :special binding-type)))
       (setf (variable-binding sym env)
-	    (make-binding :type type
+	    (make-binding :binding-type binding-type
 			  :local local
 			  :global global)))))
 
@@ -352,15 +346,15 @@
    environment ENV. If no binding for VAR exists, in ENV, a new
    binding of type :SPECIAL is created."
 
-  (ensure-variable-type var env :type :special))
+  (ensure-variable-type var env :binding-type :special))
 
 (defun add-symbol-macro (sym env &key (local t))
   "Adds a new binding, of type :SYMBOL-MACRO, for SYM in ENV. If ENV
    already has a binding for SYM it is replaced unless it is of
    type :SPECIAL."
 
-  (unless (aand (variable-binding sym env) (eq (type it) :special))
-    (add-variable sym env :type :symbol-macro :local local)))
+  (unless (aand (variable-binding sym env) (eq (binding-type it) :special))
+    (add-variable sym env :binding-type :symbol-macro :local local)))
 
 
 (defun add-variable-info (var key value env)
@@ -400,7 +394,7 @@
       
       ((global-function-type fn)
        (setf (gethash fn functions)
-	     (make-binding :type it :global t))))))
+	     (make-binding :binding-type it :global t))))))
 
 (defun (setf function-binding) (binding fn env)
   "Sets the binding for the function FN, in the environment ENV, to
@@ -409,12 +403,12 @@
   (setf (gethash fn (functions env)) binding))
 
 
-(defun add-function (fn env &key (type :function) (local t))
+(defun add-function (fn env &key (binding-type :function) (local t))
   "Adds a function binding, for the function FN, to the environment
    ENV."
 
   (setf (function-binding fn env)
-	(make-binding :type type :local local :global (not local))))
+	(make-binding :binding-type binding-type :local local :global (not local))))
 
 (defun ensure-function-type (fn env &rest args &key &allow-other-keys)
   "Ensures that there is a function binding for FN in ENV. If ENV does

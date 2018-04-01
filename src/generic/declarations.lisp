@@ -77,7 +77,7 @@
   (check-list args
     (mapc
      (if global
-	 (rcurry #'ensure-variable-type ext-env :type :special :global t)
+	 (rcurry #'ensure-variable-type ext-env :binding-type :special :global t)
 	 (rcurry #'ensure-special-variable ext-env))
      args)))
 

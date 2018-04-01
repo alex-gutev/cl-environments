@@ -227,7 +227,7 @@
    by the macro's lambda list."
 
   (match-form (name . def) def
-    (add-function name new-env :type :macro)
+    (add-function name new-env :binding-type :macro)
     (cons name (walk-macro-def def mac-env))))
 
 (defun walk-macro-def (def env)

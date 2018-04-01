@@ -37,3 +37,9 @@
 	(_ expansion))))
 
   #|(setf *macroexpand-hook* 'walker-hook)|#)
+
+(defun enable-hook ()
+  (setf *macroexpand-hook* #'walker-hook))
+
+(defun disable-hook ()
+  (setf *macroexpand-hook* #'funcall))

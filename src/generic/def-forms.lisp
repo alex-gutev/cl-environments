@@ -146,7 +146,7 @@
     (add-global-function (first args) type)))
 
 (defun add-global-function (sym &optional (type :function))
-  (ensure-function-type sym *global-environment* :type type :local nil :global t))
+  (ensure-function-type sym *global-environment* :binding-type type :local nil :global t))
 
 (defun add-global-variable (sym &optional (type :special))
-  (ensure-variable-type sym *global-environment* :type type :local nil :global t))
+  (ensure-variable-type sym *global-environment* :binding-type type :local nil :global t))

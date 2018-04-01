@@ -39,9 +39,9 @@
 
   (typecase env
     (environment
-     (slot-values (type local declarations)
+     (slot-values (binding-type local declarations)
 	 (variable-binding variable env)
-       (values type local declarations)))
+       (values binding-type local declarations)))
 
     (otherwise (variable-information variable (get-environment env)))))
 
@@ -55,9 +55,9 @@
   (typecase env
     (environment
   
-     (slot-values (type local declarations)
+     (slot-values (binding-type local declarations)
 	 (function-binding function env)
-       (values type local declarations)))
+       (values binding-type local declarations)))
 
     (otherwise (function-information function (get-environment env)))))
 

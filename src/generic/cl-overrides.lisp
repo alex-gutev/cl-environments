@@ -25,15 +25,78 @@
 
 (in-package :cl-environments)
 
+;;; Shadow CL special forms with macros, which simply expand into the
+;;; special forms, in for them to be walked when *MACROEXPAND-HOOK* is
+;;; called.
 
-;;; Shadow CL functions which take an optional environment parameter
+(cl:defmacro add-cl-form-macros (&rest ops)
+  (cl:let ((whole (gensym "WHOLE")))
+    (cl:labels ((lambda-list-args (list)
+		  (set-difference (flatten list) lambda-list-keywords))
+
+		(shadowing-macro (sym args)
+		  (cl:let* ((name (symbol-name sym))
+			    (op (intern name :cl)))
+		    
+		    `(cl:defmacro ,sym (&whole ,whole ,@args)
+		       (declare (ignore ,@(lambda-list-args args)))
+		       (cons ',op (rest ,whole))))))
+      
+      `(cl:progn
+	 ,@(loop
+	      for (sym . args) in ops
+	      collect (shadowing-macro sym args))))))
+
+
+(add-cl-form-macros
+  (block name &body body)
+  (catch tag &body body)
+  (eval-when situation &body body)
+  (flet (&rest bindings) &body body)
+  (function name-or-lambda-expression)
+  (go tag)
+  (if test true &optional false)
+  (labels (&rest bindings) &body body)
+  (let (&rest bindings) &body body)
+  (let* (&rest bindings) &body body)
+  (load-time-value form &optional read-only-p)
+  (locally &body body)
+  (macrolet (&rest bindings) &body body)
+  (multiple-value-call function arg &rest args)
+  (multiple-value-prog1 values-producing-form &body forms-for-effect)
+  (progn &body body)
+  (progv (&rest vars) (&rest values) &body body)
+  (return-from block values)
+  (setq &rest symbol-value-pairs)
+  (symbol-macrolet (&rest bindings) &body body)
+  (tagbody &rest tags-or-forms)
+  (the type-specifier form)
+  (throw tag value)
+  (unwind-protect protected-form &body cleanup-forms)
+
+  (defun function-name lambda-list &body body)
+  (defgeneric function-name lambda-list &rest options-and-methods)
+  (defmethod name &rest args)
+  (defparameter var value &optional doc)
+  (defvar var &optional value doc)
+  (defconstant sym val &optional doc)
+  (defmacro name arglist &body body)
+  (define-symbol-macro name expansion)
+  (declaim &rest declaration-specifiers))
+
+
+
+(defgeneric lexical-environment (env)
+  (:documentation
+   "Returns the implementation-specific lexical environment.")
+
+  (:method (env)
+    "Non-specialized method, simply returns ENV. This allows this
+     accessor to be used with both `environment' objects and
+     implementation-specific lexical environments."
   
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (shadow '(macro-function
-	    macroexpand-1
-	    macroexpand
-	    get-setf-expansion
-	    compiler-macro-function) :cl-environments))
+    env))
+
 
 
 ;;; The functions implemented below simply call the CL functions,
@@ -64,7 +127,6 @@
 (defun compiler-macro-function (name &optional env)
   (cl:compiler-macro-function name (lexical-environment env)))
 
-(defun (setf compiler-macro-function) (fn name &optional (env nil env-sp))
-  (if env-sp
-      (setf (cl:compiler-macro-function name env) fn)
-      (setf (cl:compiler-macro-function name) fn)))
+(defun (setf compiler-macro-function) (fn name &optional env)
+  (declare (ignore env))
+  (setf (cl:compiler-macro-function name) fn))

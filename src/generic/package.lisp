@@ -74,6 +74,12 @@
 	   :defconstant
 	   :defmacro
 	   :define-symbol-macro
-	   :declaim))
+	   :declaim
+
+	   :macro-function
+	   :macroexpand-1
+	   :macroexpand
+	   :get-setf-expansion
+	   :compiler-macro-function))
 
 

@@ -44,7 +44,7 @@
 		  :serial t
 		  :components
 		  ((:file "package")
-		   (:file "cl-forms")
+		   (:file "cl-overrides")
 		   (:file "util")
 		   (:file "environment")
 		   (:file "declarations")
@@ -54,7 +54,6 @@
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "cl-overrides")
 		   (:file "hook"))))))
   
   :depends-on (:alexandria
