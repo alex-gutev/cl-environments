@@ -44,6 +44,7 @@
 		  :serial t
 		  :components
 		  ((:file "package")
+		   (:file "cl-forms")
 		   (:file "util")
 		   (:file "environment")
 		   (:file "declarations")

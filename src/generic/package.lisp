@@ -39,6 +39,41 @@
 
   (:import-from :collectors
 		:make-simple-collector
-		:make-simple-collector-to-place))
+		:make-simple-collector-to-place)
+
+  (:shadow :block
+	   :catch
+	   :eval-when
+	   :flet
+	   :function
+	   :go
+	   :if
+	   :labels
+	   :let
+	   :let*
+	   :load-time-value
+	   :locally
+	   :macrolet
+	   :multiple-value-call
+	   :multiple-value-prog1
+	   :progn
+	   :progv
+	   :return-from
+	   :setq
+	   :symbol-macrolet
+	   :tagbody
+	   :the
+	   :throw
+	   :unwind-protect
+
+	   :defun
+	   :defgeneric
+	   :defmethod
+	   :defparameter
+	   :defvar
+	   :defconstant
+	   :defmacro
+	   :define-symbol-macro
+	   :declaim))
 
 
