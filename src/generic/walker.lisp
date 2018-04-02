@@ -98,17 +98,25 @@
    code-walker macro."
   
   (multiple-value-bind (form expanded-p) (macroexpand-1 (cons op args) env)
-    (cond
-      (expanded-p
-       form) ; Not walked as that should be already done by *macroexpand-hook*
-      ((special-operator-p op)
-       (cons op args)) ; Cannot be walked
-      (t
-       (cons op
-	     (if (proper-list-p args)
-		 (walk-forms args env)
-		 args))))))
+    (if expanded-p
+	form ; Not walked as that should be already done by *macroexpand-hook*
+	(walk-function op args env))))
 
+(defun walk-function (op args env)
+  (flet ((walk-args (args)
+	   (check-list args
+	     (walk-forms args env))))
+    
+    (match op
+      ((cons 'cl:lambda def)
+       (cons (cons 'cl:lambda (walk-fn-def def (get-environment env))) (walk-args args)))
+
+      ((type symbol)
+       (if (special-operator-p op)
+	   (cons op args) ; Cannot be walked
+	   (cons op (walk-args args))))
+
+      (_ (cons op args)))))
 
 ;;; Code walker definition macro
 
