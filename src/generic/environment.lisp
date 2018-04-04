@@ -484,3 +484,17 @@
   "Sets the declaration function for the user-defined declaration
    NAME."
   (setf (gethash name (decl-functions env)) fn))
+
+
+;;; Clisp requires that the environment object be printed in a
+;;; "readable" format, in order to serialize the output of
+;;; macroexpansion to the *.lib files.
+
+;;; The readable printed output is simply a read-eval form which
+;;; creates an empty environment object, since the lexical environment
+;;; information is not needed post expansion.
+
+(defmethod print-object ((env environment) stream)
+  (if *print-readably*
+      (write "#.(make-instance 'cl-environments:environment)" :stream stream)
+      (call-next-method)))
