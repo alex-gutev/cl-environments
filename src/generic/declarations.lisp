@@ -105,7 +105,13 @@
   
   (unless global
     (check-list args
-      (add-variables-info args 'ignore t ext-env))))
+      (dolist (arg args)
+	(match arg
+	  ((list 'function fn)
+	   (add-function-info fn 'ignore t ext-env))
+	  ((satisfies symbolp)
+	   (add-variable-info arg 'ignore t ext-env)))))))
+
 
 (defmethod walk-declaration ((decl (eql 'ignorable)) args ext-env &optional global)
   "Currently does nothing as IGNORABLE declarations are not mentioned

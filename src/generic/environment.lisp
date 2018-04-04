@@ -287,6 +287,16 @@
   (setf (gethash sym (variables env)) binding))
 
 
+(defconstant +global-special-vars+
+  '(cl:*macroexpand-hook*
+    cl:*standard-output*
+    cl:*standard-input*
+
+    #+clisp custom:*evalhook*)
+
+  "List of predefined globally declared special variables, which
+   should not be rebound temporarily by SPECIALP.")
+
 (defun specialp (var)
   "Tests whether a variable is declared special in the global
    environment. A test form is created and EVAL'd in which VAR is
@@ -304,15 +314,16 @@
    warnings/errors. Furtheremore this will not return true for
    variables declared special in the same file."
 
-  (let ((*macroexpand-hook* *old-macroexpand-hook*))
-    (with-gensyms (fn)
-      (with-open-stream (*standard-output* (make-broadcast-stream)) ; Suppress output
-	(eval
-	 `(locally (declare (type t ,var))
-	    (let ((,var 1))
-	      (flet ((,fn () ,var))
-		(let ((,var 2))
-		  (eql ,var (,fn)))))))))))
+  (or (member var +global-special-vars+)
+      (let ((*macroexpand-hook* *old-macroexpand-hook*))
+	(with-gensyms (fn)
+	  (with-open-stream (*standard-output* (make-broadcast-stream)) ; Suppress output
+	    (eval
+	     `(locally (declare (type t ,var))
+		(let ((,var 1))
+		  (flet ((,fn () ,var))
+		    (let ((,var 2))
+		      (eql ,var (,fn))))))))))))
 
 
 (defun add-variable (sym env &key (binding-type :lexical) (local t))

@@ -85,6 +85,13 @@
   (match args
     ((list (list* 'cl:lambda expr))
      (list (cons 'cl:lambda (walk-fn-def expr (enclose-environment (get-environment env) env)))))
+
+    #+clisp
+    ((list name (list* 'cl:lambda expr))
+     (list name
+	   (cons 'cl:lambda
+		 (walk-fn-def expr (enclose-environment (get-environment env) env)))))
+    
     (_ args)))
 
 
@@ -219,3 +226,13 @@
 
   (check-list args
     (walk-forms args env)))
+
+
+;;; Clisp specific special forms
+
+#+clisp
+(defwalker system::function-macro-let (args env)
+  (match-form ((&rest fns) . body) args
+    (let ((ext-env (copy-environment (get-environment env) env)))
+      (loop for (fn) in fns do (add-function fn ext-env))
+      `(,fns ,@(walk-body body ext-env)))))

@@ -49,40 +49,13 @@
 
 
 (add-cl-form-macros
-  (block name &body body)
-  (catch tag &body body)
-  (eval-when situation &body body)
   (flet (&rest bindings) &body body)
-  (function name-or-lambda-expression)
-  (go tag)
-  (if test true &optional false)
   (labels (&rest bindings) &body body)
   (let (&rest bindings) &body body)
   (let* (&rest bindings) &body body)
-  (load-time-value form &optional read-only-p)
   (locally &body body)
   (macrolet (&rest bindings) &body body)
-  (multiple-value-call function arg &rest args)
-  (multiple-value-prog1 values-producing-form &body forms-for-effect)
-  (progn &body body)
-  (progv (&rest vars) (&rest values) &body body)
-  (return-from block values)
-  (setq &rest symbol-value-pairs)
-  (symbol-macrolet (&rest bindings) &body body)
-  (tagbody &rest tags-or-forms)
-  (the type-specifier form)
-  (throw tag value)
-  (unwind-protect protected-form &body cleanup-forms)
-
-  (defun function-name lambda-list &body body)
-  (defgeneric function-name lambda-list &rest options-and-methods)
-  (defmethod name &rest args)
-  (defparameter var value &optional doc)
-  (defvar var &optional value doc)
-  (defconstant sym val &optional doc)
-  (defmacro name arglist &body body)
-  (define-symbol-macro name expansion)
-  (declaim &rest declaration-specifiers))
+  (symbol-macrolet (&rest bindings) &body body))
 
 
 

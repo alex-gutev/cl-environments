@@ -27,16 +27,31 @@
 
 (in-package :cl-environments)
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun walker-hook (fn form env)
-    (let ((expansion (funcall fn form env)))
-      (match form
-	((list* (not '%walk-form) _)
-	 (walk-form expansion env))
-	
-	(_ expansion))))
+(defconstant +walk-macros+
+  '(cl:defun
+    cl:defgeneric
+    cl:defmethod
+    cl:defparameter
+    cl:defvar
+    cl:defmacro
+    cl:define-symbol-macro
+    cl:declaim))
 
-  #|(setf *macroexpand-hook* 'walker-hook)|#)
+(defun pre-expand-walk (form env)
+  (match form
+    ((list* (guard op (member op +walk-macros+)) _)
+     (walk-form form env))
+
+    (_ form)))
+
+(defun walker-hook (fn form env)
+  (let* ((form (pre-expand-walk form env))
+	 (expansion (funcall fn form env)))
+    (match form
+      ((list* (not '%walk-form) _)
+       (walk-form expansion env))
+      
+      (_ expansion))))
 
 (defun enable-hook ()
   (setf *macroexpand-hook* #'walker-hook))

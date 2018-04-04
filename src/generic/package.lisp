@@ -41,45 +41,20 @@
 		:make-simple-collector
 		:make-simple-collector-to-place)
 
-  (:shadow :block
-	   :catch
-	   :eval-when
-	   :flet
-	   :function
-	   :go
-	   :if
-	   :labels
-	   :let
-	   :let*
-	   :load-time-value
-	   :locally
-	   :macrolet
-	   :multiple-value-call
-	   :multiple-value-prog1
-	   :progn
-	   :progv
-	   :return-from
-	   :setq
-	   :symbol-macrolet
-	   :tagbody
-	   :the
-	   :throw
-	   :unwind-protect
+  (:shadow
+   
+   :flet
+   :labels
+   :let
+   :let*
+   :locally
+   :macrolet
+   :symbol-macrolet
 
-	   :defun
-	   :defgeneric
-	   :defmethod
-	   :defparameter
-	   :defvar
-	   :defconstant
-	   :defmacro
-	   :define-symbol-macro
-	   :declaim
-
-	   :macro-function
-	   :macroexpand-1
-	   :macroexpand
-	   :get-setf-expansion
-	   :compiler-macro-function))
+   :macro-function
+   :macroexpand-1
+   :macroexpand
+   :get-setf-expansion
+   :compiler-macro-function))
 
 
