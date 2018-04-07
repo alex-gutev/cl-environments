@@ -25,29 +25,14 @@
 
 (in-package :cl-environments)
 
-;;; Provides a compatibility layer around the CLTL2 environment access
-;;; functions. Some implementations already provide CLTL2 environment
-;;; access, however with slightly different API's and subtle bugs.
 
-;;; SBCL, CCL and Allegro CL are known to support environments. CCL
-;;; has a few bugs involving user-defined declarations. Allegro CL
-;;; deviates from the CLTL2 API.
+;;; Re-export all symbols imported from the CL package except symbols
+;;; which have been shadowed
 
-
-;;; This will be implemented by providing macros which shadow the
-;;; standard CL special forms and macros, they simply expand to the CL
-;;; forms and call into the code walker. Additionaly a macro expansion
-;;; hook (*macroexpand-hook*) will be added to capture the environment
-;;; information in macro expansions of macros which were not compiled
-;;; using this package.
-
-;;; Code walking is performed using a recursive macro which expands
-;;; into the same form, with the arguments wrapped in the macro, CL
-;;; special forms are handled appropriately (as per the form) and
-;;; macros are expanded prior to wrapping the arguments. The actual
-;;; extended environment information is stored in a lexical symbol
-;;; macro, by wrapping the subforms of the environment in a
-;;; SYMBOL-MACROLET. This provides a natural mapping between the
-;;; implementation specific environment objects and the extended
-;;; environment objects.
-
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let ((shadowed (mapcar #'symbol-name (package-shadowing-symbols :cl-environments))))
+    (do-external-symbols (sym :cl)
+      (export (if (member (symbol-name sym) shadowed :test #'string=)
+		  (find-symbol (symbol-name sym) :cl-environments)
+		  sym)
+	      :cl-environments))))

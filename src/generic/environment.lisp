@@ -27,17 +27,22 @@
 
 (in-package :cl-environments)
 
-(defvar *old-macroexpand-hook* *macroexpand-hook*)  
+;; TODO: This is bound to a quicklisp hook and not the default
+;; implementation-specific hook or the previous hook if any.
+
+(defvar *old-macroexpand-hook* *macroexpand-hook*
+  "The previous value of *MACROEXPAND-HOOK* before setting it to
+   #'WALKER-HOOK.")
 
 
 (defconstant +optimize-qualities+
   '(speed safety compilation-speed space debug)  
-  "List of optimization qualities.")
+  "List of standardoptimization qualities.")
 
 
 (defun initial-declarations ()
   "Returns the initial declaration information applying to a null
-   environment. This contains the optimization qualities with their
+   environment. This contains the optimization qualities set to their
    default level 1."
   
   (aprog1 (make-hash-table :test #'eq)
@@ -57,29 +62,28 @@
     :initarg :local
     :initform nil
     :reader local
-    :documentation "True if there is a local definition.")
+    :documentation "True if there is a local binding.")
    
    (global
     :initarg :global
     :initform nil
     :reader global
     :documentation
-    "True if there is a global definition, this may be nil even if
-     LOCAL is nil, indicating there is no definition. Similarly GLOBAL
+    "True if there is a global binding this may be nil even if
+     LOCAL is nil, indicating there is no binding Similarly GLOBAL
      may be true even if local is true indicating that there is both a
-     global and local definition.")
+     global and local binding.")
 
    (declarations
     :initform nil
     :initarg :declarations
     :reader declarations
     :documentation
-    "Association list containing declaration information, as a list of
-     key-value pairs."))
+    "Association list containing declaration information."))
 
   (:documentation
    "Stores binding information. Can be used both for function and
-    variables bindings"))
+    variable bindings"))
 
 
 ;;; Constructor functions
@@ -91,20 +95,15 @@
   "Creates a new binding with the pair (KEY . VALUE) added to the
    front of its DECLARATIONS list"
 
-  (slot-values (binding-type local global declarations)
-      binding
-    (make-binding :binding-type binding-type
-		  :local local
-		  :global global
-		  :declarations (acons key value declarations))))
-	  
+  (slot-values (declarations) binding
+    (change-binding-type binding :declarations (acons key value declarations))))
 
 (defun change-binding-type (binding &key (binding-type nil binding-type-sp) (local nil local-sp) (global nil global-sp) (declarations nil decl-sp))
-  "Creates a new `binding' which is a copy of BINDING, with the
-   binding type set to TYPE and local flag set to LOCAL. If the TYPE,
-   LOCAL, GLOBAL or DECLARATIONS argument is not provided, the slot
-   value of BINDING is copied to the new binding, or NIL if BINDING is
-   NIL."
+  "Creates a new `binding' with its slots initialized with the values
+   provided in the keyword arguments BINDING-TYPE, LOCAL, GLOBAL and
+   DECLARATIONS. If the keyword argument for a particular slot is
+   omitted, the slot's value is set to the value of the corresponding
+   in BINDING, or NIL if BINDING is NIL."
 
   (slot-values ((old-type binding-type)
 		(old-local local)
@@ -140,8 +139,8 @@
     :initarg :declarations
     :accessor declarations
     :documentation
-    "Hash-table of declarations neither applying to variables nor
-     functions.")
+    "Hash-table of declaration information neither applying to
+     variables nor functions.")
 
    (decl-functions
     :initform (make-hash-table :test #'eq)
@@ -161,19 +160,21 @@
      is contained."))
 
   (:documentation
-   "The extendend environment class. Stores information about the
-    environment obtained via code walking."))
+   "The extended environment class. Stores information about the
+    lexical environment obtained via code walking."))
 
 
 (defvar *global-environment* (make-instance 'environment)
-  "The global null environment object.")
+  "The global 'null' extended environment object.")
 
 
 (defun copy-environment (env &optional (lex-env (lexical-environment env)))
   "Copies the environment object ENV. A shallow copy of the hash
    tables containing the mappings between symbols and bindings is
    performed, that is the `binding' objects themselves are not
-   copied."
+   copied. The LEXICAL-ENVIRONMENT slot of the new environment is set
+   to LEX-ENV, if the LEX-ENV argument is supplied, otherwise it is
+   set to the same value is in ENV."
 
   (with-slots (variables
 	       functions
@@ -188,8 +189,8 @@
 		   :lexical-environment lex-env)))
 
 (defun enclose-environment (env lex-env)
-  "Creates a shallow copy of the environment ENV and sets its
-   LEXICAL-ENVIRONMENT slot to LEX-ENV."
+  "Creates a shallow copy (hash-tables are not copied) of the
+   environment ENV and sets its LEXICAL-ENVIRONMENT slot to LEX-ENV."
   
   (with-slots (variables
 	       functions
@@ -218,19 +219,19 @@
   "Returns the extended environment object of the local lexical
    environment or the global null environment if there is no local
    environment. ENV is the implementation specific lexical environment
-   object, passed to macro functions, if it is NIL the global null
-   environment is returned."
+   object, obtained via the &ENVIRONMENT macro parameters, if it is
+   NIL the global null environment is returned."
   
   (if (null env)
       *global-environment*
       (get-local-environment env)))
 
 (defun get-local-environment (env)
-  "Returns the extended enevironment object of the lexical environment
-   ENV. Macroexpands *ENV-SYM*, using MACROEXPAND, in the lexical
-   environment ENV, to obtain the extended environment object. If
-   there is no expansion for *ENV-SYM* the global extended environment
-   object is returned."
+  "Returns the extended environment object of the lexical environment
+   ENV (may not be NIL). Macro-expands *ENV-SYM*, using MACROEXPAND,
+   in the lexical environment ENV, to obtain the extended environment
+   object. If there is no expansion for *ENV-SYM* the global extended
+   environment object is returned."
 
   (multiple-value-bind (ext-env expanded)
       (macroexpand *env-sym* env)
@@ -241,8 +242,11 @@
 
 (defun enclose-in-env (env forms)
   "Encloses FORMS in the extended environment object ENV. Returns
-   FORMS wrapped in a SYMBOL-MACROLET, declararing a symbol macro,
-   *ENV-SYM*, which expands to the environment object ENV."
+   FORMS wrapped in a SYMBOL-MACROLET, defining a symbol macro,
+   *ENV-SYM*, which expands to the environment object ENV. If FORMS is
+   already a list containing a SYMBOL-MACROLET form defining the
+   symbol macro *ENV-SYM*, the SYMBOL-MACROLET form is simply
+   returned."
 
   (match forms
     ((list (and body (list* 'cl:symbol-macrolet (list (list (eql *env-sym*) _)) _)))
@@ -260,9 +264,11 @@
    the environment ENV. If ENV does not have a binding for SYM, the
    `binding' for SYM in the global environment is copied and added to
    ENV. If the global environment does not have a binding for SYM,
-   however the variable is declared special in the global Common Lisp
-   environment a `binding' of type :SPECIAL is added to ENV and
-   returned, otherwise NIL is returned."
+   however the variable is declared special (determined using
+   SPECIALP) or is a constant (determined using CONSTANTP) in the
+   global Common Lisp environment a global `binding' of
+   type :SPECIAL/:CONSTANT is added to ENV and returned, otherwise NIL
+   is returned."
 
   (with-slots (variables) env
     (acond
@@ -295,11 +301,13 @@
     #+clisp custom:*evalhook*)
 
   "List of predefined globally declared special variables, which
-   should not be rebound temporarily by SPECIALP.")
+   should not be rebound temporarily by SPECIALP. If one of the
+   symbols in the list, is passed to SPECIALP, T is returned
+   immediately.")
 
 (defun specialp (var)
   "Tests whether a variable is declared special in the global
-   environment. A test form is created and EVAL'd in which VAR is
+   environment. A test form is created and compiled in which VAR is
    first bound to the value 1, a local function, which returns the
    value of VAR, is declared in the lexical scope of the binding. VAR
    is then bound to 2 (with a nested LET form) and its value is
@@ -311,25 +319,30 @@
    variables, the test is wrapped in a LOCALLY with the type of the
    variable declared to T in an attempt to silence the warnings/errors
    however this is not guaranteed to work and may itself cause
-   warnings/errors. Furtheremore this will not return true for
-   variables declared special in the same file."
+   warnings/errors. Furthermore this will not return true for
+   variables declared special in the same file.
+
+   If VAR is a member of the list +GLOBAL-SPECIAL-VARS+ T is returned
+   immediately without evaluating the test form."
 
   (or (member var +global-special-vars+)
       (let ((*macroexpand-hook* *old-macroexpand-hook*))
 	(with-gensyms (fn)
 	  (with-open-stream (*standard-output* (make-broadcast-stream)) ; Suppress output
-	    (eval
-	     `(locally (declare (type t ,var))
-		(let ((,var 1))
-		  (flet ((,fn () ,var))
-		    (let ((,var 2))
-		      (eql ,var (,fn))))))))))))
+	    (funcall
+	     (compile nil 
+		      `(lambda ()
+			 (locally (declare (type t ,var))
+			   (let ((,var 1))
+			     (flet ((,fn () ,var))
+			       (let ((,var 2))
+				 (eql ,var (,fn))))))))))))))
 
 
 (defun add-variable (sym env &key (binding-type :lexical) (local t))
   "Adds the variable named by SYM to the environment ENV. The binding
    type is either that given by TYPE or :SPECIAL if the variable is
-   currently declared special in the global environment."
+   declared special in the global environment."
 
   (slot-values ((old-type binding-type) global)
       (variable-binding sym env)
@@ -344,10 +357,10 @@
   "Ensures that there is a variable binding for SYM in env. If ENV
    does not have a binding for SYM, a new `binding' (of type NIL) is
    created. The remaining keyword arguments specify the slot-values of
-   the new `binding' object, where the keyword is the slot keyword and
-   the value is the slot value. If a value for a slot is not provided,
-   the corresponding slot value of the existing `binding' object is
-   used."
+   the new `binding' object, where the keyword is the slot init-arg
+   keyword and the value is the slot value. If a value for a slot is
+   not provided, the corresponding slot value of the existing
+   `binding' object is used."
 
   (setf (variable-binding sym env)
 	(apply #'change-binding-type (variable-binding sym env) args)))
@@ -369,16 +382,16 @@
 
 
 (defun add-variable-info (var key value env)
-  "Adds the pair (KEY . VALUE) to the variable information for VAR in
-   the environment ENV. If no binding for VAR exists, a new binding is
-   created."
+  "Adds the pair (KEY . VALUE) to the declaration information of the
+   variable-binding for VAR in the environment ENV. If no binding for
+   VAR exists, a new binding is created."
 
   (setf (variable-binding var env)
 	(add-binding-info (variable-binding var env) key value)))
 
 (defun add-variables-info (vars key value env)
-  "Adds the pair (KEY . VALUE) to the variable information of each
-   symbol in VARS."
+  "Adds the pair (KEY . VALUE) to the declaration information of the
+   variable-bindings of each symbol in VARS."
   
   (mapc (rcurry #'add-variable-info key value env) vars))
 
@@ -386,14 +399,14 @@
 ;;; Functions
 
 (defun function-binding (fn env)
-  "Returns the `binding' object for the function FN in the environment
-   ENV. If ENV does not have a binding for FN, the `binding' for FN in
-   the global environment is copied and added to ENV. If the global
-   environment does not have a binding for FN, the function type of FN
-   in the global Common Lisp environment is determined (by
-   GLOBAL-FUNCTION-TYPE) and a new `binding' of that type is added to
-   ENV and returned. If FN is not declared in the global CL
-   environment NIL is returned."
+  "Returns the function `binding' object for the symbol FN in the
+   environment ENV. If ENV does not have a binding for FN, the
+   `binding' for FN in the global environment is copied and added to
+   ENV. If the global environment does not have a binding for FN, the
+   function type of FN in the global Common Lisp environment is
+   determined (by GLOBAL-FUNCTION-TYPE) and a new global `binding' of
+   that type is added to ENV and returned. If FN is not declared in
+   the global CL environment NIL is returned."
 
   (with-slots (functions) env
     (acond
@@ -408,14 +421,14 @@
 	     (make-binding :binding-type it :global t))))))
 
 (defun (setf function-binding) (binding fn env)
-  "Sets the binding for the function FN, in the environment ENV, to
-   the `binding' object BINDING."
+  "Sets the function binding for the symbol FN, in the environment
+   ENV, to the `binding' object BINDING."
   
   (setf (gethash fn (functions env)) binding))
 
 
 (defun add-function (fn env &key (binding-type :function) (local t))
-  "Adds a function binding, for the function FN, to the environment
+  "Adds a function binding, for the symbol FN, to the environment
    ENV."
 
   (setf (function-binding fn env)
@@ -434,18 +447,19 @@
 
 
 (defun add-function-info (fn key value env)
-  "Adds the pair (KEY . VALUE) to the function information of FN in
-   the environment ENV. If no binding for FN exists a new binding is
-   created."
+  "Adds the pair (KEY . VALUE) to the declaration information of the
+   function-binding for FN in the environment ENV. If no binding for
+   FN exists a new binding is created."
 
   (setf (function-binding fn env)
 	(add-binding-info (function-binding fn env) key value)))
 
 (defun add-functions-info (fns key value env)
-  "Adds the pair (KEY . VALUE) to the function information of each
-   symbol in FNS."
+  "Adds the pair (KEY . VALUE) to the declaration information of the
+   function-bindings of each symbol in FNS."
   
   (mapc (rcurry #'add-function-info key value env) fns))
+
 
 (defun global-function-type (fn)
   "If FN is FBOUND, determines the type of the binding for FN in the
@@ -488,13 +502,18 @@
 
 ;;; Clisp requires that the environment object be printed in a
 ;;; "readable" format, in order to serialize the output of
-;;; macroexpansion to the *.lib files.
-
-;;; The readable printed output is simply a read-eval form which
-;;; creates an empty environment object, since the lexical environment
-;;; information is not needed post expansion.
+;;; macroexpansion to the *.lib files. The environment object is not
+;;; used post-compilation thus there is no need to provide a full
+;;; readable representation.
 
 (defmethod print-object ((env environment) stream)
+  "Prints `ENVIRONMENT' objects. If *PRINT-READABLY* is true, a form
+   which creates an empty `ENVIRONMENT' object (using the read-eval
+   #. reader macro). This is not done to provide a readable
+   representation of the environment object (as that is not possible)
+   but to silence compiler warnings and errors on some
+   implementations."
+  
   (if *print-readably*
       (write "#.(make-instance 'cl-environments:environment)" :stream stream)
       (call-next-method)))

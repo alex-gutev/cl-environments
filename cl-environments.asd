@@ -54,7 +54,8 @@
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "hook"))))))
+		   (:file "hook")
+		   (:file "cl-environments"))))))
   
   :depends-on (:alexandria
 	       :anaphora

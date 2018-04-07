@@ -29,7 +29,15 @@
 ;;; special forms, in for them to be walked when *MACROEXPAND-HOOK* is
 ;;; called.
 
-(cl:defmacro add-cl-form-macros (&rest ops)
+(defmacro add-cl-form-macros (&rest ops)
+  "Defines shadowing macros for special forms in the CL package. Each
+   element of OPS is a list where the first element is the symbol, for
+   which the macro will be defined, and the remaining elements are the
+   macro's lambda-list (only used for documentation in SLIME). The
+   macro defined expands into the same form with the macro operator
+   symbol replaced by the special operator symbol, which has the same
+   SYMBOL-NAME as the macro but in the CL package."
+  
   (cl:let ((whole (gensym "WHOLE")))
     (cl:labels ((lambda-list-args (list)
 		  (set-difference (flatten list) lambda-list-keywords))

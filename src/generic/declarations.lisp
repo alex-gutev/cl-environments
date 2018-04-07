@@ -44,8 +44,8 @@
   (:documentation
    "Walks the declaration DECL with arguments ARGS and adds the
     information to EXT-ENV. If GLOBAL is true, the declarations are
-    treated as global declarations and only declarations which can
-    appears as global declarations are processed."))
+    treated as global declarations, established by DECLAIM or
+    PROCLAIM."))
 
 
 ;;; Type Declarations
@@ -94,8 +94,8 @@
 	(match arg
 	  ((list 'function fn)
 	   (add-function-info fn 'dynamic-extent t ext-env))
-	  ((guard var #'symbolp)
-	   (add-variable-info var 'dynamic-extent t ext-env)))))))
+	  ((satisfies symbolp)
+	   (add-variable-info arg 'dynamic-extent t ext-env)))))))
 
 
 ;;; Ignore declarations
@@ -129,7 +129,6 @@
   (check-list args
     (add-functions-info args 'inline 'inline ext-env)))
 
-;; Local and global
 (defmethod walk-declaration ((decl (eql 'notinline)) args ext-env &optional global)
   "Adds (INLINE . NOTINLINE) to the information list of the functions in ARGS."
   
@@ -139,6 +138,10 @@
 
 
 ;;; Optimization declarations
+
+
+;; Non-standard implementation-specific optimization qualities are
+;; currently ignored completely.
 
 (defmethod walk-declaration ((decl (eql 'optimize)) args ext-env &optional global)
   "Normalizes the optimization qualities (in ARGS) to a list of 6
@@ -182,7 +185,7 @@
 
 
 (defmethod walk-declaration (decl args ext-env &optional global)
-  "If there is a declaration function (defined using
+  "If there is a declaration function, for DECL, (defined using
    DEFINE-DECLARATION) in EXT-ENV, it is called and the information
    returned by the function is added to the environment."
   

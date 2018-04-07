@@ -44,7 +44,7 @@
 
 (defun walk-let-bindings (bindings env lex-env)
   "Walks the bindings of a LET form. Adds the variable bindings to the
-   environment ENV and encloses the initforms of the bindings (if any)
+   environment ENV and encloses the init-forms of the bindings (if any)
    in the code walking macro. Returns the new bindings list."
   
   (flet ((enclose-binding (binding)
@@ -61,11 +61,10 @@
 
 (defun walk-body (body ext-env &optional documentation)
   "Walks the body of forms which create a local environment, such as
-   LET forms, LAMBDA, DEFUN, LOCALLY. Adds the declaration information
-   to the bindings in the environment EXT-ENV, and encloses the body
-   in the augmented environment. If DOCUMENTATION is true the body may
-   contain a documentation string preceding or following the
-   declarations."
+   LET/FLET/LOCALLY. Adds the declaration information to the bindings
+   in the environment EXT-ENV, and encloses the body in the augmented
+   environment. If DOCUMENTATION is true the body may contain a
+   documentation string preceding or following the declarations."
 
   (check-list body
     (multiple-value-bind (forms decl docstring)
@@ -82,8 +81,8 @@
 
 (defwalker cl:let* (args env)
   "Walks LET* binding forms: encloses each init-form in an environment
-   containing all the variables in the preceding bindings. Encloses
-   the body in an environment containing all the variable bindings
+   containing all variables in the preceding bindings. Encloses the
+   body in an environment containing all the variable bindings
    introduced by the LET*."
 
   (match-form ((&rest bindings) . body) args
@@ -96,7 +95,8 @@
 
 (defun create-let*-env (bindings env lex-env)
   "Creates the lexical environment for the body of a LET* form, by
-   adding the BINDINGS to a copy of the environment ENV."
+   adding the BINDINGS to a copy of the environment ENV. Returns the
+   new environment."
 
   (let ((env (copy-environment env lex-env)))
     (dolist (binding bindings env)
@@ -130,11 +130,10 @@
 
 (defwalker cl:flet (args env)
   "Walks FLET forms. The functions introduced by the FLET are added to
-   a copy of the environment ENV, and the body, of the FLET form, is
-   enclosed in this environment. The body of each function is enclosed
-   in an environment containing the variables in the function's lambda
-   list, the environment however does not contain the functions
-   themselves."
+   a copy of the environment ENV, in which the body, of the FLET form,
+   is enclosed. The body of each function is enclosed in an
+   environment containing the variables in the function's lambda list,
+   however it does not contain the functions themselves."
   
   (let* ((env (enclose-environment (get-environment env) env))
 	 (new-env (copy-environment env)))
@@ -145,27 +144,32 @@
 
 (defwalker cl:labels (args env)
   "Walks LABELS forms. The functions introduced by the LABELS are
-   added to a copy of the environment ENV, and the body, of the LABELS
-   form, is enclosed in this environment. The body of each function is
-   enclosed in an environment containing: all the functions,
-   introduced by the LABELS, and the variables in the function's
-   lambda list. All declarations, bound to the functions introudced by
-   the LABELS, are added to the environments of the function bodies."
+   added to a copy of the environment ENV, in which the body, of the
+   LABELS form, is enclosed. The body of each function is enclosed in
+   an environment containing: all the functions, introduced by the
+   LABELS, and the variables in the function's lambda list. All
+   declarations, bound to the functions introduced by the LABELS, are
+   added to the environments of the function bodies."
   
-  (let* ((env (enclose-environment (get-environment env) env))
+  (let* ((env (copy-environment (get-environment env) env))
 	 (body-env (copy-environment env)))
     
-    (flet
-	((walk-fns (fns env body-env)
+    (labels
+	((make-fn-env (fns)
+	   (dolist (fn fns env)
+	     (match-form (name . _) fn
+	       (setf (function-binding name env) ; Copy binding from BODY-ENV to ENV
+		     (function-binding name body-env)))))
+	 
+	 (walk-fns (fns)
 	   (loop
 	      for fn in fns
+	      with env = (make-fn-env fns)
 	      collect
 		(match-form (name . def) fn
-		  (setf env (copy-environment env))
-		  (setf (function-binding name env)
-			(function-binding name body-env))
-		  (cons name (walk-fn-def def env))))))
+		    (cons name (walk-fn-def def env))))))
 
+      ;; Add all function-bindings to BODY-ENV
       (match-form ((&rest fns) . body) args
 	(loop
 	   for fn in fns
@@ -174,7 +178,7 @@
 	       (add-function name body-env)))
 	
 	(let ((body (walk-body body body-env)))
-	  (cons (walk-fns fns env body-env)
+	  (cons (walk-fns fns)
 		body))))))
 
 
@@ -207,10 +211,10 @@
 
 (defwalker cl:macrolet (args env)
   "Walks MACROLET forms. Each macro is added to a copy of the
-   environment ENV, and the body of the MACROLET form is enclosed in
-   this environment. The body of each macro is enclosed in an
-   environment containing the variables introduced by the macro's
-   lambda-list, but does not contain the macro itself."
+   environment ENV, in which the body of the MACROLET form is
+   enclosed. The body of each macro is enclosed in an environment
+   containing the variables introduced by the macro's lambda-list, but
+   does not contain the macro itself."
 
   (match-form ((&rest macros) . body) args
     

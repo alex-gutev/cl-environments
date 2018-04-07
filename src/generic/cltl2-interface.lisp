@@ -34,7 +34,7 @@
    VARIABLE, in the environment ENV. Returns three values: the first
    value is the binding type nil, :SPECIAL, :LEXICAL, :SYMBOL-MACRO
    or :CONSTANT, the second value is true if there is a local binding
-   and the third value is the association list of the declaration
+   and the third value is an association list containing declaration
    information."
 
   (typecase env
@@ -50,7 +50,7 @@
    FUNCTION in the environment ENV. Returns three values: the first
    value is the binding type nil, :FUNCTION, :MACRO or :SPECIAL-FORM,
    the second value is true if there is a local binding and the third
-   value is the association list of the declaration information."
+   value is an association list containing declaration information."
 
   (typecase env
     (environment
@@ -60,7 +60,6 @@
        (values binding-type local declarations)))
 
     (otherwise (function-information function (get-environment env)))))
-
 
 (defun declaration-information (decl-name &optional env)
   "Returns information about the declaration DECL-NAME in the
@@ -74,9 +73,27 @@
      (declaration-information decl-name (get-environment env)))))
 
 
-(defmacro define-declaration (decl-name lambda-list &body body)
+(defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
+  "Defines a handler function for the user-defined declaration
+   DECL-NAME. ARG-VAR is a symbol bound to the argument list of the
+   declaration expression, ENV-VAR is a symbol bound to the lexical
+   environment in which the declaration appears. The function should
+   return two values: the first value is a keyword identifying whether
+   the declaration applies to variable bindings (:VARIABLE), function
+   bindings (:FUNCTION) or is a free declaration :DECLARE. If the
+   first value is :VARIABLE or :FUNCTION the second must be a list
+   where each element is of the form (BINDING-NAME KEY VALUE) where
+   BINDING-NAME is the function or variable binding to which the
+   declaration applies, and (KEY . VALUE) is the key value pair added
+   to the declaration list of the binding. If the first value
+   is :DECLARE the second value must be a CONS of the (KEY . VALUE),
+   which is added to the declarations list of the lexical
+   environment."
+  
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (declaim (declaration ,decl-name))
      (setf (declaration-function ,decl-name *global-environment*)
-	   (lambda ,lambda-list ,@body))
+	   (lambda (,arg-var ,env-var)
+	     (declare (ignorable ,env-var))
+	     ,@body))
      ,decl-name))

@@ -29,7 +29,14 @@
 (define-condition malformed-lambda-list (walk-program-error)
   ((list-position
     :reader list-position
-    :initarg :position)))
+    :initarg :position
+    :documentation
+    "The CONS cell of the lambda-list element for which the condition
+     was signaled"))
+
+  (:documentation
+   "Condition signaled when a lambda-list with incorrect structure is
+    walked."))
 
 (defun lambda-walk-error (list)
   "Signals a `MALFORMED-LAMBDA-LIST' condition for the lambda list at
@@ -48,6 +55,9 @@
   (member sym lambda-list-keywords))
 
 (defun var-symbol-p (thing)
+  "Returns true if THING is a symbol which can be used as a
+   variable-name."
+  
   (and thing (symbolp thing) (not (keywordp thing)) (lambda-list-keyword-p thing)))
 
 
@@ -208,16 +218,12 @@
 (defun walk-lambda-list (list env &key ((:destructure destructurep)) ((:env envp)))
   "Walks the lambda list LIST, augments the environment ENV with the
    bindings introduced by the lambda list, and encloses the initforms
-   of the arguments in the environments augmented with the bindings
-   introduced before that argument in the lambda list. Returns the new
-   lambda list and the augmented environment. The keyword
+   of the arguments in the environments augmented with all the
+   bindings introduced in the lambda-list preceding it. Returns the
+   new lambda list and the augmented environment. The keyword
    argument :DESTRUCTURE indicates whether the lambda list should be
-   treated as a destructuring lambda list, :ENV whether &ENVIRONMENT
-   parameters are accepted and :GENERIC whether the lambda list is a
-   DEFMETHOD lambda list. This function performs a best effort, that
-   is it does not check for all syntax errors and if a syntax error is
-   found, it simply returns the rest of the lambda list letting,
-   leaving the CL implementation to deal with the error."
+   parsed as a destructuring lambda list, and :ENV indicates whether
+   &ENVIRONMENT parameters are accepted."
 
   (let ((env (copy-environment env)))
     (flet ((walk-arg (type arg)
@@ -234,13 +240,23 @@
 			  :env envp)
 	 env)))))
 
-(defgeneric walk-lambda-list-arg (type arg env))
+(defgeneric walk-lambda-list-arg (type arg env)
+  (:documentation
+   "Walks a lambda-list argument. Returns the new argument and the
+    augmented environment."))
 
 (defmethod walk-lambda-list-arg ((type (eql nil)) keyword env)
+  "Walks lambda-list keywords. Simply returns the keyword and
+   environment unchanged."
+  
   (values keyword env))
 
 
 (defmethod walk-lambda-list-arg ((type (eql :optional)) arg env)
+  "Walks optional arguments. Encloses the init-form (if any) in the
+   environment ENV and augments ENV with a bindings for the argument
+   and supplied-p variable (if any)."
+  
   (match (ensure-list arg)
     ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
      (values
@@ -250,6 +266,10 @@
 	(when var-sp (add-variable var-sp it)))))))
 
 (defmethod walk-lambda-list-arg ((type (eql :key)) arg env)
+  "Walks keyword arguments. Encloses the init-form (if any) in the
+   environment ENV and augments ENV with bindings for the argument and
+   supplied-p variable (if any)."
+  
   (match (ensure-list arg)
     ((cons
       (and (or (list _ var) var) arg)
@@ -262,6 +282,9 @@
 	(when var-sp (add-variable var-sp it)))))))
 
 (defmethod walk-lambda-list-arg ((type (eql :aux)) arg env)
+  "Walks auxiliary variables. Encloses the init-form (if any) in the
+   environment ENV and augments ENV with a binding for the variable."
+  
   (match (ensure-list arg)
     ((cons var (optional (list initform)))
 
@@ -271,5 +294,9 @@
 	(add-variable var it))))))
 
 (defmethod walk-lambda-list-arg ((type t) arg env)
+  "Walks lambda-list arguments which are composed of a single symbol
+   to which the argument is bound. Augments the environment ENV with a
+   binding for the argument."
+  
   (add-variable arg env)
   (values arg env))

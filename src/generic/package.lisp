@@ -55,6 +55,11 @@
    :macroexpand-1
    :macroexpand
    :get-setf-expansion
-   :compiler-macro-function))
+   :compiler-macro-function)
+
+  (:export :variable-information
+	   :function-information
+	   :declaration-information
+	   :define-declaration))
 
 

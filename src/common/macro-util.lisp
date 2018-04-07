@@ -70,6 +70,7 @@
 		   `(((guard ,from (not (and ,g!force (eq ,from-state ',name)))) ,pattern)
 		     (flet ((,next (,g!arg &key force (from ',name))
 			      (,g!next from force ,g!arg)))
+		       (declare (ignorable (function,next)))
 		       ,@body))))))
 
       (let-if ((start (second states) :start)

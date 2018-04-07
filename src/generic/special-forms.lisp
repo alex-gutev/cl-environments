@@ -32,15 +32,13 @@
 ;;; BLOCK
 
 (defwalker cl:block (args env)
-  "Walks CATCH forms. Encloses the body of the BLOCK form (excluding
-   the block name symbol) in the code walking macro."
+  "Walks the body of the BLOCK form (excluding the block name symbol)"
 
   (match-form (name &rest forms) args
     `(,name ,@(walk-forms forms env))))
 
 (defwalker cl:return-from (args env)
-  "Walks RETURN-FROM forms. Encloses the result expression form in the
-   code-walking macro."
+  "Walks the result-form of the RETURN-FROM form."
 
   (match-form (name form) args
     `(,name ,(walk-form form env))))
@@ -49,15 +47,13 @@
 ;;; CATCH
 
 (defwalker cl:catch (args env)
-  "Walks CATCH forms. Encloses the CATCH tag form and
-   body in the code-walking macro."
+  "Walks the tag and body of the CATCH form."
 
   (check-list args
     (walk-forms args env)))
 
 (defwalker cl:throw (args env)
-  "Walks THROW forms. Encloses the CATCH tag form and result form in
-   the code-walking macro."
+  "Walks the result form of the THROW form."
 
   (match-form (tag result) args
     `(,(walk-form tag env) ,(walk-form result env))))
@@ -66,8 +62,7 @@
 ;;; EVAL-WHEN
 
 (defwalker cl:eval-when (args env)
-  "Walks EVAL-WHEN forms. Encloses the body in the code-walking
-   macro."
+  "Walks the body of the EVAL-WHEN form."
   
   (match-form (situation &rest forms) args
     (cons situation (walk-forms forms env))))
@@ -76,11 +71,9 @@
 ;;; FUNCTION
 
 (defwalker cl:function (args env)
-  "Walks FUNCTION forms. If the body of the form is a LAMBDA
-   expression, it is walked directly (i.e. not enclosed in the
-   code-walking macro as the function form does not expand macros). If
-   the body of the form is not a LAMBDA expression, the entire form is
-   simply returned as is."
+  "If the body of the FUNCTION form is a lambda expression, it is
+   walked as a function definition. Otherwise the form arguments are
+   returned as is."
 
   (match args
     ((list (list* 'cl:lambda expr))
@@ -98,7 +91,7 @@
 ;;; IF
 
 (defwalker cl:if (args env)
-  "Walks IF forms. Encloses all body forms in the code-walking macro."
+  "Walks the test, then and else forms."
 
   (check-list args
     (walk-forms args env)))
@@ -107,8 +100,7 @@
 ;;; LOAD-TIME-VALUE
 
 (defwalker cl:load-time-value (args)
-  "Walks LOAD-TIME-VALUE forms. Encloses the form in the global
-   environment."
+  "Walks the value form in the global NIL environment."
 
   (match-form (form &optional read-only-p) args
     `(,(walk-form form nil) ,read-only-p)))
@@ -117,9 +109,8 @@
 ;;; LOCALLY
 
 (defwalker cl:locally (args env)
-  "Walks LOCALLY forms. Creates a copy of the extended lexical
-   environment object in ENV, which is augmented with the declaration
-   information and encloses the body of the form in this environment."
+  "Encloses the body of the LOCALLY form in an environment, augmented
+   with the declaration information."
   
   (let ((ext-env (copy-environment (get-environment env) env)))
     (walk-body args ext-env)))
@@ -129,8 +120,7 @@
 ;;; MULTIPLE-VALUE-CALL
 
 (defwalker cl:multiple-value-call (args env)
-  "Walks MULTIPLE-VALUE-CALL forms. Encloses the function form and the
-   argument forms in the code-walking macro."
+  "Walks all argument forms."
 
   (check-list args
     (walk-forms args env)))
@@ -139,8 +129,7 @@
 ;;; MULTIPLE-VALUE-PROG1
 
 (defwalker cl:multiple-value-prog1 (args env)
-  "Walks MULTIPLE-VALUE-PROG1 forms. Encloses the expression form and
-   body forms in the code-walking macro."
+  "Walks the result and body forms."
 
   (check-list args
     (walk-forms args env)))
@@ -149,8 +138,7 @@
 ;;; PROGN
 
 (defwalker cl:progn (args env)
-  "Walks PROGN forms. Encloses the body of the PROGN in the code
-   walking macro."
+  "Walks the body forms."
 
   (check-list args
     (walk-forms args env)))
@@ -159,10 +147,9 @@
 ;;; PROGV
 
 (defwalker cl:progv (args env)
-  "Walks PROGV forms. Encloses the symbols list form, the values list
-   form, and the body forms in the code-walking macro. Does not add
-   anything to the lexical environment as the variable symbols are
-   only known at run-time."
+  "Walks the symbols, values and body forms. Does not add anything to
+   the lexical environment as the variable symbols are only known at
+   run-time."
 
   (check-list args
     (walk-forms args env)))
@@ -171,7 +158,7 @@
 ;;; QUOTE
 
 (defwalker cl:quote (args)
-  "Walks QUOTE forms. Simply returns the form unchanged."
+  "Returns the arguments unchanged."
 
   args)
 
@@ -179,9 +166,7 @@
 ;;; SETQ
 
 (defwalker cl:setq (args env)
-  "Walks SETQ forms. Encloses the value forms in the code walking
-   macros. Does not expand symbol macros occurring in the variable
-   symbol positions."
+  "Walks the value forms."
 
   (check-list args
     (loop for (var form) on args by #'next-2
@@ -191,8 +176,7 @@
 ;;; TAGBODY
 
 (defwalker cl:tagbody (args env)
-  "Walks TAGBODY forms. Encloses function forms, in the body of the
-   TAGBODY, in the code-walking macro. Does not enclose atom forms."
+  "Walks the body forms (excluding the tags)."
 
   (flet ((enclose-form (form)
 	   (if (atom form)
@@ -204,14 +188,14 @@
 
 
 (defwalker cl:go (args)
-  "Walks GO forms. Returns the form as is."
+  "Returns the argument as is."
   
   args)
 
 ;;; THE
 
 (defwalker cl:the (args env)
-  "Walks THE forms. Encloses the form in the code-walking macro."
+  "Walks the value form."
 
   (match-form (type form) args
     `(,type ,(walk-form form env))))
@@ -221,8 +205,7 @@
 ;;; UNWIND-PROTECT
 
 (defwalker cl:unwind-protect (args env)
-  "Walks UNWIND-PROTECT forms. Encloses the protected form and cleanup
-   forms in the code-walking macro."
+  "Walks the protected form and the cleanup forms."
 
   (check-list args
     (walk-forms args env)))
@@ -232,6 +215,11 @@
 
 #+clisp
 (defwalker system::function-macro-let (args env)
+  "Encloses the body of the form in an environment augmented with the
+   lexical functions introduced by the form. The bodies of the
+   functions are not walked as this form is only used internally by
+   Clisp's implementation of CLOS."
+  
   (match-form ((&rest fns) . body) args
     (let ((ext-env (copy-environment (get-environment env) env)))
       (loop for (fn) in fns do (add-function fn ext-env))

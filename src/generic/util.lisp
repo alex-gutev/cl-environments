@@ -32,6 +32,7 @@
   ((message :initarg :message
 	    :reader message
 	    :initform nil))
+  
   (:documentation
    "Condition raised when a syntax error is encountered in code being
     walked."))
@@ -47,7 +48,8 @@
 (defun walk-error (form msg)
   "Signals a WALK-PROGRAM-ERROR with a SKIP-WALK restart established,
    which returns FORM if invoked. MSG is the value of the MESSAGE slot
-   of the WALK-PROGRAM-ERROR condition object."
+   of the WALK-PROGRAM-ERROR condition object which is to be
+   signaled."
   
   (restart-case
       (error 'walk-program-error :message msg)
@@ -73,16 +75,20 @@
 (defpattern optional (arg)
   `(or ,arg nil))
 
+
 ;;; Macros
 
 (defmacro! skip-walk-errors (&body body)
+  "Surrounds BODY in a HANDLER-BIND which invokes the SKIP-WALK
+   restart when the WALK-PROGRAM-ERROR condition is signaled."
+  
   `(handler-bind ((walk-program-error #'skip-walk))
      ,@body))
 
 (defmacro! match-form (pattern o!form &body body)
   "Performs list destructuring on FORM with PATTERN being the list
-   structure. If FORM does not match the structure denoted by PATTERN
-   a WALK-PROGRAM-ERROR is signaled, with a SKIP-WALK restart
+   structure. If FORM does not match the structure described by
+   PATTERN a WALK-PROGRAM-ERROR is signaled, with a SKIP-WALK restart
    established. PATTERN may contain nested lists, dotted lists,
    &OPTIONAL (without init-forms or supplied-p variables) and &REST
    parameters. The difference between &REST and a dotted list is that
@@ -114,8 +120,8 @@
 
 (defmacro! check-list (o!thing &body body)
   "Checks that THING is a proper list and evaluates the forms in
-   BODY. If THING is not a proper list, a WALK-ERROR is signalled,
-   with a SKIP-WALK restart established (which simply returns THING)."
+   BODY. If THING is not a proper list, a WALK-ERROR is signaled, with
+   a SKIP-WALK restart established (which simply returns THING)."
   
   `(if (proper-list-p ,g!thing)
        (progn ,@body)

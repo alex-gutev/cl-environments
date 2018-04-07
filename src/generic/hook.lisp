@@ -35,16 +35,29 @@
     cl:defvar
     cl:defmacro
     cl:define-symbol-macro
-    cl:declaim))
+    cl:declaim)
+
+  "List of macros which should be walked prior expansion.")
 
 (defun pre-expand-walk (form env)
+  "If FORM is a function macro-form and the macro symbol is a member
+   of the list +WALK-MACROS+, walks the form, otherwise returns FORM
+   as is."
+  
   (match form
     ((list* (guard op (member op +walk-macros+)) _)
      (walk-form form env))
 
     (_ form)))
 
+
+;; TODO: Call the previous *MACROEXPAND-HOOK*, requires that
+;; *OLD-MACROEXPAND-HOOK* be set correctly first
+
 (defun walker-hook (fn form env)
+  "Macro-expansion hook function. Walks the result of the expansion of
+   FORM."
+  
   (let* ((form (pre-expand-walk form env))
 	 (expansion (funcall fn form env)))
     (match form
@@ -54,7 +67,18 @@
       (_ expansion))))
 
 (defun enable-hook ()
+  "Sets the code-walker as the macro-expansion hook, this allows
+   information about the lexical-environment to be stored and
+   retrieved later."
+  
   (setf *macroexpand-hook* #'walker-hook))
 
+;; TODO: Restore to previous value, requires that
+;; *OLD-MACROEXPAND-HOOK* be set correctly first
+
 (defun disable-hook ()
+  "Restores the macro-expansion hook to FUNCALL, thus disabling the
+   top-level form code-walker. Lexical-environment information will no
+   longer be stored and thus will no longer be retrievable."
+  
   (setf *macroexpand-hook* #'funcall))
