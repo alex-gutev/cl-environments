@@ -30,19 +30,18 @@
 
 ;;; LET forms
 
-(defwalker cl:let (args env)
+(defwalker cl:let (args)
   "Walks LET binding forms, augments the environment ENV with the
    bindings introduced, adds the declaration information to the
    bindings and encloses the body of the LET form in the augmented
    environment."
 
   (match-form ((&rest bindings) . body) args
-    (let* ((old-env (get-environment env))
-	   (new-env (copy-environment old-env env)))
-      (cons (walk-let-bindings bindings new-env env)
-	    (walk-body body new-env)))))
+    (let* ((env (copy-environment (get-environment *env*))))
+      (cons (walk-let-bindings bindings env)
+	    (walk-body body env)))))
 
-(defun walk-let-bindings (bindings env lex-env)
+(defun walk-let-bindings (bindings env)
   "Walks the bindings of a LET form. Adds the variable bindings to the
    environment ENV and encloses the init-forms of the bindings (if any)
    in the code walking macro. Returns the new bindings list."
@@ -50,7 +49,7 @@
   (flet ((enclose-binding (binding)
 	   (match binding
 	     ((list var initform)
-	      `(,var ,(walk-form initform lex-env)))
+	      `(,var ,(walk-form initform)))
 	     (_ binding))))
 
     (loop
@@ -79,26 +78,26 @@
 
 ;;; LET* forms
 
-(defwalker cl:let* (args env)
+(defwalker cl:let* (args)
   "Walks LET* binding forms: encloses each init-form in an environment
    containing all variables in the preceding bindings. Encloses the
    body in an environment containing all the variable bindings
    introduced by the LET*."
 
   (match-form ((&rest bindings) . body) args
-    (let* ((old-env (get-environment env))
-	   (body-env (create-let*-env bindings old-env env))
+    (let* ((env (get-environment *env*))
+	   (body-env (create-let*-env bindings env))
 	   (body (walk-body body body-env))
-	   (bindings (walk-let*-bindings bindings old-env body-env)))
+	   (bindings (walk-let*-bindings bindings env body-env)))
 
       (cons bindings body))))
 
-(defun create-let*-env (bindings env lex-env)
+(defun create-let*-env (bindings env)
   "Creates the lexical environment for the body of a LET* form, by
    adding the BINDINGS to a copy of the environment ENV. Returns the
    new environment."
 
-  (let ((env (copy-environment env lex-env)))
+  (let ((env (copy-environment env)))
     (dolist (binding bindings env)
       (add-variable (ensure-car binding) env))))
 
@@ -128,21 +127,21 @@
 
 ;;; Lexical functions
 
-(defwalker cl:flet (args env)
+(defwalker cl:flet (args)
   "Walks FLET forms. The functions introduced by the FLET are added to
    a copy of the environment ENV, in which the body, of the FLET form,
    is enclosed. The body of each function is enclosed in an
    environment containing the variables in the function's lambda list,
    however it does not contain the functions themselves."
   
-  (let* ((env (enclose-environment (get-environment env) env))
+  (let* ((env (get-environment *env*))
 	 (new-env (copy-environment env)))
 
     (match-form ((&rest fns) . body) args
       (cons (mapcar (rcurry #'walk-local-fn env new-env) fns)
 	    (walk-body body new-env)))))
 
-(defwalker cl:labels (args env)
+(defwalker cl:labels (args)
   "Walks LABELS forms. The functions introduced by the LABELS are
    added to a copy of the environment ENV, in which the body, of the
    LABELS form, is enclosed. The body of each function is enclosed in
@@ -151,7 +150,7 @@
    declarations, bound to the functions introduced by the LABELS, are
    added to the environments of the function bodies."
   
-  (let* ((env (copy-environment (get-environment env) env))
+  (let* ((env (copy-environment (get-environment *env*)))
 	 (body-env (copy-environment env)))
     
     (labels
@@ -209,7 +208,7 @@
 
 ;;; Lexical Macros
 
-(defwalker cl:macrolet (args env)
+(defwalker cl:macrolet (args)
   "Walks MACROLET forms. Each macro is added to a copy of the
    environment ENV, in which the body of the MACROLET form is
    enclosed. The body of each macro is enclosed in an environment
@@ -218,7 +217,7 @@
 
   (match-form ((&rest macros) . body) args
     
-    (let* ((env (enclose-environment (get-environment env) env))
+    (let* ((env (get-environment *env*))
 	   (new-env (copy-environment env)))
       
       (cons (mapcar (rcurry #'walk-local-macro env new-env) macros)
@@ -252,14 +251,14 @@
 
 ;;; Lexical Symbol Macros
 
-(defwalker cl:symbol-macrolet (args env)
+(defwalker cl:symbol-macrolet (args)
   "Walks SYMBOL-MACROLET forms. Each symbol macro is added to a copy
    of the environment ENV, and the body is enclosed in this
    environment."
 
   (match-form ((&rest macros) . body) args
     (if (not (eq (caar macros) *env-sym*))
-	(let ((env (copy-environment (get-environment env) env)))
+	(let ((env (copy-environment (get-environment *env*))))
 	  (mapc (compose (rcurry #'add-symbol-macro env) #'first) macros)
 	  (cons macros (walk-body body env)))
 	args)))

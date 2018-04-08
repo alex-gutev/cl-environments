@@ -37,13 +37,9 @@
    and the third value is an association list containing declaration
    information."
 
-  (typecase env
-    (environment
-     (slot-values (binding-type local declarations)
-	 (variable-binding variable env)
-       (values binding-type local declarations)))
-
-    (otherwise (variable-information variable (get-environment env)))))
+  (slot-values (binding-type local declarations)
+      (variable-binding variable (get-environment env))
+    (values binding-type local declarations)))
 
 (defun function-information (function &optional env)
   "Returns information about the function binding for the symbol
@@ -52,25 +48,15 @@
    the second value is true if there is a local binding and the third
    value is an association list containing declaration information."
 
-  (typecase env
-    (environment
-  
-     (slot-values (binding-type local declarations)
-	 (function-binding function env)
-       (values binding-type local declarations)))
-
-    (otherwise (function-information function (get-environment env)))))
+  (slot-values (binding-type local declarations)
+      (function-binding function (get-environment env))
+    (values binding-type local declarations)))
 
 (defun declaration-information (decl-name &optional env)
   "Returns information about the declaration DECL-NAME in the
    environment ENV."
 
-  (typecase env
-    (environment 
-     (declaration-info decl-name env))
-
-    (otherwise
-     (declaration-information decl-name (get-environment env)))))
+  (declaration-info decl-name (get-environment env)))
 
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)

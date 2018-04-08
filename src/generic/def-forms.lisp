@@ -68,15 +68,15 @@
 
 ;;;; Variable Definitions
 
-(defwalker cl:defparameter (args env)
+(defwalker cl:defparameter (args)
   "Walks DEFPARAMETER forms. Adds the variable binding (of
    type :SPECIAL) to the global environment and walks the init-form."
   
   (match-form (name init-form . doc) args
     (add-global-variable name)
-    (list* name (walk-form init-form env) doc)))
+    (list* name (walk-form init-form) doc)))
 
-(defwalker cl:defvar (args env)
+(defwalker cl:defvar (args)
   "Walks DEFVAR forms. Adds the variable binding (of type :SPECIAL) to
    the global environment and walks the init-form."
   
@@ -85,18 +85,18 @@
     (cons name
 	  (destructuring-bind (&optional (init-form nil init-p) &rest doc) args
 	    (when init-p
-	      (cons (walk-form init-form env) doc))))))
+	      (cons (walk-form init-form) doc))))))
 
 
 ;;;; Constant Definitions
 
-(defwalker cl:defconstant (args env)
+(defwalker cl:defconstant (args)
   "Walks DEFCONSTANT forms. Adds the variable binding (of
    type :CONSTANT) to the global environment and walks the init-form."
   
   (match-form (name init-form . doc) args
     (add-global-variable name :constant)
-    (list* name (walk-form init-form env) doc)))
+    (list* name (walk-form init-form) doc)))
 
 
 ;;;; Macros
@@ -113,13 +113,13 @@
 
 ;;; DEFINE-SYMBOL-MACRO
 
-(defwalker cl:define-symbol-macro (args env)
+(defwalker cl:define-symbol-macro (args)
   "Walks DEFINE-SYMBOL-MACRO forms. Adds the symbol macro to the
    global environment."
   
   (match-form (name form) args
     (add-global-variable :symbol-macro)
-    (list name (walk-form form env))))
+    (list name form)))
 
 
 ;;; Global Declarations (DECLAIM)
@@ -132,7 +132,8 @@
   (check-list args
     (dolist (arg args args)
       (match-form (decl &rest args) arg
-	(walk-declaration decl args *global-environment* t)))))
+	(let ((*env* nil))
+	  (walk-declaration decl args *global-environment* t))))))
 
 
 ;;; Utility Functions

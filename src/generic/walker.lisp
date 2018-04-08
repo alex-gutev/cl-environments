@@ -25,14 +25,18 @@
 
 (in-package :cl-environments)
 
+(defvar *env* nil
+  "The implementation-specific environment in which the form,
+   currently being walked, occurs.")
+
 ;;; Code-Walker Macro
 
-(defmacro %walk-form (form &environment env)
+(defmacro %walk-form (form &environment *env*)
   "Code-walker macro, simply invokes the WALK-FORM function. This
    macro is used when FORM needs to be walked in an augmented
    environment."
   
-  (walk-form form env))
+  (walk-form form))
 
 (defun enclose-form (form)
   "Encloses FORM in the code-walker macro."
@@ -51,42 +55,42 @@
 
 ;;; Code-Walker function
 
-(defun walk-form (form env)
+(defun walk-form (form)
   "Walks the form FORM and its sub-forms, enclosing them in an
    augmented environment if necessary."
 
   (match form
     ((cons op args)
-     (walk-fn-form op args env))
+     (walk-fn-form op args))
 
-    (_ (walk-atom-form form env))))
+    (_ (walk-atom-form form))))
 
-(defun walk-forms (forms env)
+(defun walk-forms (forms)
   "Walks each form in FORMS."
   
-  (mapcar (rcurry #'walk-form env) forms))
+  (mapcar #'walk-form forms))
 
 
 ;;; Walking atom forms
 
-(defun walk-atom-form (form env)
+(defun walk-atom-form (form)
   "Walks atom forms. If the form is a symbol-macro, it is expanded and
    the result is walked otherwise FORM is returned as is."
   
-  (multiple-value-bind (form expanded-p) (macroexpand-1 form env)
+  (multiple-value-bind (form expanded-p) (macroexpand-1 form *env*)
     (if expanded-p
-	(walk-form form env)
+	(walk-form form)
 	form)))
 
 
 ;;; Walking function call forms
 
-(defgeneric walk-fn-form (op args env)
+(defgeneric walk-fn-form (op args)
   (:documentation
    "Walks a function call expression with function/macro/special
     operator OP and arguments ARGS."))
 
-(defmethod walk-fn-form (op args env)
+(defmethod walk-fn-form (op args)
   "Walks a function call expression which is not one of the recognized
    CL special forms. If OP names a macro it is expanded and the result
    is walked. If OP is a special operator the function call expression
@@ -94,23 +98,23 @@
    neither a macro nor special operator it is assumed to be a
    function, all arguments are walked."
   
-  (multiple-value-bind (form expanded-p) (macroexpand-1 (cons op args) env)
+  (multiple-value-bind (form expanded-p) (macroexpand-1 (cons op args) *env*)
     (if expanded-p
 	form ; Not walked as that should be already done by *macroexpand-hook*
-	(walk-function op args env))))
+	(walk-function op args))))
 
-(defun walk-function (op args env)
+(defun walk-function (op args)
   "Walks the function call expression where OP names an ordinary
    function. If op is a LAMBDA expression it is walked otherwise OP is
    left as is. The form arguments ARGS are walked."
   
   (flet ((walk-args (args)
 	   (check-list args
-	     (walk-forms args env))))
+	     (walk-forms args))))
     
     (match op
-      ((cons 'cl:lambda def)
-       (cons (cons 'cl:lambda (walk-fn-def def (get-environment env))) (walk-args args)))
+      ((cons 'cl:lambda _)
+       (cons (second (walk-fn-form 'function (list op))) (walk-args args)))
 
       ((type symbol)
        (if (special-operator-p op)
@@ -121,7 +125,7 @@
 
 ;;; Code walker definition macro
 
-(defmacro! defwalker (op (arg-var &optional (env-var (gensym))) &body body)
+(defmacro! defwalker (op (arg-var) &body body)
   "Defines a code-walker method for the operator OP. ARG-VAR is bound
    to the operator arguments and ENV-VAR is bound to the lexical
    environment in which the operator appears. The forms in BODY,
@@ -133,7 +137,7 @@
   (multiple-value-bind (body decl doc)
       (parse-body body :documentation t)
     
-    `(defmethod walk-fn-form ((,g!op (eql ',op)) ,arg-var (,env-var t))
+    `(defmethod walk-fn-form ((,g!op (eql ',op)) ,arg-var)
        ,@(ensure-list doc) ,@decl
 
        (cons ,g!op (skip-walk-errors

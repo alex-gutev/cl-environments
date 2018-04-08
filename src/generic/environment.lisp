@@ -149,15 +149,7 @@
     :documentation
     "Functions which handle user-defined declarations. Stored as a
      hash table where the key is the user-defined declaration name and
-     the value is the function.")
-
-   (lexical-environment
-    :initform nil
-    :initarg :lexical-environment
-    :accessor lexical-environment
-    :documentation
-    "The implementation-specific environment in which this environment
-     is contained."))
+     the value is the function."))
 
   (:documentation
    "The extended environment class. Stores information about the
@@ -168,7 +160,7 @@
   "The global 'null' extended environment object.")
 
 
-(defun copy-environment (env &optional (lex-env (lexical-environment env)))
+(defun copy-environment (env)
   "Copies the environment object ENV. A shallow copy of the hash
    tables containing the mappings between symbols and bindings is
    performed, that is the `binding' objects themselves are not
@@ -185,24 +177,8 @@
 		   :variables (copy-hash-table variables)
 		   :functions (copy-hash-table functions)
 		   :declarations (copy-hash-table declarations)
-		   :decl-functions (copy-hash-table decl-functions)
-		   :lexical-environment lex-env)))
+		   :decl-functions (copy-hash-table decl-functions))))
 
-(defun enclose-environment (env lex-env)
-  "Creates a shallow copy (hash-tables are not copied) of the
-   environment ENV and sets its LEXICAL-ENVIRONMENT slot to LEX-ENV."
-  
-  (with-slots (variables
-	       functions
-	       declarations
-	       decl-functions) env
-  
-    (make-instance 'environment
-		   :variables variables
-		   :functions functions
-		   :declarations declarations
-		   :decl-functions decl-functions
-		   :lexical-environment lex-env)))
 
 
 ;;; Local Environments

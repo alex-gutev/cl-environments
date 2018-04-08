@@ -39,14 +39,14 @@
 
   "List of macros which should be walked prior expansion.")
 
-(defun pre-expand-walk (form env)
+(defun pre-expand-walk (form)
   "If FORM is a function macro-form and the macro symbol is a member
    of the list +WALK-MACROS+, walks the form, otherwise returns FORM
    as is."
   
   (match form
     ((list* (guard op (member op +walk-macros+)) _)
-     (walk-form form env))
+     (walk-form form))
 
     (_ form)))
 
@@ -54,15 +54,15 @@
 ;; TODO: Call the previous *MACROEXPAND-HOOK*, requires that
 ;; *OLD-MACROEXPAND-HOOK* be set correctly first
 
-(defun walker-hook (fn form env)
+(defun walker-hook (fn form *env*)
   "Macro-expansion hook function. Walks the result of the expansion of
    FORM."
   
-  (let* ((form (pre-expand-walk form env))
-	 (expansion (funcall fn form env)))
+  (let* ((form (pre-expand-walk form))
+	 (expansion (funcall fn form *env*)))
     (match form
       ((list* (not '%walk-form) _)
-       (walk-form expansion env))
+       (walk-form expansion))
       
       (_ expansion))))
 

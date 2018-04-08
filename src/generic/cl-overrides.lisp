@@ -67,47 +67,13 @@
 
 
 
-(defgeneric lexical-environment (env)
-  (:documentation
-   "Returns the implementation-specific lexical environment.")
+;;; Re-export all symbols imported from the CL package except symbols
+;;; which have been shadowed
 
-  (:method (env)
-    "Non-specialized method, simply returns ENV. This allows this
-     accessor to be used with both `environment' objects and
-     implementation-specific lexical environments."
-  
-    env))
-
-
-
-;;; The functions implemented below simply call the CL functions,
-;;; however if the environment passed is an `environment' object, the
-;;; implementation specific environment stored in the
-;;; LEXICAL-ENVIRONMENT slot is passed as the environment parameter
-;;; instead.
-
-
-(defun macro-function (symbol &optional env)
-  (cl:macro-function symbol (lexical-environment env)))
-
-(defun (setf macro-function) (fn symbol &optional env)
-  (setf (cl:macro-function symbol (lexical-environment env)) fn))
-
-
-(defun macroexpand-1 (form &optional env)
-  (cl:macroexpand-1 form (lexical-environment env)))
-
-(defun macroexpand (form &optional env)
-  (cl:macroexpand form (lexical-environment env)))
-
-
-(defun get-setf-expansion (place &optional env)
-  (cl:get-setf-expansion place (lexical-environment env)))
-
-
-(defun compiler-macro-function (name &optional env)
-  (cl:compiler-macro-function name (lexical-environment env)))
-
-(defun (setf compiler-macro-function) (fn name &optional env)
-  (declare (ignore env))
-  (setf (cl:compiler-macro-function name) fn))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let ((shadowed (mapcar #'symbol-name (package-shadowing-symbols :cl-environments))))
+    (do-external-symbols (sym :cl)
+      (export (if (member (symbol-name sym) shadowed :test #'string=)
+		  (find-symbol (symbol-name sym) :cl-environments)
+		  (list sym))
+	      :cl-environments))))

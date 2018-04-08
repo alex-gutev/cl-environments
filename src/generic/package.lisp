@@ -41,21 +41,13 @@
 		:make-simple-collector
 		:make-simple-collector-to-place)
 
-  (:shadow
-   
-   :flet
-   :labels
-   :let
-   :let*
-   :locally
-   :macrolet
-   :symbol-macrolet
-
-   :macro-function
-   :macroexpand-1
-   :macroexpand
-   :get-setf-expansion
-   :compiler-macro-function)
+  (:shadow :flet
+	   :labels
+	   :let
+	   :let*
+	   :locally
+	   :macrolet
+	   :symbol-macrolet)
 
   (:export :variable-information
 	   :function-information

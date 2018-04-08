@@ -46,16 +46,15 @@
 		  ((:file "package")
 		   (:file "cl-overrides")
 		   (:file "util")
+		   (:file "walker")
 		   (:file "environment")
 		   (:file "declarations")
-		   (:file "walker")
 		   (:file "lambda")
 		   (:file "let-forms")
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "hook")
-		   (:file "cl-environments"))))))
+		   (:file "hook"))))))
   
   :depends-on (:alexandria
 	       :anaphora

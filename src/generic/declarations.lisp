@@ -192,7 +192,7 @@
   (declare (ignore global))
 
   (awhen (declaration-function decl ext-env)
-    (multiple-value-call #'add-decl-info (funcall it args ext-env) ext-env)))
+    (multiple-value-call #'add-decl-info (funcall it args *env*) ext-env)))
 
 (defun add-decl-info (type info ext-env)
   "Adds the information returned by a declaration function to the
