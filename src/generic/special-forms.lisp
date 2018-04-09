@@ -101,8 +101,7 @@
   "Walks the value form in the global NIL environment."
 
   (match-form (form &optional read-only-p) args
-    (let ((*env* nil))
-      `(,(walk-form form) ,read-only-p))))
+    `(,(enclose-in-env *global-environment* (list form)) ,read-only-p)))
 
 
 ;;; LOCALLY
