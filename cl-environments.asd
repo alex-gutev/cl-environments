@@ -40,6 +40,23 @@
 		   (:file "util")
 		   (:file "macro-util")))
 
+		 #+ccl
+		 (:module "ccl"
+		  :serial t
+		  :components
+		  ((:file "../generic/package")
+		   (:file "../generic/cl-overrides")
+		   (:file "../generic/util")
+		   (:file "../generic/walker")
+		   (:file "environment")
+		   (:file "declarations")
+		   (:file "lambda")
+		   (:file "let-forms")
+		   (:file "special-forms")
+		   (:file "cltl2-interface")
+		   (:file "hook")))
+		 
+		 #-(or ccl sbcl ecl abcl cmucl allegro lispworks)
 		 (:module "generic"
 		  :serial t
 		  :components
