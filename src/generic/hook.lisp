@@ -62,7 +62,11 @@
 	 (expansion (funcall fn form *env*)))
     (match form
       ((list* (not '%walk-form) _)
-       (walk-form expansion))
+       
+       (let ((walked-form (walk-form expansion)))
+	 (if (equal walked-form form)
+	     form
+	     walked-form)))
       
       (_ expansion))))
 
