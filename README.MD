@@ -17,12 +17,12 @@ implementations of the environment API functions.
 The following functions/macros are provided by this library on all
 implementations:
 
-* *VARIABLE-INFORMATION*
-* *FUNCTION-INFORMATION*
-* *DECLARATION-INFORMATION*
-* *DEFINE-DECLARATION*
+* `VARIABLE-INFORMATION`
+* `FUNCTION-INFORMATION`
+* `DECLARATION-INFORMATION`
+* `DEFINE-DECLARATION`
 
-*AUGMENT-ENVIRONMENT* cannot be implemented on implementations which
+`AUGMENT-ENVIRONMENT` cannot be implemented on implementations which
 do not provide the functionality natively, since it requires that the
 macro-expansion functions be overridden to handle extended
 environment objects, however functions cannot be reliably overridden
