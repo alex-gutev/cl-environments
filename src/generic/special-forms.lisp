@@ -82,6 +82,10 @@
     #+clisp
     ((list name (and (list* 'cl:lambda _) expr))
      (list name (second (walk-fn-form 'function (list expr)))))
+
+    #+ecl
+    ((list (list* 'ext:lambda-block name expr))
+     (list (list* 'ext:lambda-block name (walk-fn-def expr (get-environment *env*)))))
     
     (_ args)))
 
