@@ -31,6 +31,14 @@
 (defun gensyms (syms &key (key #'identity))
   (mapcar (compose #'gensym #'symbol-name (curry #'funcall key)) syms))
 
+(defun reexport-all-symbols (from-package)
+  (let ((shadowed (mapcar #'symbol-name (package-shadowing-symbols *package*))))
+    (do-external-symbols (sym from-package)
+      (export (if (member (symbol-name sym) shadowed :test #'string=)
+		  (find-symbol (symbol-name sym) *package*)
+		  (list sym))
+	      *package*))))
+
 (defmacro! let-if ((&rest bindings) condition &body body)
   "Allows variables to be initialized with different init-forms based
    on a condition. BINDINGS is a list of bindings where the first

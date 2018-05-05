@@ -40,6 +40,9 @@
 		   (:file "util")
 		   (:file "macro-util")))
 
+		 #+sbcl
+		 (:file "other/sbcl")
+
 		 #+ccl
 		 (:module "ccl"
 		  :serial t

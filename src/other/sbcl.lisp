@@ -1,6 +1,6 @@
-;;;; package.lisp
+;;;; sbcl.lisp
 ;;;;
-;;;; Copyright 2018 Alexander Gutev
+;;;; Copyright 2017 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,18 +23,36 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments.util
+(require :sb-cltl2)
+
+(defpackage :cl-environments
   (:use :common-lisp
+	:sb-cltl2
 	:alexandria
 	:anaphora
+	:iterate
 	:optima
-	:named-readtables)
 
-  (:import-from :let-over-lambda
-		:defmacro!
-		:lol-syntax)
+	:cl-environments.util)
 
-  (:export :let-if
-	   :slot-values
-	   :match-state
-	   :reexport-all-symbols))
+  (:shadow :define-declaration)
+
+  (:export :variable-information
+	   :function-information
+	   :declaration-information
+	   :define-declaration))
+
+(in-package :cl-environments)
+
+
+;; SBCL includes declaration name in arguments
+
+(defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
+  (with-gensyms (args)
+    `(sb-cltl2:define-declaration ,decl-name (,args ,env-var)
+       (declare (ignorable ,env-var))
+       (let ((,arg-var (rest ,args)))
+	 ,@body))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (reexport-all-symbols :cl))
