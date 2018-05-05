@@ -1,6 +1,6 @@
 ;;;; sbcl.lisp
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2018 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,7 +23,8 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(require :sb-cltl2)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (require :sb-cltl2))
 
 (defpackage :cl-environments
   (:use :common-lisp
