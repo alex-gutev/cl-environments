@@ -86,6 +86,10 @@
     #+ecl
     ((list (list* 'ext:lambda-block name expr))
      (list (list* 'ext:lambda-block name (walk-fn-def expr (get-environment *env*)))))
+
+    #+abcl
+    ((list (list* 'system:named-lambda name expr))
+     (list (list* 'system:named-lambda name (walk-fn-def expr (get-environment *env*)))))
     
     (_ args)))
 

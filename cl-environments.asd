@@ -59,7 +59,7 @@
 		   (:file "cltl2-interface")
 		   (:file "hook")))
 		 
-		 #-(or ccl sbcl abcl cmucl allegro lispworks)
+		 #-(or ccl sbcl cmucl allegro lispworks)
 		 (:module "generic"
 		  :serial t
 		  :components
