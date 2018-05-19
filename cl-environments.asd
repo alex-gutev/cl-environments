@@ -44,13 +44,13 @@
 		 (:file "other/sbcl")
 
 		 #+ccl
-		 (:module "ccl"
+		 (:module "partial"
 		  :serial t
 		  :components
-		  ((:file "../generic/package")
-		   (:file "../generic/cl-overrides")
-		   (:file "../generic/util")
-		   (:file "../generic/walker")
+		  ((:file "../full/package")
+		   (:file "../full/cl-overrides")
+		   (:file "../full/util")
+		   (:file "../full/walker")
 		   (:file "environment")
 		   (:file "declarations")
 		   (:file "lambda")
@@ -60,7 +60,7 @@
 		   (:file "hook")))
 		 
 		 #-(or ccl sbcl cmucl allegro lispworks)
-		 (:module "generic"
+		 (:module "full"
 		  :serial t
 		  :components
 		  ((:file "package")
