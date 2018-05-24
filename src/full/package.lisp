@@ -47,7 +47,9 @@
 	   :let*
 	   :locally
 	   :macrolet
-	   :symbol-macrolet)
+	   :symbol-macrolet
+
+	   #+abcl :defun)
 
   (:export :variable-information
 	   :function-information

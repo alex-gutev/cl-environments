@@ -63,7 +63,10 @@
   (let* (&rest bindings) &body body)
   (locally &body body)
   (macrolet (&rest bindings) &body body)
-  (symbol-macrolet (&rest bindings) &body body))
+  (symbol-macrolet (&rest bindings) &body body)
+
+  #+abcl
+  (defun name lambda-list &body body))
 
 
 

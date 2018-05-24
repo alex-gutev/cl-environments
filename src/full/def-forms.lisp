@@ -36,11 +36,20 @@
 
 ;;; DEFUN
 
+#-abcl
 (defwalker cl:defun (args)
   "Walks DEFUN forms, adds the function to the global environment."
 
   (walk-global-function args :function)
   args)
+
+#+abcl
+(defwalker cl:defun (args)
+  (walk-global-function args :function)
+  
+  (match-form (name . def) args
+    (let ((env (copy-environment (get-environment *env*))))
+      `(,name ,@ (walk-fn-def def env t)))))
 
 
 ;;;; Generic Functions
