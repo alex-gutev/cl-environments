@@ -32,15 +32,6 @@
 
 	:cl-environments.util)
 
-  (:import-from :let-over-lambda
-		:defmacro!
-		:defun!
-		:group)
-
-  (:import-from :collectors
-		:make-simple-collector
-		:make-simple-collector-to-place)
-
   (:shadow :flet
 	   :labels
 	   :let

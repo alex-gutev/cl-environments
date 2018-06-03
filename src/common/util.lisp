@@ -25,8 +25,6 @@
 
 (in-package :cl-environments.util)
 
-(in-readtable lol-syntax)
-
 
 (defun gensyms (syms &key (key #'identity))
   (mapcar (compose #'gensym #'symbol-name (curry #'funcall key)) syms))
@@ -46,16 +44,21 @@
    evaluated if CONDITION evaluates to true, the second element is the
    init-form to evaluate if CONDITION evaluates to false."
 
-  (let ((gensyms (gensyms bindings :key #'car)))
-    `(let ((,g!test ,condition) ,@gensyms)
-       (if ,g!test
-       	   (progn
-       	     ,@(mapcar #2`(setf ,a1 ,(second a2)) gensyms bindings))
-       	   (progn
-       	     ,@(mapcar #2`(setf ,a1 ,(third a2)) gensyms bindings)))
-       (let
-       	   ,(mapcar #2`(,(first a1) ,a2) bindings gensyms)
-	 ,@body))))
+  (labels ((make-setf (sym value)
+	     `(setf ,sym ,value))
+	   (make-binding (binding sym)
+	     `(,(first binding) ,sym)))
+    
+    (let ((gensyms (gensyms bindings :key #'car)))
+      `(let ((,g!test ,condition) ,@gensyms)
+	 (if ,g!test
+	     (progn
+	       ,@(mapcar #'make-setf gensyms (mapcar #'second bindings)))
+	     (progn
+	       ,@(mapcar #'make-setf gensyms (mapcar #'third bindings))))
+	 (let
+	     ,(mapcar #'make-binding bindings gensyms)
+	   ,@body)))))
 
 (defmacro! slot-values ((&rest slots) o!form &body body)
   (flet ((parse-slot (slot)

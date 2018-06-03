@@ -29,6 +29,11 @@
 
 (in-package :cl-environments)
 
+(defmacro cltl2-fn (fn &rest args)
+  `(,(intern (symbol-name fn)
+	     #+ccl :ccl
+	     #+cmucl :extensions) ,@args))
+
 (defun variable-information (variable &optional env)
   "Returns information about the variable binding for the symbol
    VARIABLE, in the environment ENV. Returns three values: the first
@@ -38,7 +43,8 @@
    information."
 
   (let ((info (variable-binding variable (get-environment env))))
-    (multiple-value-bind (type local decl) (ccl:variable-information variable env)
+    (multiple-value-bind (type local decl)
+	(cltl2-fn variable-information variable env)
       (values type local (append decl info)))))
 
 (defun function-information (function &optional env)
@@ -49,7 +55,8 @@
    value is an association list containing declaration information."
 
   (let ((info (function-binding function (get-environment env))))
-    (multiple-value-bind (type local decl) (ccl:function-information function env)
+    (multiple-value-bind (type local decl)
+	(cltl2-fn function-information function env)
       (values type local (append decl info)))))
 
 (defun declaration-information (decl-name &optional env)
@@ -59,7 +66,7 @@
   (let ((ext-env (get-environment env)))
     (if (declaration-function decl-name ext-env)
 	(declaration-info decl-name (get-environment env))
-	(ccl:declaration-information decl-name env))))
+	(cltl2-fn declaration-information decl-name env))))
 
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
@@ -86,7 +93,7 @@
 	     (declare (ignorable ,env-var))
 	     ,@body))
      
-     (ccl:define-declaration ,decl-name (,arg-var)
+     #+ccl (ccl:define-declaration ,decl-name (,arg-var)
        (let (,env-var)
 	 (declare (ignorable ,env-var))
 	 ,@body))

@@ -27,14 +27,11 @@
   (:use :common-lisp
 	:alexandria
 	:anaphora
-	:optima
-	:named-readtables)
+	:optima)
 
-  (:import-from :let-over-lambda
-		:defmacro!
-		:lol-syntax)
+  (:export :defmacro!
 
-  (:export :let-if
+	   :let-if
 	   :slot-values
 	   :match-state
 	   :reexport-all-symbols))

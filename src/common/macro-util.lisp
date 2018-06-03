@@ -25,8 +25,6 @@
 
 (in-package :cl-environments.util)
 
-(in-readtable lol-syntax)
-
 
 (defmacro! match-state (arg &body states)
   "Implements an FSM where each state may specify a pattern and a list
@@ -55,11 +53,14 @@
 
   (let ((next (intern (string 'next)))
 	(from-state (intern (string 'from-state))))
-    (labels ((extract-from (body)
+    (labels ((make-quote (thing)
+	       `(quote ,thing))
+	     
+	     (extract-from (body)
 	       (if (eq (first body) :from)
 		   (let ((states (second body)))
 		     (values (if (listp states)
-				 (cons 'or (mapcar #`(quote ,a1) states))
+				 (cons 'or (mapcar #'make-quote states))
 				 (list 'quote states))
 			     (cddr body)))
 		   (values '_ body)))

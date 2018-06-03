@@ -37,13 +37,14 @@
 		((:module "common"
 		  :components
 		  ((:file "package")
+		   (:file "let-over-lambda")
 		   (:file "util")
 		   (:file "macro-util")))
 
 		 #+sbcl
 		 (:file "other/sbcl")
 
-		 #+ccl
+		 #+(or ccl cmucl)
 		 (:module "partial"
 		  :serial t
 		  :components
@@ -78,11 +79,8 @@
   
   :depends-on (:alexandria
 	       :anaphora
-	       :iterate
 	       :optima
-	       :collectors
-	       :let-over-lambda
-	       :named-readtables)
+	       :collectors)
   
   :in-order-to ((asdf:test-op (asdf:test-op :cl-environments-test))))
 
