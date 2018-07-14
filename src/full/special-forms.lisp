@@ -29,6 +29,29 @@
 ;;;; macros, excluding the lexical binding forms (LET, FLET, etc)
 ;;;; which are implemented in let-forms.lisp.
 
+
+;;; Generic walker for special-forms which evaluate all arguments.
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun walk-all-args (op args)
+    "Walks the arguments as ordinary lisp forms."
+
+    (cons op
+	  (check-list args
+	    (walk-forms args))))
+
+  (set-walker-functions
+   '(cl:catch
+     cl:throw
+     cl:if
+     cl:multiple-value-call
+     cl:multiple-value-prog1
+     cl:progn
+     cl:progv
+     cl:unwind-protect)
+   #'walk-all-args))
+
+
 ;;; BLOCK
 
 (defwalker cl:block (args)
@@ -42,21 +65,6 @@
 
   (match-form (name form) args
     `(,name ,(walk-form form))))
-
-
-;;; CATCH
-
-(defwalker cl:catch (args)
-  "Walks the tag and body of the CATCH form."
-
-  (check-list args
-    (walk-forms args)))
-
-(defwalker cl:throw (args)
-  "Walks the result form of the THROW form."
-
-  (match-form (tag result) args
-    `(,(walk-form tag) ,(walk-form result))))
 
 
 ;;; EVAL-WHEN
@@ -81,7 +89,7 @@
 
     #+clisp
     ((list name (and (list* 'cl:lambda _) expr))
-     (list name (second (walk-fn-form 'function (list expr)))))
+     (list name (second (walk-list-form 'function (list expr)))))
 
     #+ecl
     ((list (list* 'ext:lambda-block name expr))
@@ -92,15 +100,6 @@
      (list (list* 'system:named-lambda name (walk-fn-def expr (get-environment *env*)))))
     
     (_ args)))
-
-
-;;; IF
-
-(defwalker cl:if (args)
-  "Walks the test, then and else forms."
-
-  (check-list args
-    (walk-forms args)))
 
 
 ;;; LOAD-TIME-VALUE
@@ -120,45 +119,6 @@
   
   (let ((ext-env (copy-environment (get-environment *env*))))
     (walk-body args ext-env)))
-
-
-
-;;; MULTIPLE-VALUE-CALL
-
-(defwalker cl:multiple-value-call (args)
-  "Walks all argument forms."
-
-  (check-list args
-    (walk-forms args)))
-
-
-;;; MULTIPLE-VALUE-PROG1
-
-(defwalker cl:multiple-value-prog1 (args)
-  "Walks the result and body forms."
-
-  (check-list args
-    (walk-forms args)))
-
-
-;;; PROGN
-
-(defwalker cl:progn (args)
-  "Walks the body forms."
-
-  (check-list args
-    (walk-forms args)))
-
-
-;;; PROGV
-
-(defwalker cl:progv (args)
-  "Walks the symbols, values and body forms. Does not add anything to
-   the lexical environment as the variable symbols are only known at
-   run-time."
-
-  (check-list args
-    (walk-forms args)))
 
 
 ;;; QUOTE
@@ -184,13 +144,13 @@
 (defwalker cl:tagbody (args)
   "Walks the body forms (excluding the tags)."
 
-  (flet ((enclose-form (form)
+  (flet ((walk-form (form)
 	   (if (atom form)
 	       form
 	       (walk-form form))))
     
     (check-list args
-      (mapcar #'enclose-form args))))
+      (mapcar #'walk-form args))))
 
 
 (defwalker cl:go (args)
@@ -205,16 +165,6 @@
 
   (match-form (type form) args
     `(,type ,(walk-form form))))
-
-
-
-;;; UNWIND-PROTECT
-
-(defwalker cl:unwind-protect (args)
-  "Walks the protected form and the cleanup forms."
-
-  (check-list args
-    (walk-forms args)))
 
 
 ;;; Clisp specific special forms

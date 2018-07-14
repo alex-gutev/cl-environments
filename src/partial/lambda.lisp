@@ -225,60 +225,44 @@
    parsed as a destructuring lambda list, and :ENV indicates whether
    &ENVIRONMENT parameters are accepted."
 
-  (flet ((walk-arg (type arg)
-	   (walk-lambda-list-arg type arg env)))
+  (labels ((walk-arg (type arg)
+	     "Walks lambda-list arguments. TYPE is a keyword
+              identifying the type of argument, ARG is the argument."
+
+	     (case type
+	       (:optional (walk-optional arg))
+	       (:key (walk-key arg))
+	       (:aux (walk-aux arg))
+	       (otherwise arg)))
+
+	   (walk-optional (arg)
+	     "Walks optional arguments. Walks the init form if any."
+
+	     (match (ensure-list arg)
+	       ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
+
+		`(,var ,(walk-form initform) ,@rest))))
+
+	   (walk-key (arg)
+	     "Walks keyword arguments. Walks the init form if any."
+  
+	     (match (ensure-list arg)
+	       ((cons
+		 (and (or (list _ var) var) arg)
+		 (optional (cons initform (and rest (optional (list var-sp))))))
+
+		`(,arg ,(walk-form initform) ,@rest))))
+
+	   (walk-aux (arg)
+	     "Walks auxiliary variables. Walks the init form if any."
+  
+	     (match (ensure-list arg)
+	       ((cons var (optional (list initform)))
+
+		`(,var ,(walk-form initform))))))
 
     (handler-bind
-	((malformed-lambda-list #'skip-walk))
+  	((malformed-lambda-list #'skip-walk))
       (map-lambda-list #'walk-arg list
-		       :destructure destructurep
-		       :env envp))))
-
-(defgeneric walk-lambda-list-arg (type arg env)
-  (:documentation
-   "Walks a lambda-list argument. Returns the new argument and the
-    augmented environment."))
-
-(defmethod walk-lambda-list-arg ((type (eql nil)) keyword (env t))
-  "Walks lambda-list keywords. Simply returns the keyword and
-   environment unchanged."
-  
-  keyword)
-
-
-(defmethod walk-lambda-list-arg ((type (eql :optional)) arg env)
-  "Walks optional arguments. Encloses the init-form (if any) in the
-   environment ENV and augments ENV with a bindings for the argument
-   and supplied-p variable (if any)."
-  
-  (match (ensure-list arg)
-    ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
-     `(,var ,(enclose-in-env env (list initform)) ,@rest))))
-
-(defmethod walk-lambda-list-arg ((type (eql :key)) arg env)
-  "Walks keyword arguments. Encloses the init-form (if any) in the
-   environment ENV and augments ENV with bindings for the argument and
-   supplied-p variable (if any)."
-  
-  (match (ensure-list arg)
-    ((cons
-      (and (or (list _ var) var) arg)
-      (optional (cons initform (and rest (optional (list var-sp))))))
-
-     `(,arg ,(enclose-in-env env (list initform)) ,@rest))))
-
-(defmethod walk-lambda-list-arg ((type (eql :aux)) arg env)
-  "Walks auxiliary variables. Encloses the init-form (if any) in the
-   environment ENV and augments ENV with a binding for the variable."
-  
-  (match (ensure-list arg)
-    ((cons var (optional (list initform)))
-
-     `(,var ,(enclose-in-env env (list initform))))))
-
-(defmethod walk-lambda-list-arg ((type t) arg (env t))
-  "Walks lambda-list arguments which are composed of a single symbol
-   to which the argument is bound. Augments the environment ENV with a
-   binding for the argument."
-  
-  arg)
+  		       :destructure destructurep
+  		       :env envp))))

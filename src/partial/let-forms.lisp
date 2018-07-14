@@ -189,7 +189,7 @@
   (match-form ((&rest macros) . body) args
     (let* ((env (get-environment *env*)))
        (cons (mapcar (rcurry #'walk-local-macro env) macros)
-	    (walk-body body)))))
+	     (walk-body body)))))
 
 (defun walk-local-macro (def mac-env)
   "Walks a lexical macro, defined using MACROLET. Adds the macro to

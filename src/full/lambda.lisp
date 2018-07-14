@@ -226,11 +226,66 @@
    &ENVIRONMENT parameters are accepted."
 
   (let ((env (copy-environment env)))
-    (flet ((walk-arg (type arg)
-	     (multiple-value-bind (arg new-env)
-		 (walk-lambda-list-arg type arg env)
-	       (setf env new-env)
-	       arg)))
+    (labels ((walk-arg (type arg)
+	       "Walks lambda-list arguments. TYPE is a keyword
+                identifying the type of argument, ARG is the
+                argument."
+
+	       (multiple-value-bind (arg new-env)
+		   (case type
+		     (:optional (walk-optional arg))
+		     (:key (walk-key arg))
+		     (:aux (walk-aux arg))
+		     (nil (values arg env))
+		     (otherwise
+		      (add-variable arg env)
+		      (values arg env)))
+		 (setf env new-env)
+		 arg))
+
+	     (walk-optional (arg)
+	       "Walks optional arguments. Encloses the init-form (if
+                any) in the environment ENV and augments ENV with
+                bindings for the argument and supplied-p variable (if
+                any)."
+
+	       (match (ensure-list arg)
+		 ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
+		  (values
+		   `(,var ,(enclose-in-env env (list initform)) ,@rest)
+		   (aprog1 (copy-environment env)
+		     (add-variable var it)
+		     (when var-sp (add-variable var-sp it)))))))
+
+	     (walk-key (arg)
+	       "Walks keyword arguments. Encloses the init-form (if
+                any) in the environment ENV and augments ENV with
+                bindings for the argument and supplied-p variable (if
+                any)."
+
+	       (match (ensure-list arg)
+		 ((cons
+		   (and (or (list _ var) var) arg)
+		   (optional (cons initform (and rest (optional (list var-sp))))))
+
+		  (values
+		   `(,arg ,(enclose-in-env env (list initform)) ,@rest)
+		   (aprog1 (copy-environment env)
+		     (add-variable var it)
+		     (when var-sp (add-variable var-sp it)))))))
+
+	     (walk-aux (arg)
+	       "Walks auxiliary variables. Encloses the init-form (if
+                any) in the environment ENV and augments ENV with a
+                binding for the variable."
+
+	       (match (ensure-list arg)
+		 ((cons var (optional (list initform)))
+
+		  (values
+		   `(,var ,(enclose-in-env env (list initform)))
+		   (aprog1 (copy-environment env)
+		     (add-variable var it)))))))
 
       (handler-bind
 	  ((malformed-lambda-list #'skip-walk))
@@ -239,64 +294,3 @@
 			  :destructure destructurep
 			  :env envp)
 	 env)))))
-
-(defgeneric walk-lambda-list-arg (type arg env)
-  (:documentation
-   "Walks a lambda-list argument. Returns the new argument and the
-    augmented environment."))
-
-(defmethod walk-lambda-list-arg ((type (eql nil)) keyword env)
-  "Walks lambda-list keywords. Simply returns the keyword and
-   environment unchanged."
-  
-  (values keyword env))
-
-
-(defmethod walk-lambda-list-arg ((type (eql :optional)) arg env)
-  "Walks optional arguments. Encloses the init-form (if any) in the
-   environment ENV and augments ENV with a bindings for the argument
-   and supplied-p variable (if any)."
-  
-  (match (ensure-list arg)
-    ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
-     (values
-      `(,var ,(enclose-in-env env (list initform)) ,@rest)
-      (aprog1 (copy-environment env)
-	(add-variable var it)
-	(when var-sp (add-variable var-sp it)))))))
-
-(defmethod walk-lambda-list-arg ((type (eql :key)) arg env)
-  "Walks keyword arguments. Encloses the init-form (if any) in the
-   environment ENV and augments ENV with bindings for the argument and
-   supplied-p variable (if any)."
-  
-  (match (ensure-list arg)
-    ((cons
-      (and (or (list _ var) var) arg)
-      (optional (cons initform (and rest (optional (list var-sp))))))
-
-     (values
-      `(,arg ,(enclose-in-env env (list initform)) ,@rest)
-      (aprog1 (copy-environment env)
-	(add-variable var it)
-	(when var-sp (add-variable var-sp it)))))))
-
-(defmethod walk-lambda-list-arg ((type (eql :aux)) arg env)
-  "Walks auxiliary variables. Encloses the init-form (if any) in the
-   environment ENV and augments ENV with a binding for the variable."
-  
-  (match (ensure-list arg)
-    ((cons var (optional (list initform)))
-
-     (values
-      `(,var ,(enclose-in-env env (list initform)))
-      (aprog1 (copy-environment env)
-	(add-variable var it))))))
-
-(defmethod walk-lambda-list-arg ((type t) arg env)
-  "Walks lambda-list arguments which are composed of a single symbol
-   to which the argument is bound. Augments the environment ENV with a
-   binding for the argument."
-  
-  (add-variable arg env)
-  (values arg env))

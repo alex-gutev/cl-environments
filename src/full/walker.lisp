@@ -29,6 +29,7 @@
   "The implementation-specific environment in which the form,
    currently being walked, occurs.")
 
+
 ;;; Code-Walker Macro
 
 (defmacro %walk-form (form &environment *env*)
@@ -61,7 +62,7 @@
 
   (match form
     ((cons op args)
-     (walk-fn-form op args))
+     (walk-list-form op args))
 
     (_ (walk-atom-form form))))
 
@@ -76,7 +77,7 @@
 (defun walk-atom-form (form)
   "Walks atom forms. If the form is a symbol-macro, it is expanded and
    the result is walked otherwise FORM is returned as is."
-  
+
   (multiple-value-bind (form expanded-p) (macroexpand-1 form *env*)
     (if expanded-p
 	(walk-form form)
@@ -85,62 +86,91 @@
 
 ;;; Walking function call forms
 
-(defgeneric walk-fn-form (op args)
-  (:documentation
-   "Walks a function call expression with function/macro/special
-    operator OP and arguments ARGS."))
+(defvar *walker-functions** (make-hash-table :test #'eq)
+  "Hash-table mapping special operator symbols to their walker
+   functions. The walker function is responsible for walking the
+   arguments, according to the special operator's evaluation rules and
+   returning a new form with an augmented environment if
+   necessary. Walker functions can be added either using
+   SET-WALKER-FUNCTION, SET-WALKER-FUNCTIONS or the DEFWALKER macro.")
 
-(defmethod walk-fn-form (op args)
-  "Walks a function call expression which is not one of the recognized
-   CL special forms. If OP names a macro it is expanded and the result
-   is walked. If OP is a special operator the function call expression
-   is simply returned as is (the arguments are not walked). If OP is
-   neither a macro nor special operator it is assumed to be a
-   function, all arguments are walked."
-  
-  (multiple-value-bind (form expanded-p) (macroexpand-1 (cons op args) *env*)
-    (if expanded-p
-	form ; Not walked as that should be already done by *macroexpand-hook*
-	(walk-function op args))))
+(defun walk-list-form (operator args)
+  "Walks a function call expression with function/macro/special
+   operator OPERATOR and arguments ARGS."
 
-(defun walk-function (op args)
-  "Walks the function call expression where OP names an ordinary
-   function. If op is a LAMBDA expression it is walked otherwise OP is
-   left as is. The form arguments ARGS are walked."
+  (aif (gethash operator *walker-functions**)
+       (funcall it operator args)
+       (walk-function-call operator args)))
+
+(defun walk-function-call (function args)
+  "Walks a function call expression which is not a recognized special
+   form. If FUNCTION names a macro or a special operator, the form is
+   simply returned unchanged (the arguments are not walked). If
+   FUNCTION is neither a macro nor special operator it is assumed to
+   be a function, all arguments are walked."
+
+  (if (and (symbolp function) (macro-function function *env*))
+      (cons function args)
+      (walk-function function args)))
+
+
+(defun walk-function (function args)
+  "Walks the function call expression where FUNCTION is does not name
+   a macro function. If FUNCTION is a LAMBDA expression it is walked
+   otherwise FUNCTION is left as is. The form arguments ARGS are
+   walked, if FUNCTION is not a special operator."
   
   (flet ((walk-args (args)
 	   (check-list args
 	     (walk-forms args))))
     
-    (match op
+    (match function
       ((cons 'cl:lambda _)
-       (cons (second (walk-fn-form 'function (list op))) (walk-args args)))
+       (cons (second (walk-list-form 'function (list function))) (walk-args args)))
 
       ((type symbol)
-       (if (special-operator-p op)
-	   (cons op args) ; Cannot be walked
-	   (cons op (walk-args args))))
+       (if (special-operator-p function)
+	   (cons function args) ; Cannot be walked
+	   (cons function (walk-args args))))
 
-      (_ (cons op args)))))
+      (_ (cons function args)))))
 
-;;; Code walker definition macro
+
+;;; Utilities for adding walker functions
+
+(defun set-walker-function (operator function)
+  "Sets the walker function for OPERATOR."
+
+  (setf (gethash operator *walker-functions**) function))
+
+(defun set-walker-functions (operators function)
+  "Sets the walker function for each operator in the list OPERATORS to
+   FUNCTION."
+
+  (mapc (rcurry #'set-walker-function function) operators))
 
 (defmacro! defwalker (op (arg-var) &body body)
-  "Defines a code-walker method for the operator OP. ARG-VAR is bound
-   to the operator arguments and ENV-VAR is bound to the lexical
-   environment in which the operator appears. The forms in BODY,
-   enclosed in an implicit PROGN, should return the new operator
-   arguments. The result returned by the walker method is the form
-   with the operator OP and the arguments returned by the last form in
-   BODY, effectively (CONS ,OP (PROGN ,@BODY))."
+  "Defines a walker function for the operator OP. ARG-VAR is bound to
+   the arguments of the form. The forms in BODY, enclosed in an
+   implicit PROGN, should return the new operator arguments. The
+   result returned by the walker method is the form with the operator
+   OP and the arguments returned by the last form in BODY,
+   effectively (CONS ,OP (PROGN ,@BODY)). BODY is additionally
+   surrounded in a RESTART-CASE, which establishes the restart
+   SKIP-WALK (returns the arguments unchanged) and in a HANDLER-BIND
+   which invokes the restart in the case of a WALK-PROGRAM-ERROR."
   
   (multiple-value-bind (body decl doc)
       (parse-body body :documentation t)
-    
-    `(defmethod walk-fn-form ((,g!op (eql ',op)) ,arg-var)
-       ,@(ensure-list doc) ,@decl
+    (declare (ignore doc))
 
-       (cons ,g!op (skip-walk-errors
-		     (restart-case (progn ,@body)
-		       (skip-walk () ,arg-var)))))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (set-walker-function ',op
+			    (compile nil
+				     (lambda (,g!op-var ,arg-var)
+				       ,@decl
+				       (declare (ignore ,g!op-var))
+				       (cons ',op (skip-walk-errors
+						    (restart-case (progn ,@body)
+						      (skip-walk () ,arg-var))))))))))
      

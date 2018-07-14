@@ -27,17 +27,6 @@
 
 (in-package :cl-environments)
 
-(defconstant +walk-macros+
-  '(cl:defun
-    cl:defgeneric
-    cl:defmethod
-    cl:defparameter
-    cl:defvar
-    cl:defmacro
-    cl:define-symbol-macro
-    cl:declaim)
-
-  "List of macros which should be walked prior expansion.")
 
 (defun pre-expand-walk (form)
   "If FORM is a function macro-form and the macro symbol is a member
@@ -57,18 +46,20 @@
 (defun walker-hook (fn form *env*)
   "Macro-expansion hook function. Walks the result of the expansion of
    FORM."
-  
-  (let* ((form (pre-expand-walk form))
-	 (expansion (funcall fn form *env*)))
-    (match form
-      ((list* (not '%walk-form) _)
-       
-       (let ((walked-form (walk-form expansion)))
-	 (if (equal walked-form form)
-	     form
-	     walked-form)))
+
+  (let ((*macroexpand-hook* #'funcall))
+    (let* ((form (pre-expand-walk form))
+	   (expansion (funcall fn form *env*)))
       
-      (_ expansion))))
+      (match form
+	((list* (not '%walk-form) _)
+
+	 (let ((walked-form (walk-form expansion)))
+	   (if (equal walked-form form)
+	       form
+	       walked-form)))
+
+	(_ expansion)))))
 
 (defun enable-hook ()
   "Sets the code-walker as the macro-expansion hook, this allows

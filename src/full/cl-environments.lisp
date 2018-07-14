@@ -1,6 +1,6 @@
-;;;; package.lisp
+;;;; cl-environments.lisp
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2018 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,32 +23,19 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments
-  (:use :common-lisp
-	:alexandria
-	:anaphora
-	:iterate
-	:optima
+(in-package :cl-environments)
 
-	:cl-environments.util)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (pushnew :cl-environments-full *features*))
 
-  (:import-from :collectors
-		:make-simple-collector
-		:make-simple-collector-to-place)
+(defconstant +walk-macros+
+  '(cl:defun
+    cl:defgeneric
+    cl:defmethod
+    cl:defparameter
+    cl:defvar
+    cl:defmacro
+    cl:define-symbol-macro
+    cl:declaim)
 
-  (:shadow :flet
-	   :labels
-	   :let
-	   :let*
-	   :locally
-	   :macrolet
-	   :symbol-macrolet
-
-	   #+abcl :defun)
-
-  (:export :variable-information
-	   :function-information
-	   :declaration-information
-	   :define-declaration))
-
-
+  "List of macros which should be walked prior expansion.")
