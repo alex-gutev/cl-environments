@@ -47,6 +47,9 @@
 		 #+allegro
 		 (:file "other/allegro")
 
+		 #+lispworks
+		 (:file "other/lispworks")
+
 		 #+(or ccl cmucl)
 		 (:module "partial"
 		  :serial t
