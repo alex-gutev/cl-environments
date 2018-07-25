@@ -44,6 +44,9 @@
 		 #+sbcl
 		 (:file "other/sbcl")
 
+		 #+allegro
+		 (:file "other/allegro")
+
 		 #+(or ccl cmucl)
 		 (:module "partial"
 		  :serial t
