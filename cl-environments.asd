@@ -27,7 +27,7 @@
   :description "Implements the CLTL2 environment access functionality
                 for implementations which do not provide the
                 functionality to the programmer."
-  
+
   :author "Alexander Gutev"
   :license "MIT"
   :serial t
@@ -67,7 +67,7 @@
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
 		   (:file "../full/hook")))
-		 
+
 		 #-(or ccl sbcl cmucl allegro lispworks)
 		 (:module "full"
 		  :serial t
@@ -85,12 +85,12 @@
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
 		   (:file "hook"))))))
-  
+
   :depends-on (:alexandria
 	       :anaphora
 	       :optima
 	       :collectors)
-  
+
   :in-order-to ((asdf:test-op (asdf:test-op :cl-environments-test))))
 
 (asdf:defsystem #:cl-environments-test
@@ -103,8 +103,16 @@
   :components ((:module "test"
 		:components
 		((:module "generic"
-		  :components
-		  ((:file "package")
-		   (:test-file "declarations"))))))
+			  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
+			  :components
+			  ((:file "package")
+			   (:test-file "declarations")))
+
+		 (:module "partial"
+			  :if-feature (:or :ccl :cmucl)
+			  :components
+			  ((:file "package")
+			   (:test-file "declarations"))))))
+
   :perform (asdf:test-op :after (op c)
 			 (funcall (intern #.(string :run) :prove) c)))

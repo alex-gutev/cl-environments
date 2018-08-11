@@ -35,18 +35,6 @@
    #'WALKER-HOOK.")
 
 
-
-
-(defun initial-declarations ()
-  "Returns the initial declaration information applying to a null
-   environment. This contains the optimization qualities set to their
-   default level 1."
-  
-  (aprog1 (make-hash-table :test #'eq)
-    (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
-
-
-
 ;;; Environments
 
 (defclass environment ()

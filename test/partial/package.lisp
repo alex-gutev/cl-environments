@@ -31,19 +31,10 @@
   (:import-from
    :cl-environments
 
-   :+optimize-qualities+
    :environment
-   
-   :binding
-   :type
-   :local
-   :global
-   :declarations
 
    :variable-binding
    :function-binding
-   :add-variable
-   :add-function
 
    :declaration-info
    :declaration-function
