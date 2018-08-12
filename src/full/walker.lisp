@@ -86,7 +86,7 @@
 
 ;;; Walking function call forms
 
-(defvar *walker-functions** (make-hash-table :test #'eq)
+(defvar *walker-functions* (make-hash-table :test #'eq)
   "Hash-table mapping special operator symbols to their walker
    functions. The walker function is responsible for walking the
    arguments, according to the special operator's evaluation rules and
@@ -98,7 +98,7 @@
   "Walks a function call expression with function/macro/special
    operator OPERATOR and arguments ARGS."
 
-  (aif (gethash operator *walker-functions**)
+  (aif (gethash operator *walker-functions*)
        (funcall it operator args)
        (walk-function-call operator args)))
 
@@ -115,8 +115,8 @@
 
 
 (defun walk-function (function args)
-  "Walks the function call expression where FUNCTION is does not name
-   a macro function. If FUNCTION is a LAMBDA expression it is walked
+  "Walks the function call expression where FUNCTION does not name a
+   macro function. If FUNCTION is a LAMBDA expression it is walked
    otherwise FUNCTION is left as is. The form arguments ARGS are
    walked, if FUNCTION is not a special operator."
   
@@ -141,7 +141,7 @@
 (defun set-walker-function (operator function)
   "Sets the walker function for OPERATOR."
 
-  (setf (gethash operator *walker-functions**) function))
+  (setf (gethash operator *walker-functions*) function))
 
 (defun set-walker-functions (operators function)
   "Sets the walker function for each operator in the list OPERATORS to
