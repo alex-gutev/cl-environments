@@ -27,13 +27,6 @@
 
 (in-package :cl-environments)
 
-;; TODO: This is bound to a quicklisp hook and not the default
-;; implementation-specific hook or the previous hook if any.
-
-(defvar *old-macroexpand-hook* *macroexpand-hook*
-  "The previous value of *MACROEXPAND-HOOK* before setting it to
-   #'WALKER-HOOK.")
-
 
 ;;; Environments
 

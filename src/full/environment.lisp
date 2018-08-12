@@ -27,13 +27,6 @@
 
 (in-package :cl-environments)
 
-;; TODO: This is bound to a quicklisp hook and not the default
-;; implementation-specific hook or the previous hook if any.
-
-(defvar *old-macroexpand-hook* *macroexpand-hook*
-  "The previous value of *MACROEXPAND-HOOK* before setting it to
-   #'WALKER-HOOK.")
-
 
 (defconstant +optimize-qualities+
   '(speed safety compilation-speed space debug)  
@@ -302,7 +295,7 @@
    immediately without evaluating the test form."
 
   (or (member var +global-special-vars+)
-      (let ((*macroexpand-hook* *old-macroexpand-hook*))
+      (let ((*macroexpand-hook* #'funcall))
 	(with-gensyms (fn)
 	  (with-open-stream (*standard-output* (make-broadcast-stream)) ; Suppress output
 	    (funcall

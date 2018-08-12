@@ -49,6 +49,9 @@
   (:export :variable-information
 	   :function-information
 	   :declaration-information
-	   :define-declaration))
+	   :define-declaration
+
+	   :enable-hook
+	   :disable-hook))
 
 
