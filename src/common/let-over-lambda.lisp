@@ -2,7 +2,9 @@
 ;; let-over-lambda, which are used in the cl-environments project.
 ;; The only modification is that the functions and macros have been
 ;; moved from the :let-over-lambda package to the
-;; :cl-environments.util package.
+;; :cl-environments.util package, and the flatten function has been
+;; renamed to lol-flatten to avoid conflicts with the flatten function
+;; from the alexandria package.
 
 ;; Antiweb (C) Doug Hoyte
 
@@ -61,7 +63,7 @@
   (defun symb (&rest args)
     (values (intern (apply #'mkstr args))))
 
-  (defun flatten (x)
+  (defun lol-flatten (x)
     (labels ((rec (x acc)
                   (cond ((null x) acc)
                         #+(and sbcl (not old-sbcl))
@@ -95,7 +97,7 @@
 (defmacro defmacro/g! (name args &rest body)
   (let ((syms (remove-duplicates
                (remove-if-not #'g!-symbol-p
-                              (flatten body)))))
+                              (lol-flatten body)))))
     (multiple-value-bind (body declarations docstring)
         (parse-body body :documentation t)
       `(defmacro ,name ,args
@@ -111,7 +113,7 @@
            ,@body)))))
 
 (defmacro defmacro! (name args &rest body)
-  (let* ((os (remove-if-not #'o!-symbol-p (flatten args)))
+  (let* ((os (remove-if-not #'o!-symbol-p (lol-flatten args)))
          (gs (mapcar #'o!-symbol-to-g!-symbol os)))
     (multiple-value-bind (body declarations docstring)
         (parse-body body :documentation t)
@@ -125,7 +127,7 @@
 (defmacro defun! (name args &body body)
   (let ((syms (remove-duplicates
                (remove-if-not #'g!-symbol-p
-                              (flatten body)))))
+                              (lol-flatten body)))))
     (multiple-value-bind (body declarations docstring)
         (parse-body body :documentation t)
       `(defun ,name ,args

@@ -34,7 +34,10 @@
   (:export :variable-information
 	   :function-information
 	   :declaration-information
-	   :define-declaration))
+	   :define-declaration
+
+	   :enable-hook
+	   :disable-hook))
 
 (in-package :cl-environments)
 
@@ -78,3 +81,16 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (reexport-all-symbols :cl))
+
+
+(defun enable-hook (&optional (previous-hook *macroexpand-hook*))
+  "Does nothing, provided for compatibility with implementations where
+   the code walker is required."
+
+  (declare (ignore previous-hook)))
+
+(defun disable-hook (&optional (previous-hook *previous-hook*))
+  "Does nothing, provided for compatibility with implementations where
+   the code walker is required."
+
+  (declare (ignore previous-hook)))
