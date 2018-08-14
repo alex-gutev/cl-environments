@@ -31,37 +31,38 @@ inlining.
 
 ## Documentation
 
-To be able to use the environment access functions, *`ENABLE-HOOK`* has
-to be called to ensure that the code walker is set as the
-macroexpansion hook on implementations where it is required. On
-implementations where the code-walker is not required `ENABLE-HOOK
-and `DISABLE-HOOK` do nothing.
+To be able to use the environment access functions, **`ENABLE-HOOK`**
+has to be called to ensure that the code walker is set as the
+macroexpansion hook on implementations where the code-walker is
+required. On implementations where the code-walker is not required
+`ENABLE-HOOK` and `DISABLE-HOOK` do nothing.
 
 
-Function: *`ENABLE-HOOK`* `&OPTIONAL PREVIOUS-HOOK`
+Function: **`ENABLE-HOOK`** `&OPTIONAL PREVIOUS-HOOK`
 
 Sets the code-walker as the `*MACROEXPAND-HOOK*` if
 necessary. `PREVIOUS-HOOK`, if provided, is the function to restore
 `*MACROEXPAND-HOOK*` to when calling `DISABLE-HOOK`. If not provided
 defaults to the current value of `*MACROEXPAND-HOOK*`.
-
-
-Function: *`DISABLE-HOOK`* `&OPTIONAL PREVIOUS-HOOK`
+  
+  
+Function: **`DISABLE-HOOK`** `&OPTIONAL PREVIOUS-HOOK`
 
 Restores `*MACROEXPAND-HOOK*` to its previous value prior to calling
 `ENABLE-HOOK`.
 
 If `PREVIOUS-HOOK` is provided restores `*MACROEXPAND-HOOK*` to that
 value instead.
-
-
+  
+  
 ### Environment Access Functions
 
 See [Common Lisp the Language
 2](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html) for
 more information.
 
-Function: *`VARIABLE-INFORMATION`* `SYMBOL &OPTIONAL ENV`
+  
+Function: **`VARIABLE-INFORMATION`** `SYMBOL &OPTIONAL ENV`
 
 Returns information about the variable binding for symbol `SYMBOL`, in
 the lexical environment `ENV`. `ENV` defaults to the `NIL` global
@@ -88,9 +89,9 @@ The second return value is `T` if there is a local variable binding for
 
 The third return value is an alist containing the declaration
 information applying to the variable `SYMBOL`.
-
-
-FUNCTION: *`FUNCTION-INFORMATION`* `SYMBOL &OPTIONAL ENV`
+  
+  
+Function: **`FUNCTION-INFORMATION`** `SYMBOL &OPTIONAL ENV`
 
 Returns information about the function binding for `SYMBOL` in the
 environment `ENV`. `ENV` defaults to the global `NIL` environment if it is
@@ -115,9 +116,9 @@ The second return value is `T` if there is a local fucntion binding for
 
 The third return value is an alist containing the declaration
 information applying to the function SYMBOL.
-
-
-FUNCTION: *`DECLARATION-INFORMATION`* `NAME &OPTIONAL ENV`
+  
+  
+Function: **`DECLARATION-INFORMATION`** `NAME &OPTIONAL ENV`
 
 Returns information about the declaration named `NAME` in the
 environment `ENV`, which neither applies to variables nor
@@ -125,7 +126,7 @@ functions. `ENV` defaults to the global `NIL` environment if it is not
 provided.
 
 
-MACRO: *`DEFINE-DECLARATION`* `NAME (ARG-VAR &OPTIONAL ENV-VAR) &BODY BODY`
+Macro: **`DEFINE-DECLARATION`** `NAME (ARG-VAR &OPTIONAL ENV-VAR) &BODY BODY`
 
 Defines a handler for the declaration named `NAME`. `NAME` must not name a
 standard CL declaration, nor an implementation-specific declaration.
