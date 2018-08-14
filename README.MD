@@ -37,6 +37,10 @@ macroexpansion hook on implementations where the code-walker is
 required. On implementations where the code-walker is not required
 `ENABLE-HOOK` and `DISABLE-HOOK` do nothing.
 
+The `CL-ENVIRONMENTS` package has to be imported instead of the
+`COMMON-LISP` package, as it shadows the CL special forms to ensure they
+are walked by the code-walker, if required.
+
 #### ENABLE-HOOK
 
 Function: `ENABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
