@@ -62,7 +62,7 @@ value instead.
 
 See [Common Lisp the Language
 2](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html) for
-more information.
+the Environments API specification.
 
 
 #### VARIABLE-INFORMATION
