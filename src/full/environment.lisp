@@ -298,14 +298,15 @@
       (let ((*macroexpand-hook* #'funcall))
 	(with-gensyms (fn)
 	  (with-open-stream (*standard-output* (make-broadcast-stream)) ; Suppress output
-	    (funcall
-	     (compile nil 
-		      `(lambda ()
-			 (locally (declare (type t ,var))
-			   (let ((,var 1))
-			     (flet ((,fn () ,var))
-			       (let ((,var 2))
-				 (eql ,var (,fn))))))))))))))
+	    (handler-bind ((warning #'muffle-warning)) ; Suppress style warnings
+	      (funcall
+	       (compile nil
+			`(lambda ()
+			   (locally (declare (type t ,var))
+			     (let ((,var 1))
+			       (flet ((,fn () ,var))
+				 (let ((,var 2))
+				   (eql ,var (,fn)))))))))))))))
 
 
 (defun add-variable (sym env &key (binding-type :lexical) (local t))
