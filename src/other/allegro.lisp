@@ -55,7 +55,12 @@
     (multiple-value-bind (type binding declarations local)
 	(sys:function-information function env t nil)
       (declare (ignore binding))
-      (values type local declarations))))
+      (values
+       (case type
+	 (:special-operator :special-form)
+	 (t type))
+       local
+       declarations))))
 
 
 (defun convert-declaration (type info)
