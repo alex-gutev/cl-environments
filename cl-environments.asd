@@ -30,6 +30,7 @@
 
   :author "Alexander Gutev"
   :license "MIT"
+  :version "0.2"
   :serial t
   :components ((:module "src"
 	        :components
