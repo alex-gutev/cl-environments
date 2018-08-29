@@ -1,18 +1,20 @@
 # CL-ENVIRONMENTS - CLTL2 Environment Access Compatibility Layer
 
-This library provides a compatibility layer for the Syntactic
-Environment Access API, specified in [Common Lisp the Language
-2](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html), which
-can be used both on implementations which provide this API natively
-and those which don't.
+This library provides a uniform API, as specified in [Common Lisp the
+Language
+2](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html), for
+accessing information about variable and function bindings from
+implementation-defined lexical environment objects. All major Common
+Lisp implementations are supported, even those which don't support the
+CLTL2 environment access API.
 
 On implementations, which provide the CLTL2 environment access API,
 this library is simply a wrapper which handles the peculiarities of
 each implementation.
 
-ON implementations, which do not provide the API, the environment
-information is extracted using a code-walker and can be accessed using
-implementations of the environment API functions.
+ON implementations, which do not provide the CLTL2 environment access
+API, the environment information is extracted using a code-walker
+bound to `*MACROEXPAND-HOOK*`.
 
 The following functions/macros are provided by this library on all
 implementations:
@@ -23,11 +25,9 @@ implementations:
 * `DEFINE-DECLARATION`
 
 `AUGMENT-ENVIRONMENT` is not provided as it cannot be implemented on
-implementations which do not provide the functionality natively, since
-it requires that all functions, which take an environment parameter,
-be overridden to handle extended environment objects, however
-functions cannot be reliably overridden in Common Lisp due to
-inlining.
+implementations which do not provide the functionality natively, since it
+requires that all functions, which take an environment parameter, be
+overridden to handle the extended environment objects.
 
 ## Documentation
 
@@ -37,9 +37,13 @@ macroexpansion hook on implementations where the code-walker is
 required. On implementations where the code-walker is not required
 `ENABLE-HOOK` and `DISABLE-HOOK` do nothing.
 
-The `CL-ENVIRONMENTS` package has to be imported instead of the
-`COMMON-LISP` package, as it shadows the CL special forms to ensure they
-are walked by the code-walker, if required.
+The `CL-ENVIRONMENTS` package is a clone of the `COMMON-LISP` package
+with the exception that all CL special operators, which modify the
+environment, are shadowed and replaced with macro definitions to
+ensure that the code-walker walks all forms, including forms appearing
+at top-level. This package should be used, instead of the
+`COMMON-LISP` package, in order to be able to obtain accurate
+information about the environment from top-level special forms.
 
 #### ENABLE-HOOK
 
