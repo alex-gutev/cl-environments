@@ -99,7 +99,7 @@
   :author "Alexander Gutev"
   :license "MIT"
   :serial t
-  :depends-on (:cl-environments :prove)
+  :depends-on (:cl-environments :prove :prove-asdf)
   :defsystem-depends-on (:prove-asdf)
   :components ((:module "test"
 		:components
