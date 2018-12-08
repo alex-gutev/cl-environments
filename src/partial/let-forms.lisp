@@ -148,7 +148,7 @@
 		  with env = (make-fn-env fns)
 		  collect
 		    (match-form (name . def) fn
-		      (cons name (walk-fn-def def env))))))
+		      (cons name (walk-fn-def def env t))))))
 
 	  (cons (walk-fns fns) body))))))
 

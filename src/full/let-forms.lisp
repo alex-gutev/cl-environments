@@ -166,7 +166,7 @@
 	      with env = (make-fn-env fns)
 	      collect
 		(match-form (name . def) fn
-		    (cons name (walk-fn-def def env))))))
+		    (cons name (walk-fn-def def env t))))))
 
       ;; Add all function-bindings to BODY-ENV
       (match-form ((&rest fns) . body) args
