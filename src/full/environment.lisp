@@ -440,12 +440,14 @@
    is returned."
   
   (when (fboundp fn)
-    (cond
-      ((macro-function fn)
-       :macro)
-      ((special-operator-p fn)
-       :special-form)
-      (t :function))))
+    (if (symbolp fn)
+	(cond
+	  ((macro-function fn)
+	   :macro)
+	  ((special-operator-p fn)
+	   :special-form)
+	  (t :function))
+	:function)))
 
 
 ;;; Declarations
