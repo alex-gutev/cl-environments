@@ -42,7 +42,7 @@
 
   (flet ((get-ftype (decl)
 	   (match (cdr (assoc 'ftype decl))
-	     ((list 'function _ return-type)
+	     ((list 'function _ (and (not (eq '*)) return-type))
 	      return-type)
 
 	     (_ t)))
