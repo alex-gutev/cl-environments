@@ -1,6 +1,6 @@
 ;;;; cl-environments.asd
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2017-2019 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -85,7 +85,13 @@
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "hook"))))))
+		   (:file "hook")))
+
+		 (:module
+		  "tools"
+		  :components
+		  ((:file "package")
+		   (:file "types"))))))
 
   :depends-on (:alexandria
 	       :anaphora
