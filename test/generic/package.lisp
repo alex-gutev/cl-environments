@@ -33,9 +33,9 @@
 
    :+optimize-qualities+
    :environment
-   
+
    :binding
-   :type
+   :binding-type
    :local
    :global
    :declarations

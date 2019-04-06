@@ -36,27 +36,27 @@
 (subtest "TYPE and FTYPE declarations"
   (let ((env (make-instance 'environment)))
     (labels ((test-var-binding (var type var-type)
-	     (let ((binding (variable-binding var env)))	     
+	     (let ((binding (variable-binding var env)))
 	       (ok binding (format nil "Variable binding ~s added" var))
 
 	       (when binding
-		 (is (type binding) type (format nil "Binding type of ~s is ~s" var type))
+		 (is (binding-type binding) type (format nil "Binding type of ~s is ~s" var type))
 		 (is (cdr (assoc 'type (declarations binding))) var-type
 		     (format nil "Declared type of ~s is ~s" var var-type)))))
-	   
+
 	     (test-fn-binding (fn type fn-type)
 	       (let ((binding (function-binding fn env)))
 		 (ok binding (format nil "Function binding ~s added" fn))
 
 		 (when binding
-		   (is (type binding) type (format nil "Binding type of ~s is ~s" fn type))
+		   (is (binding-type binding) type (format nil "Binding type of ~s is ~s" fn type))
 		   (is (cdr (assoc 'ftype (declarations binding))) fn-type
 		       (format nil "Declared type of ~s is ~s" fn fn-type))))))
-	     
-	   
-      (add-variable 'x env :type :lexical :local t)
-      (add-function 'x env :type :function :local t)
-  
+
+
+      (add-variable 'x env :binding-type :lexical :local t)
+      (add-function 'x env :binding-type :function :local t)
+
       (walk-declaration 'type '(number x y z) env)
       (walk-declaration 'ftype '((function (integer) number) x y) env)
 
@@ -76,46 +76,46 @@
 	     (let ((binding (variable-binding var env)))
 	       (ok binding (format nil "Binding ~s added" var))
 	       (when binding
-		 (is (type binding) type (format nil "~s is ~s" var type))
+		 (is (binding-type binding) type (format nil "~s is ~s" var type))
 		 (is (local binding) local (format nil "~s is local: ~s" var local))))))
-	
-      (add-variable 'x env :type :lexical :local t)
+
+      (add-variable 'x env :binding-type :lexical :local t)
 
       ;; Lexical bound and free SPECIAL declarations
-      
+
       (walk-declaration 'special '(x y) env)
 
       ;; Test that a lexical bound SPECIAL declaration changes the
       ;; type of the existing binding to :SPECIAL however does not
       ;; modify the rest of the binding's slots.
-      
+
       (test-binding 'x :special t)
-      
+
       ;; Test that a lexical free SPECIAL declaration creates a new
       ;; (non-local) binding
-      
+
       (test-binding 'y :special nil)
 
       ;; Global SPECIAL declarations
-      
+
       ;; Test that a global :SPECIAL declaration creates a new global
       ;; binding.
-      
+
       (walk-declaration 'special '(z) env t)
-    
-      (add-variable 'x env :type :lexical :local t)
-      (add-variable 'y env :type :lexical :local t)
-      (add-variable 'z env :type :lexical :local t)
+
+      (add-variable 'x env :binding-type :lexical :local t)
+      (add-variable 'y env :binding-type :lexical :local t)
+      (add-variable 'z env :binding-type :lexical :local t)
 
       ;; Test that when adding a lexical variable, and a non-global
       ;; special variable exists, the added variable is lexical.
-      
+
       (test-binding 'x :lexical t)
       (test-binding 'y :lexical t)
 
       ;; Test that when adding a lexical variable, and a global
       ;; special variable exists, the added variable is special.
-      
+
       (test-binding 'z :special t))))
 
 
@@ -127,7 +127,7 @@
 	     (when binding
 	       (is (cdr (assoc 'dynamic-extent (declarations binding))) dynamic-extent
 		   (format nil "DYNAMIC-EXTENT of ~s is ~s" sym dynamic-extent)))))
-		 
+
 
     (add-variable 'x env)
     (add-variable 'f env)
@@ -151,7 +151,7 @@
 	     (let ((binding (variable-binding var env)))
 	       (is (cdr (assoc 'ignore (declarations binding))) ignore
 		   (format nil "~s ignored: ~s" var ignore)))))
-    
+
     (add-variable 'x env)
     (add-variable 'y env)
     (add-variable 'z env)
@@ -171,7 +171,7 @@
 	     (let ((binding (function-binding fn env)))
 	       (is (cdr (assoc 'inline (declarations binding))) inline
 		   (format nil "~s inline: ~s" fn inline)))))
-    
+
     (add-function 'f env)
     (add-function 'g env)
     (add-function 'h env)
@@ -190,10 +190,10 @@
   (let ((env (make-instance 'environment)))
     (labels ((count-quality (quality list)
 	       (count quality list :key #'first))
-	       
+
 	     (test-qualities (expected)
 	       (let ((qualities (declaration-info 'optimize env)))
-		 
+
 		 (ok (every (rcurry #'count-quality qualities) +optimize-qualities+)
 		     "No duplicate optimize qualities")
 
@@ -201,7 +201,7 @@
 		     (format nil "Optimize qualities are: ~s" expected)))))
 
       ;; Test abbreviated OPTIMIZE qualities
-      
+
       (walk-declaration 'optimize '(speed safety compilation-speed space debug) env)
       (test-qualities '((speed 3) (safety 3) (compilation-speed 3) (space 3) (debug 3)))
 
@@ -229,7 +229,7 @@
 (defun gc-optimize-decl-fn (args env)
   (declare (ignore env))
   (values :declare (cons 'gc-policy (first args))))
-    
+
 
 (subtest "User-defined declarations"
   (let ((env (make-instance 'environment)))
@@ -237,11 +237,11 @@
 	     (let ((pair (assoc key (declarations binding))))
 	       (ok pair (format nil "~s added to declaration info of binding" key))
 	       (is (cdr pair) value (format nil "Value of ~s is ~s" key value)))))
-      
+
       ;; Test that user/implementation-defined declarations (which are
       ;; declared so using the DECLARATION declaration) are added to the
       ;; list of known declarations
-      
+
       (walk-declaration 'declaration '(static-dispatch) env t)
       (ok (member 'static-dispatch (declaration-info 'declaration env))
 	  "Declaration STATIC-DISPATCH added to list of known declarations")
@@ -253,7 +253,7 @@
       (walk-declaration 'static-dispatch '(f g) env)
 
       ;; Add a declaration function for the STATIC-DISPATCH declaration
-      
+
       (setf (declaration-function 'static-dispatch env) #'static-dispatch-decl-fn)
 
       ;; Test walking user-defined declarations, with a declaration
@@ -294,14 +294,14 @@
 
 (subtest "Walking DECLARE expressions"
   (let ((env (make-instance 'environment)))
-    (flet ((test-binding (var binding-type var-type)
+    (flet ((test-binding (var bind-type var-type)
 	     (let ((binding (variable-binding var env)))
-	       (with-slots (type declarations) binding
-		 (is type binding-type
+	       (with-slots (binding-type declarations) binding
+		 (is binding-type bind-type
 		     (format nil "Binding type of ~s is ~s" var binding-type))
 		 (is (cdr (assoc 'type declarations)) var-type
 		     (format nil "~s is of type: ~s" var var-type))))))
-      
+
       (walk-declarations '((declare (special x y) (type number x))
 			   (declare (type string y))) env)
 
