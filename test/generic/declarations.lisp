@@ -26,7 +26,35 @@
 ;;;; Tests that declarations are being parsed correctly and that the
 ;;;; declaration information is added to the environment correctly.
 
-(in-package :cl-environments.test)
+(defpackage :cl-environments.test.internal
+  (:use :common-lisp
+	:alexandria
+	:prove)
+
+  (:import-from
+   :cl-environments
+
+   :+optimize-qualities+
+   :environment
+
+   :binding
+   :binding-type
+   :local
+   :global
+   :declarations
+
+   :variable-binding
+   :function-binding
+   :add-variable
+   :add-function
+
+   :declaration-info
+   :declaration-function
+
+   :walk-declarations
+   :walk-declaration))
+
+(in-package :cl-environments.test.internal)
 
 (plan nil)
 

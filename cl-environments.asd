@@ -112,8 +112,8 @@
 		((:module "generic"
 			  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
 			  :components
-			  ((:file "package")
-			   (:test-file "declarations")))
+			  ((:test-file "declarations")
+			   (:test-file "full")))
 
 		 (:module "partial"
 			  :if-feature (:or :ccl :cmucl)
