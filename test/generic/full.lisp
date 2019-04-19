@@ -119,6 +119,9 @@
 
 (plan 3)
 
+(defconstant +some-constant+ 'x
+  "Constant used in constant tests")
+
 (subtest "Test VARIABLE-INFORMATION"
   (subtest "Test lexical binding using LET"
     (test-form
@@ -378,6 +381,31 @@
        (define-symbol-macro sym-macro-test (+ 1 2))
        (var-info sym-macro-test))
 
-     (:symbol-macro nil nil))))
+     (:symbol-macro nil nil)))
+
+  (subtest "Constants"
+    (test-form
+     "Constant defined using DEFCONSTANT"
+
+     (progn
+       (defconstant +a-constant+ 'a)
+       (var-info +a-constant+))
+
+     (:constant nil nil))
+
+    (test-form
+     "Previously defined constant"
+
+     (var-info +some-constant+)
+
+     (:constant nil nil))
+
+    (test-form
+     "Builtin constants"
+
+     (var-info t :keyword)
+
+     (:constant nil nil)
+     (:constant nil nil))))
 
 (finalize)
