@@ -339,6 +339,45 @@
 
      (:lexical t ((type . integer)))
      (:special t ((type . integer)))
-     (:special nil nil))))
+     (:special nil nil)))
+
+  (subtest "Symbol Macros"
+    (test-form
+     "SYMBOL-MACROLET"
+
+     (symbol-macrolet ((hello "hello"))
+       (var-info hello))
+
+     (:symbol-macro t nil))
+
+    (test-form
+     "Nested SYMBOL-MACROLET"
+
+     (symbol-macrolet ((hello "hello"))
+       (symbol-macrolet ((bye "bye"))
+	 (var-info hello bye)))
+
+     (:symbol-macro t nil)
+     (:symbol-macro t nil))
+
+    (test-form
+     "Symbol-macro shadowing lexical variable"
+
+     (let ((x 1))
+       (declare (type integer))
+
+       (symbol-macrolet ((x 2))
+	 (var-info x)))
+
+     (:symbol-macro t ((type . nil))))
+
+    (test-form
+     "Global Symbol Macros"
+
+     (progn
+       (define-symbol-macro sym-macro-test (+ 1 2))
+       (var-info sym-macro-test))
+
+     (:symbol-macro nil nil))))
 
 (finalize)
