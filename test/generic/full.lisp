@@ -433,6 +433,167 @@
      (var-info t :keyword)
 
      (:constant nil nil)
-     (:constant nil nil))))
+     (:constant nil nil)))
+
+  (subtest "Test LAMBDA Forms"
+    (test-form
+     "LAMBDA with required arguments only"
+
+     ;; LOCALLY is necessary for the form to be intercepted by the
+     ;; macroexpand hook, since LOCALLY is a macro that shadows the CL
+     ;; special form.
+
+     (locally
+	 ((lambda (x y)
+	    (declare (type number x) (type fixnum y))
+
+	    (var-info x y))
+
+	  1 2))
+
+     (:lexical t ((type . number)))
+     (:lexical t ((type . fixnum))))
+
+    (test-form
+     "LAMBDA with optional arguments only"
+
+     (locally
+	 ((lambda (&optional x (y 1 y-sp))
+	    (declare (type integer y))
+	    (var-info x y y-sp))))
+
+     (:lexical t)
+     (:lexical t ((type . integer)))
+     (:lexical t))
+
+    (test-form
+     "LAMBDA with required and optional arguments"
+
+     (locally
+	 ((lambda (x &optional (y) (z 1))
+	    (declare (type number x z))
+	    (var-info x y z))
+
+	  1))
+
+     (:lexical t ((type . number)))
+     (:lexical t)
+     (:lexical t ((type . number))))
+
+    (test-form
+     "LAMBDA with rest argument"
+
+     (let ((f (lambda (&rest args) (var-info args))))
+       (funcall f))
+
+     (:lexical t))
+
+    (test-form
+     "LAMBDA with required and rest argument"
+
+     (locally
+	 ((lambda (x &rest xs)
+	    (declare (type number x))
+	    (var-info x xs))
+	  1))
+
+     (:lexical t ((type . number)))
+     (:lexical t))
+
+    (test-form
+     "LAMBDA with optional and rest argument"
+
+     (locally
+	 ((lambda (&optional first &rest more)
+	    (var-info first more))))
+
+     (:lexical t)
+     (:lexical t))
+
+    (test-form
+     "LAMBDA with keyword arguments"
+
+     (locally
+	 ((lambda (&key a (b) (c 2) (d 'x d-sp) ((:key e)) ((:key f) 1 f-sp))
+	    (var-info a b c d e f f-sp))))
+
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (:lexical t))
+
+    (test-form
+     "LAMBDA with required and keyword arguments"
+
+     (locally
+	 ((lambda (x &key first last &allow-other-keys)
+	    (var-info x first last y))
+	  1))
+
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (nil nil nil))
+
+    (test-form
+     "LAMBDA with auxiliary arguments"
+
+     (locally
+	 ((lambda (x &rest xs &key &allow-other-keys &aux first (last (last xs)))
+	    (var-info x xs first last))
+
+	  1))
+
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (:lexical t))
+
+    (test-form
+     "LAMBDA optional argument init-form environment"
+
+     (locally
+	 ((lambda (x &optional (y (var-info x y y-sp) y-sp) (z (var-info x y y-sp)))
+	    (append y z))
+
+	  1))
+
+     (:lexical t)
+     nil
+     nil
+
+     (:lexical t)
+     (:lexical t)
+     (:lexical t))
+
+    (test-form
+     "LAMBDA keyword and auxiliary argument init-form environment"
+
+     (locally
+	 ((lambda (a &key (b (var-info a b b-sp) b-sp) ((:argc c) (var-info a b b-sp)) &aux (d (var-info a b b-sp c d e)) (e (var-info d)))
+	    (append b c d e))
+	  1))
+
+     ;; Environment of b
+     (:lexical t) nil nil
+
+     ;; Environment of c
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+
+     ;; Environment of d
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     (:lexical t)
+     nil
+     nil
+
+     ;; Environment of e
+     (:lexical t))))
 
 (finalize)
