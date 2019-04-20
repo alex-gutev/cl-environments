@@ -270,7 +270,7 @@
 
   (subtest "Test LET* forms"
     (test-form
-     "LET init-form environment"
+     "LET* init-form environment"
 
      (let ((x 1) (y (var-info x)))
        (declare (type integer x))
@@ -281,12 +281,15 @@
     (test-form
      "LET* init-form environment"
 
-     (let* ((x 1) (y (var-info x z)) (z 2))
+     (let* ((x 1) (y (var-info x z)) (z (var-info x y)))
        (declare (type integer x z))
-       y)
+       (append y z))
 
      (:lexical t ((type . integer)))
-     (nil nil ((type . nil))))
+     (nil nil ((type . nil)))
+
+     (:lexical t ((type . integer)))
+     (:lexical t))
 
     (test-form
      "LET* body environment"
@@ -299,7 +302,20 @@
 
      (:lexical t ((type . integer)))
      (:lexical t ((type . fixnum) (ignore . t)))
-     (:lexical t ((type . integer)))))
+     (:lexical t ((type . integer))))
+
+    (test-form
+     "Nested LET* forms"
+
+     (let* ((x 1) (y 2))
+       (declare (type integer x y))
+       (let* ((z 3))
+	 (declare (type number z))
+	 (var-info x y z)))
+
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . number)))))
 
   (subtest "Test LOCALLY forms"
     (test-form
@@ -342,7 +358,18 @@
 
      (:lexical t ((type . integer)))
      (:special t ((type . integer)))
-     (:special nil nil)))
+     (:special nil nil))
+
+    (test-form
+     "Nested LOCALLY forms"
+
+     (locally
+	 (declare (dynamic-extent x))
+       (locally
+	   (declare (type character x))
+	 (var-info x)))
+
+     (nil nil ((dynamic-extent . t) (type . character)))))
 
   (subtest "Symbol Macros"
     (test-form
