@@ -594,6 +594,150 @@
      nil
 
      ;; Environment of e
-     (:lexical t))))
+     (:lexical t))
+
+    (test-form
+     "Nested LAMBDA forms"
+
+     (locally
+	 ((lambda (x)
+	    (declare (type number x))
+
+	    ((lambda (y)
+	       (declare (type fixnum y))
+	       (var-info x y))
+	     1))
+	  2))
+
+     (:lexical t ((type . number)))
+     (:lexical t ((type . fixnum))))
+
+    (test-form
+     "Nested LAMBDA form shadowing variable"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (append
+	((lambda (x)
+	   (declare (ignore x))
+	   (var-info x))
+	 1)
+
+	(var-info x)))
+
+     (:lexical t ((ignore . t) (type . nil)))
+     (:lexical t ((ignore . nil) (type . number)))))
+
+  (subtest "Test FLET and LABELS"
+    ;; Test that the information about the arguments in the FLET and
+    ;; LABELS functions. It is assumed that the lambda lists of the
+    ;; functions are processing in the same way as for LAMBDA forms,
+    ;; thus there is no need to do an exhaustive test for each type of
+    ;; lambda list argument.
+
+    (test-form
+     "Test FLET Form"
+
+     (flet ((f (x)
+	      (declare (ignore x))
+	      (var-info x y))
+
+	    (g (y)
+	      (declare (type number y))
+	      (var-info y x)))
+
+       (append (f 1) (g 2) (var-info x y)))
+
+     (:lexical t ((ignore . t)))
+     nil
+
+     (:lexical t ((type . number)))
+     nil
+
+     nil nil)
+
+    (test-form
+     "Test LABELS form"
+
+     (labels ((f (x)
+		(declare (ignore x))
+		(var-info x y))
+
+	      (g (y)
+		(declare (type number y))
+		(var-info y x)))
+       (append (f 1) (g 2) (var-info x y)))
+
+     (:lexical t ((ignore . t)))
+     nil
+
+     (:lexical t ((type . number)))
+     nil
+
+     nil nil)
+
+    (test-form
+     "Nested FLET in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (flet ((f (a)
+		(declare (ignore a))
+		(var-info a x)))
+
+	 (append (f 1) (var-info x))))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((type . number)))
+     (:lexical t ((type . number))))
+
+
+    (test-form
+     "FLET function argument shadowing LET variable"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (flet ((f (x)
+		(declare (ignore x))
+		(var-info x)))
+
+	 (append (f 1) (var-info x))))
+
+     (:lexical t ((ignore . t) (type . nil)))
+     (:lexical t ((ignore . nil) (type . number))))
+
+    (test-form
+     "Nested LABELS in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (labels ((f (a)
+		  (declare (ignore a))
+		  (var-info a x)))
+
+	 (append (f 1) (var-info x))))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((type . number)))
+     (:lexical t ((type . number))))
+
+    (test-form
+     "LABELS function argument shadowing LET variable"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (labels ((f (x)
+		  (declare (ignore x))
+		  (var-info x)))
+
+	 (append (f 1) (var-info x))))
+
+     (:lexical t ((ignore . t) (type . nil)))
+     (:lexical t ((ignore . nil) (type . number))))))
 
 (finalize)
