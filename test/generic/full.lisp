@@ -738,6 +738,66 @@
 	 (append (f 1) (var-info x))))
 
      (:lexical t ((ignore . t) (type . nil)))
-     (:lexical t ((ignore . nil) (type . number))))))
+     (:lexical t ((ignore . nil) (type . number)))))
+
+  (subtest "Test DEFUN forms"
+    (test-form
+     "Top-level DEFUN"
+
+     (progn
+       (defun nonsense-function (a b &optional c &rest d)
+	 (declare (type integer a b))
+	 (declare (ignore c))
+	 (declare (dynamic-extent d))
+
+	 (var-info a b c d))
+
+       (nonsense-function 1 2))
+
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . integer)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((dynamic-extent . t))))
+
+    (test-form
+     "DEFUN nested in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (defun nonsense-function-2 (&optional (a 1 a-sp) &key (b 2 b-sp) c ((:arg d) 5))
+	 (declare (type integer a b))
+	 (declare (ignore c))
+	 (declare (dynamic-extent d))
+
+	 (var-info a a-sp b b-sp c d x))
+
+       (nonsense-function-2))
+
+     (:lexical t ((type . integer)))
+     (:lexical t)
+
+     (:lexical t ((type . integer)))
+     (:lexical t)
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((dynamic-extent . t)))
+     (:lexical t ((type . number))))
+
+    (test-form
+     "DEFUN shadowing variable in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (defun nonsense-function-3 (a b &aux (x (+ a b)))
+	 (declare (type integer a b))
+	 (var-info a b x))
+
+       (nonsense-function-3 1 2))
+
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . nil))))))
 
 (finalize)
