@@ -26,7 +26,8 @@
 (defpackage :cl-environments
   (:use :common-lisp
 	:alexandria
-	:hcl)
+	:hcl
+	:cl-environments.util)
 
   (:shadow :define-declaration)
 
