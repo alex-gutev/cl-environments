@@ -740,6 +740,69 @@
      (:lexical t ((ignore . t) (type . nil)))
      (:lexical t ((ignore . nil) (type . number)))))
 
+  (subtest "Test MACROLET forms"
+    (test-form
+     "Test MACROLET Form"
+
+     (macrolet ((test-x (x (y &rest z) &body body)
+		  (declare (ignore x y z body))
+		  `',(var-info x y z body)))
+       (test-x 1 (2 3)))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t))))
+
+    (test-form
+     "Test MACROLET with &environment parameter"
+
+     (macrolet ((test-x ((x y) &optional z &environment e &body body)
+		  (declare (ignore x y z e body))
+		  `',(var-info x y z e body)))
+       (test-x (1 2) 3))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t))))
+
+    (test-form
+     "Test MACROLET with multiple destructuring levels"
+
+     (macrolet ((test-x (a (b (c &optional d) &rest e) f)
+		  (declare (ignore a b c d e f))
+		  `',(var-info a b c d e f)))
+       (test-x 1 (2 (3)) 4))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t))))
+
+    ;; Test that parameter variables of one macrolet don't "leak" into
+    ;; another macrolet.
+    (test-form
+     "Test MACROLET with multiple macros"
+
+     (macrolet ((test-x (a)
+		  (declare (ignore a))
+		  `',(var-info a b))
+
+		(test-y (b)
+		  (declare (ignore b))
+		  `',(var-info b a)))
+       (append (test-x 1) (test-y 2)))
+
+     (:lexical t ((ignore . t)))
+     nil
+     (:lexical t ((ignore . t)))
+     nil))
+
   (subtest "Test DEFUN forms"
     (test-form
      "Top-level DEFUN"
