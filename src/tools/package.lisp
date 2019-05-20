@@ -30,4 +30,5 @@
 	:optima)
 
   (:export :get-return-types
-	   :get-return-type))
+	   :get-return-type
+	   :get-value-type))

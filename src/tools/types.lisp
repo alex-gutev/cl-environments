@@ -34,7 +34,21 @@
    environment ENV. Returns a list where each element is the
    return-value type of the corresponding form in FORMS."
 
-  (mapcar (rcurry #'get-return-type env) forms))
+  (mapcar (rcurry #'get-value-type env) forms))
+
+(defun get-value-type (form env &optional (n 0))
+  "Determines the type of the N'th value returned by FORM, in the
+   environment ENV. If N > 0 and there is no information about the
+   type of the N'th value, NIL is returned."
+
+  (match (get-return-type form env)
+    ((list* 'values types)
+     (nth n types))
+
+    (type
+     (if (zerop n)
+	 type
+	 nil))))
 
 (defun get-return-type (form env)
   "Determines the type of the return value of the form FORM, in the
