@@ -62,13 +62,13 @@
   (reexport-all-symbols :cl))
 
 
-(defun enable-hook (&optional (previous-hook *macroexpand-hook*))
+(defun enable-hook (&optional previous-hook)
   "Does nothing, provided for compatibility with implementations where
    the code walker is required."
 
   (declare (ignore previous-hook)))
 
-(defun disable-hook (&optional (previous-hook *previous-hook*))
+(defun disable-hook (&optional previous-hook)
   "Does nothing, provided for compatibility with implementations where
    the code walker is required."
 
