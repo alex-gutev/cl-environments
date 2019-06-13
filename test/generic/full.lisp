@@ -871,6 +871,58 @@
 
      (:lexical t ((type . integer)))
      (:lexical t ((type . integer)))
+     (:lexical t ((type . nil)))))
+
+  (subtest "Test DEFMACRO forms"
+    (test-form
+     "Top-level DEFMACRO"
+
+     (progn
+       (defmacro nonsense-macro (a (b c) &body d)
+	 (declare (ignore a b c))
+
+	 `',(var-info a b c d))
+
+       (nonsense-macro 1 (2 3)))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t))
+
+    (test-form
+     "DEFMACRO nested in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (defmacro nonsense-macro-2 (a b &optional (c 0 c-sp))
+	 (declare (ignore a b c))
+
+	 `',(var-info x a b c c-sp))
+
+       (nonsense-macro-2 1 2 3))
+
+     (:lexical t ((type . number)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t))
+
+    (test-form
+     "DEFMACRO shadowing variable in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (defmacro nonsense-macro-3 (a b &aux (x (+ a b)))
+	 (declare (ignore a b))
+	 `',(var-info a b x))
+
+       (nonsense-macro-3 1 2))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
      (:lexical t ((type . nil))))))
 
 (finalize)
