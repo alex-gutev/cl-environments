@@ -801,7 +801,17 @@
      (:lexical t ((ignore . t)))
      nil
      (:lexical t ((ignore . t)))
-     nil))
+     nil)
+
+    (test-form
+     "Nested MACROLET"
+
+     (let ((x 1))
+       (declare (type number x))
+       (macrolet ((add (x y) `(+ ,x ,y)))
+	 (var-info x)))
+
+     (:lexical t ((type . number)))))
 
   (subtest "Test DEFUN forms"
     (test-form
