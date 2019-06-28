@@ -61,7 +61,18 @@
    environment."
 
   (walk-global-function args :function)
-  args)
+
+  (match-form (name lambda-list &rest options) args
+    `(,name
+      ,lambda-list
+      ,@(loop
+	   for option in options
+	   collect
+	     (match option
+	       ((list* :method def)
+		`(:method ,@(walk-method def)))
+
+	       (_ option))))))
 
 
 
@@ -72,8 +83,33 @@
    environment."
 
   (walk-global-function args :function)
-  args)
 
+  (match-form (name . def) args
+    `(,name ,@(walk-method def))))
+
+(defun walk-method (def)
+  "Walks the method definition DEF where DEF is the part of the
+   definition following the method's name. Encloses the body in an
+   environment augmented with the variable bindings in the method's
+   generic function lambda-list."
+
+  (flet ((consume-qualifiers (def)
+	   (loop
+	      for rest on def
+	      for (thing) = rest
+	      while (symbolp thing)
+	      collect thing into qualifiers
+	      finally
+		(return (values qualifiers rest)))))
+
+    (multiple-value-bind (qualifiers def)
+	(consume-qualifiers def)
+
+      (match-form ((&rest lambda-list) . body) def
+	(multiple-value-bind (lambda-list env)
+	    (walk-generic-lambda-list lambda-list (get-environment *env*))
+	  `(,@qualifiers ,lambda-list
+			 ,@ (walk-body body env t)))))))
 
 ;;;; Variable Definitions
 

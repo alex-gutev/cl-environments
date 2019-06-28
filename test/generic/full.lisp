@@ -923,6 +923,168 @@
 
      (:lexical t ((ignore . t)))
      (:lexical t ((ignore . t)))
-     (:lexical t ((type . nil))))))
+     (:lexical t ((type . nil)))))
+
+  (subtest "Test DEFGENERIC and DEFMETHOD forms"
+    (test-form
+     "Top-level DEFGENERIC"
+
+     (progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (defgeneric nonsense-generic-function (a b &optional c &rest d)
+	   (:method (a b &optional c &rest d)
+	     (declare (ignore a b c))
+	     (declare (dynamic-extent d))
+
+	     (var-info a b c d))))
+
+       (nonsense-generic-function 'x 'y))
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((dynamic-extent . t))))
+
+    (test-form
+     "Top-level DEFMETHOD"
+
+     (progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (defmethod nonsense-generic-function ((a number) (b number) &optional c &rest d)
+	   (declare (ignore c))
+	   (declare (dynamic-extent a b d))
+
+	   (var-info a b c d)))
+
+       (nonsense-generic-function 1 2))
+
+     (:lexical t ((type . number) (dynamic-extent . t)))
+     (:lexical t ((type . number) (dynamic-extent . t)))
+     (:lexical t ((ignore . t)))
+     (:lexical t ((dynamic-extent . t))))
+
+    (test-form
+     "DEFGENERIC nested in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (defgeneric nonsense-generic-function-2 (x &optional a &key b c arg)
+	 (:method (y &optional (a 1 a-sp) &key (b 2 b-sp) c ((:arg d) 5))
+	   (declare (type integer a b))
+	   (declare (ignore c))
+	   (declare (dynamic-extent d))
+
+	   (var-info y a a-sp b b-sp c d x)))
+
+       (nonsense-generic-function-2 'x))
+
+     (:lexical t)
+     (:lexical t ((type . integer)))
+     (:lexical t)
+
+     (:lexical t ((type . integer)))
+     (:lexical t)
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((dynamic-extent . t)))
+     (:lexical t ((type . number))))
+
+    (test-form
+     "DEFMETHOD nested in LET"
+
+     (let ((x 1))
+       (declare (type number x))
+
+       (defmethod nonsense-generic-function-2 ((y integer) &optional (a 1 a-sp) &key (b 2 b-sp) c ((:arg d) 5))
+	 (declare (type integer a b))
+	 (declare (ignore c))
+	 (declare (dynamic-extent d))
+
+	 (var-info y a a-sp b b-sp c d x))
+
+       (nonsense-generic-function-2 1))
+
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . integer)))
+     (:lexical t)
+
+     (:lexical t ((type . integer)))
+     (:lexical t)
+
+     (:lexical t ((ignore . t)))
+     (:lexical t ((dynamic-extent . t)))
+     (:lexical t ((type . number))))
+
+    (test-form
+     "DEFGENERIC shadowing variable in LET"
+
+     (progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (let ((x 1))
+	   (declare (type number x))
+
+	   (defgeneric nonsense-generic-function-3 (a b)
+	     (:method (a b &aux (x (list a b)))
+	       (declare (type integer a b))
+	       (var-info a b x)))))
+
+       (nonsense-generic-function-3 'x 'y))
+
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . integer)))
+     (:lexical t ((type . nil))))
+
+    (test-form
+     "DEFMETHOD shadowing variable in LET"
+
+     (progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (let ((x 1))
+	   (declare (type number x))
+
+	   (defmethod nonsense-generic-function-3 ((a integer) b &aux (x (+ a b)))
+	     (var-info a b x))
+
+	   (nonsense-generic-function-3 2 3))))
+
+     (:lexical t ((type . integer)))
+     (:lexical t)
+     (:lexical t ((type . nil))))
+
+    (test-form
+     "DEFMETHOD with qualifiers"
+
+     (progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (defgeneric nonsense-generic-function-4 (a))
+	 (defmethod nonsense-generic-function-4 :around (a)
+		    (declare (ignore a))
+		    (var-info a))
+
+	 (defmethod nonsense-generic-function-4 (a)
+	   (declare (ignore a))
+	   'fail))
+
+       (nonsense-generic-function-4 1))
+
+     (:lexical t ((ignore . t))))
+
+    (test-form
+     "DEFMETHOD with EQL specializers"
+
+     (progn
+       (eval-when (:compile-toplevel :load-toplevel :execute)
+	 (defgeneric nonsense-generic-function-5 (a))
+	 (defmethod nonsense-generic-function-5 ((a (eql 2)))
+	   (declare (ignore a))
+	   (var-info a))
+
+	 (defmethod nonsense-generic-function-5 ((a number))
+	   'fail))
+
+       (nonsense-generic-function-5 2))
+
+     (:lexical t ((ignore . t))))))
 
 (finalize)

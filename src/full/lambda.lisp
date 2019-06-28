@@ -294,3 +294,100 @@
 			  :destructure destructurep
 			  :env envp)
 	 env)))))
+
+(defun walk-generic-lambda-list (list env)
+  "Walks the generic function lambda list LIST, augments the
+   environment ENV with the bindings introduced by the lambda list,
+   and encloses the initforms of the arguments in the environments
+   augmented with all the bindings introduced in the lambda-list
+   preceding it. Returns the new lambda list and the augmented
+   environment.
+
+   The augmented environment additionally contains type declarations
+   for type specialized arguments."
+
+  (let ((env (copy-environment env)))
+    (labels ((walk-arg (type arg)
+	       "Walks lambda-list arguments. TYPE is a keyword
+                identifying the type of argument, ARG is the
+                argument."
+
+	       (multiple-value-bind (arg new-env)
+		   (case type
+		     (:required (walk-required arg))
+		     (:optional (walk-optional arg))
+		     (:key (walk-key arg))
+		     (:aux (walk-aux arg))
+		     (nil (values arg env))
+		     (otherwise
+		      (add-variable arg env)
+		      (values arg env)))
+		 (setf env new-env)
+		 arg))
+
+	     (walk-required (arg)
+	       "Walks required arguments. Augments the environment
+                with a binding for the argument. If the argument has a
+                type specializer, a TYPE declaration is added to the
+                binding's information list."
+
+	       (match arg
+		 ((or (list var (list 'eql _))
+		      (list var type)
+		      var)
+
+		  (add-variable var env)
+		  (when type
+		    (add-variable-info var 'type type env))
+
+		  (values arg env))))
+
+	     (walk-optional (arg)
+	       "Walks optional arguments. Encloses the init-form (if
+                any) in the environment ENV and augments ENV with
+                bindings for the argument and supplied-p variable (if
+                any)."
+
+	       (match (ensure-list arg)
+		 ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
+		  (values
+		   `(,var ,(enclose-in-env env (list initform)) ,@rest)
+		   (aprog1 (copy-environment env)
+		     (add-variable var it)
+		     (when var-sp (add-variable var-sp it)))))))
+
+	     (walk-key (arg)
+	       "Walks keyword arguments. Encloses the init-form (if
+                any) in the environment ENV and augments ENV with
+                bindings for the argument and supplied-p variable (if
+                any)."
+
+	       (match (ensure-list arg)
+		 ((cons
+		   (and (or (list _ var) var) arg)
+		   (optional (cons initform (and rest (optional (list var-sp))))))
+
+		  (values
+		   `(,arg ,(enclose-in-env env (list initform)) ,@rest)
+		   (aprog1 (copy-environment env)
+		     (add-variable var it)
+		     (when var-sp (add-variable var-sp it)))))))
+
+	     (walk-aux (arg)
+	       "Walks auxiliary variables. Encloses the init-form (if
+                any) in the environment ENV and augments ENV with a
+                binding for the variable."
+
+	       (match (ensure-list arg)
+		 ((cons var (optional (list initform)))
+
+		  (values
+		   `(,var ,(enclose-in-env env (list initform)))
+		   (aprog1 (copy-environment env)
+		     (add-variable var it)))))))
+
+      (handler-bind
+	  ((malformed-lambda-list #'skip-walk))
+	(values
+	 (map-lambda-list #'walk-arg list)
+	 env)))))
