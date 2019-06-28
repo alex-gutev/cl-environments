@@ -71,7 +71,7 @@
 
 (defwalker cl:eval-when (args)
   "Walks the body of the EVAL-WHEN form."
-  
+
   (match-form (situation &rest forms) args
     (cons situation (walk-forms forms))))
 
@@ -98,7 +98,7 @@
     #+abcl
     ((list (list* 'system:named-lambda name expr))
      (list (list* 'system:named-lambda name (walk-fn-def expr (get-environment *env*)))))
-    
+
     (_ args)))
 
 
@@ -116,7 +116,7 @@
 (defwalker cl:locally (args)
   "Encloses the body of the LOCALLY form in an environment, augmented
    with the declaration information."
-  
+
   (let ((ext-env (copy-environment (get-environment *env*))))
     (walk-body args ext-env)))
 
@@ -148,14 +148,14 @@
 	   (if (atom form)
 	       form
 	       (walk-form form))))
-    
+
     (check-list args
       (mapcar #'walk-form args))))
 
 
 (defwalker cl:go (args)
   "Returns the argument as is."
-  
+
   args)
 
 ;;; THE
@@ -175,7 +175,7 @@
    lexical functions introduced by the form. The bodies of the
    functions are not walked as this form is only used internally by
    Clisp's implementation of CLOS."
-  
+
   (match-form ((&rest fns) . body) args
     (let ((ext-env (copy-environment (get-environment *env*))))
       (loop for (fn) in fns do (add-function fn ext-env))
