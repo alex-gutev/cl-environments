@@ -176,6 +176,45 @@ If the first value is `:DECLARE` the second value should be a `CONS` of
 the form `(KEY . VALUE)`. `VALUE` will be returned by
 `DECLARATION-INFORMATION` for the declaration named `KEY`.
 
+### Utilities
+
+The package `cl-environments.tools` provides a number of functions for
+obtaining information about forms occurring in a particular
+environment. These functions make use of the information return by the
+`*-INFORMATION` functions.
+
+#### GET-RETURN-TYPE
+
+Function `GET-RETURN-TYPE FORM ENV`
+
+Determines the type of the return value of `FORM` in the environment
+`ENV`.
+
+The return value type can be determined if `FORM` is:
+
+* A symbol naming a variable for which there is a `TYPE` declaration.
+* A list where the `CAR` is a function for which there is an `FTYPE`
+  declaration.
+* A `THE` form.
+* A macro/symbol-macro which expands to one of the above.
+
+#### GET-RETURN-TYPES
+
+Function `GET-RETURN-TYPES FORMS ENV`
+
+Determines the type of the return value of each form in `FORMS`, in the
+environment `ENV`.
+
+Returns a list where each element is the return value type of the
+corresponding form in `FORMS`.
+
+#### GET-VALUE-TYPE
+
+Function `GET-VALUE-TYPE FORM ENV &OPTIONAL (N 0)`
+
+Returns the type of the `N`'th return value of `FORM` in the
+environment `ENV`.
+
 
 ## Status
 
