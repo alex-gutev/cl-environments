@@ -74,13 +74,16 @@
 	    ((list 'cl:the type _)
 	     type)
 
-	    ((list* op _)
+	    ((list* op args)
 	     (multiple-value-bind (type local decl) (function-information op env)
 	       (declare (ignore local))
 
 	       (case type
 		 (:function
 		  (get-ftype decl))
+
+		 (:special-form
+		  (get-special-form-return-type op args env))
 
 		 (otherwise t))))
 
@@ -101,3 +104,19 @@
 	     `(eql ,value))
 
 	    (_ t))))))
+
+(defun get-special-form-return-type (operator operands env)
+  "Determine the type of value returned by a form in which the
+   operator is a special operator."
+
+  (case operator
+    (cl:progn
+     (get-return-type (lastcar operands) env))
+
+    (cl:quote
+     (when (length= operands 1)
+       `(eql ,(first operands))))
+
+    (cl:setq
+     (when (evenp (length operands))
+       (get-return-type (lastcar operands) env)))))
