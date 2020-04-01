@@ -24,8 +24,10 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 (defpackage :cl-environments
-  (:use :common-lisp
-	:sys)
+  (:use :common-lisp)
+
+  (:import-from :cl-environments.util
+                :reexport-all-symbols)
 
   (:shadow :variable-information
 	   :function-information
