@@ -51,7 +51,7 @@
 
 
 (defun function-information (function &optional env)
-  (let ((env (augment-environment env)))
+  (let ((env (sys:augment-environment env)))
     (setf (sys::augmentable-environment-kind env) :evaluation)
 
     (multiple-value-bind (type binding declarations local)
