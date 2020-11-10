@@ -33,9 +33,11 @@
   :version "0.2"
   :serial t
   :components ((:module "src"
+		:serial t
 	        :components
 
 		((:module "common"
+		  :serial t
 		  :components
 		  ((:file "package")
 		   (:file "let-over-lambda")
@@ -89,6 +91,7 @@
 
 		 (:module
 		  "tools"
+		  :serial t
 		  :components
 		  ((:file "package")
 		   (:file "types"))))))
