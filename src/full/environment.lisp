@@ -78,6 +78,14 @@
    "Stores binding information. Can be used both for function and
     variable bindings"))
 
+(defmethod make-load-form ((object binding) &optional env)
+  (multiple-value-bind (create init)
+      (make-load-form-saving-slots object :environment env)
+
+    (values
+     (enclose-in-env nil create)
+     (and init (enclose-in-env nil init)))))
+
 
 ;;; Constructor functions
 
@@ -148,6 +156,13 @@
    "The extended environment class. Stores information about the
     lexical environment obtained via code walking."))
 
+(defmethod make-load-form ((object environment) &optional env)
+  (multiple-value-bind (create init)
+      (make-load-form-saving-slots object :environment env)
+
+    (values
+     (enclose-in-env nil create)
+     (and init (enclose-in-env nil init)))))
 
 (defvar *global-environment* (make-instance 'environment)
   "The global 'null' extended environment object.")
