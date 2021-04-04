@@ -101,9 +101,23 @@
 		 (otherwise t))))
 
 	    ((guard value (constantp value env))
-	     `(eql ,value))
+	     (constant-type value))
 
 	    (_ t))))))
+
+(defun constant-type (value)
+  "Return the type specifier of a constant value.
+
+   If the value is a CHARACTER, NUMBER or SYMBOL an EQL type specifier
+   is returned. Otherwise the type specifier returned by TYPE-OF is
+   returned.
+
+   VALUE is the constant value."
+
+  (typecase value
+    ((or number character symbol) `(eql ,value))
+    (otherwise
+     (type-of value))))
 
 (defun get-special-form-return-type (operator operands env)
   "Determine the type of value returned by a form in which the
