@@ -119,4 +119,5 @@
 		  ((:file "test")
 		   (:file "let")
 		   (:file "letstar")
-		   (:file "flet")))))))
+		   (:file "flet")
+		   (:file "labels")))))))
