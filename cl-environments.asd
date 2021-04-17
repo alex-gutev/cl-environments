@@ -122,7 +122,8 @@
 		   (:file "labels")
 		   (:file "macrolet")
 		   (:file "lambda")
-		   (:file "special-forms"))))))
+		   (:file "special-forms")
+		   (:file "def-forms"))))))
 
   :perform (test-op (o s)
 		    (uiop:symbol-call :cl-environments.test.cltl2 :test-cl-environments)))
