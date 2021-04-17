@@ -38,7 +38,9 @@
 	   :define-declaration
 
 	   :enable-hook
-	   :disable-hook)
+	   :disable-hook
+
+	   :walk-environment)
 
   (:import-from :cl-environments.cltl2
 		:enclose-form)

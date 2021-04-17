@@ -42,7 +42,9 @@
 	   :define-declaration
 
 	   :enable-hook
-	   :disable-hook)
+	   :disable-hook
+
+	   :walk-environment)
 
   (:documentation
    "Package exporting the base CLTL2 environments API."))

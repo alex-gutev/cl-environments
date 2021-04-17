@@ -29,6 +29,11 @@
   "The implementation-specific environment in which the form,
    currently being walked, occurs.")
 
+(defmacro walk-environment (&body body)
+  "Walks the BODY forms to extract environment information."
+
+  `(progn
+     ,@(enclose-forms body)))
 
 ;;; Code-Walker Macro
 
