@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 (defvar *env* nil
   "The implementation-specific environment in which the form,
@@ -36,7 +36,7 @@
   "Code-walker macro, simply invokes the WALK-FORM function. This
    macro is used when FORM needs to be walked in an augmented
    environment."
-  
+
   (walk-form form))
 
 (defun enclose-form (form)
@@ -45,12 +45,12 @@
   (match form
     ((not (list* '%walk-form _))
      `(%walk-form ,form))
-    
+
     (_ form)))
 
 (defun enclose-forms (forms)
   "Encloses each form, in FORMS, in the code-walker macro."
-  
+
   (mapcar #'enclose-form forms))
 
 
@@ -68,7 +68,7 @@
 
 (defun walk-forms (forms)
   "Walks each form in FORMS."
-  
+
   (mapcar #'walk-form forms))
 
 
@@ -119,11 +119,11 @@
    macro function. If FUNCTION is a LAMBDA expression it is walked
    otherwise FUNCTION is left as is. The form arguments ARGS are
    walked, if FUNCTION is not a special operator."
-  
+
   (flet ((walk-args (args)
 	   (check-list args
 	     (walk-forms args))))
-    
+
     (match function
       ((cons 'cl:lambda _)
        (cons (second (walk-list-form 'function (list function))) (walk-args args)))
@@ -159,7 +159,7 @@
    surrounded in a RESTART-CASE, which establishes the restart
    SKIP-WALK (returns the arguments unchanged) and in a HANDLER-BIND
    which invokes the restart in the case of a WALK-PROGRAM-ERROR."
-  
+
   (multiple-value-bind (body decl doc)
       (parse-body body :documentation t)
     (declare (ignore doc))
@@ -173,4 +173,3 @@
 				       (cons ',op (skip-walk-errors
 						    (restart-case (progn ,@body)
 						      (skip-walk () ,arg-var))))))))))
-     

@@ -27,7 +27,7 @@
 ;;;; DECLARATION-INFORMATION FUNCTIONS as specified in Common Lisp the
 ;;;; Language 2 (CLTL2)
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 (defun variable-information (variable &optional env)
   "Returns information about the variable binding for the symbol
@@ -75,7 +75,7 @@
    is :DECLARE the second value must be a CONS of the (KEY . VALUE),
    which is added to the declarations list of the lexical
    environment."
-  
+
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (declaim (declaration ,decl-name))
      (setf (declaration-function ',decl-name *global-environment*)

@@ -23,8 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
-
+(in-package :cl-environments.cltl2)
 
 ;;; Conditions
 
@@ -32,7 +31,7 @@
   ((message :initarg :message
 	    :reader message
 	    :initform nil))
-  
+
   (:documentation
    "Condition raised when a syntax error is encountered in code being
     walked."))
@@ -50,7 +49,7 @@
    which returns FORM if invoked. MSG is the value of the MESSAGE slot
    of the WALK-PROGRAM-ERROR condition object which is to be
    signaled."
-  
+
   (restart-case
       (error 'walk-program-error :message msg)
     (skip-walk () form)))
@@ -62,7 +61,7 @@
   "Equivalent to CDDR however if LIST has only one element left (that
    is the original list being traversed is not of even length) signals
    a WALK-PROGRAM-ERROR. Does not establish any restarts."
-  
+
   (when list
     (aif (cdr list)
 	 (cdr it)
@@ -81,7 +80,7 @@
 (defmacro! skip-walk-errors (&body body)
   "Surrounds BODY in a HANDLER-BIND which invokes the SKIP-WALK
    restart when the WALK-PROGRAM-ERROR condition is signaled."
-  
+
   `(handler-bind ((walk-program-error #'skip-walk))
      ,@body))
 
@@ -94,7 +93,7 @@
    parameters. The difference between &REST and a dotted list is that
    the &REST var is checked to be a proper list whereas no type
    checking is performed for a dotted list."
-  
+
   (labels ((list->cons (list)
 	     (match list
 	       ((list '&rest var)
@@ -103,16 +102,16 @@
 	       ((cons '&optional rest)
 		`(or ,(list->cons rest)
 		     nil))
-	       
+
 	       ((list 'quote arg)
 		(list 'quote arg))
-	       
+
 	       ((cons item rest)
 		`(cons ,(list->cons item)
 		       ,(list->cons rest)))
-	       
+
 	       (_ list))))
-    
+
     `(match ,g!form
        (,(list->cons pattern)
 	 ,@body)
@@ -122,7 +121,7 @@
   "Checks that THING is a proper list and evaluates the forms in
    BODY. If THING is not a proper list, a WALK-ERROR is signaled, with
    a SKIP-WALK restart established (which simply returns THING)."
-  
+
   `(if (proper-list-p ,g!thing)
        (progn ,@body)
        (walk-error ,g!thing "Invalid form syntax")))

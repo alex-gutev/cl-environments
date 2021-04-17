@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 ;;;; Code-walkers for: LET, LET*, FLET, LABELS, MACROLET and
 ;;;; SYMBOL-MACROLET.
@@ -45,7 +45,7 @@
   "Walks the bindings of a LET form. Adds the variable bindings to the
    environment ENV and encloses the init-forms of the bindings (if any)
    in the code walking macro. Returns the new bindings list."
-  
+
   (flet ((enclose-binding (binding)
 	   (match binding
 	     ((list var initform)
@@ -108,7 +108,7 @@
    bindings introduced by the LET*. Each init-form is enclosed in an
    environment which contains all the previous bindings copied from
    BODY-ENV."
-  
+
   (flet ((enclose-binding (binding env)
 	   (match binding
 	     ((list var initform)
@@ -133,7 +133,7 @@
    is enclosed. The body of each function is enclosed in an
    environment containing the variables in the function's lambda list,
    however it does not contain the functions themselves."
-  
+
   (let* ((env (get-environment *env*))
 	 (new-env (copy-environment env)))
 
@@ -149,17 +149,17 @@
    LABELS, and the variables in the function's lambda list. All
    declarations, bound to the functions introduced by the LABELS, are
    added to the environments of the function bodies."
-  
+
   (let* ((env (copy-environment (get-environment *env*)))
 	 (body-env (copy-environment env)))
-    
+
     (labels
 	((make-fn-env (fns)
 	   (dolist (fn fns env)
 	     (match-form (name . _) fn
 	       (setf (function-binding name env) ; Copy binding from BODY-ENV to ENV
 		     (function-binding name body-env)))))
-	 
+
 	 (walk-fns (fns)
 	   (loop
 	      for fn in fns
@@ -175,7 +175,7 @@
 	   do
 	     (match-form (name . _) fn
 	       (add-function name body-env)))
-	
+
 	(let ((body (walk-body body body-env)))
 	  (cons (walk-fns fns)
 		body))))))
@@ -199,7 +199,7 @@
    body is enclosed in this environment. The new lambda-list and body
    are returned. This function can be used both for lexical function
    definitions and for global function definitions."
-  
+
   (match-form (lambda-list . body) def
     (multiple-value-bind (lambda-list env)
 	(walk-lambda-list lambda-list env)
@@ -216,10 +216,10 @@
    does not contain the macro itself."
 
   (match-form ((&rest macros) . body) args
-    
+
     (let* ((env (get-environment *env*))
 	   (new-env (copy-environment env)))
-      
+
       (cons (mapcar (rcurry #'walk-local-macro env new-env) macros)
 	    (walk-body body new-env)))))
 
@@ -245,7 +245,7 @@
   (match-form (lambda-list . body) def
     (multiple-value-bind (lambda-list env)
 	(walk-lambda-list lambda-list env :destructure t :env t)
-      
+
       (cons lambda-list (walk-body body env t)))))
 
 

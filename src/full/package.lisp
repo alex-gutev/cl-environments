@@ -1,6 +1,6 @@
 ;;;; package.lisp
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2017-2021 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments
+(defpackage :cl-environments.cltl2
   (:use :common-lisp
 	:alexandria
 	:anaphora
@@ -36,22 +36,13 @@
 		:make-simple-collector
 		:make-simple-collector-to-place)
 
-  (:shadow :flet
-	   :labels
-	   :let
-	   :let*
-	   :locally
-	   :macrolet
-	   :symbol-macrolet
-
-	   #+abcl :defun)
-
   (:export :variable-information
 	   :function-information
 	   :declaration-information
 	   :define-declaration
 
 	   :enable-hook
-	   :disable-hook))
+	   :disable-hook)
 
-
+  (:documentation
+   "Package exporting the base CLTL2 environments API."))

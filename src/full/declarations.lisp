@@ -23,16 +23,16 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 (defun walk-declarations (decl ext-env)
   "Walks the declare expressions in DECL and adds the information to
    EXT-ENV."
-  
+
   (labels ((walk-decl (decl)
 	     (match-form (decl . args) decl
 	       (walk-declaration decl args ext-env)))
-	   
+
 	   (walk-declare (decl)
 	     (match-form ('cl:declare &rest decl) decl
 	       (mapc #'walk-decl decl))))
@@ -52,7 +52,7 @@
 
 (defmethod walk-declaration ((decl (eql 'type)) args ext-env &optional global)
   "Adds type information to the information list of the variables in ARGS."
-  
+
   (declare (ignore global))
 
   (match-form (type &rest vars) args
@@ -60,7 +60,7 @@
 
 (defmethod walk-declaration ((decl (eql 'ftype)) args ext-env &optional global)
   "Adds type information to the information list of the functions in ARGS."
-  
+
   (declare (ignore global))
 
   (match-form (type &rest fns) args
@@ -87,7 +87,7 @@
 (defmethod walk-declaration ((decl (eql 'dynamic-extent)) args ext-env &optional global)
   "Adds (DYNAMIC-EXTENT . T) to the information list of the variables
    and functions in ARGS."
-  
+
   (unless global
     (check-list args
       (dolist (arg args)
@@ -102,7 +102,7 @@
 
 (defmethod walk-declaration ((decl (eql 'ignore)) args ext-env &optional global)
   "Adds (IGNORE . T) to the information list of the variables in ARGS."
-  
+
   (unless global
     (check-list args
       (dolist (arg args)
@@ -116,7 +116,7 @@
 (defmethod walk-declaration ((decl (eql 'ignorable)) args ext-env &optional global)
   "Currently does nothing as IGNORABLE declarations are not mentioned
    in CLTL2."
-  
+
   (declare (ignore args ext-env global)))
 
 
@@ -124,14 +124,14 @@
 
 (defmethod walk-declaration ((decl (eql 'inline)) args ext-env &optional global)
   "Adds (INLINE . INLINE) to the information list of the functions in ARGS."
-  
+
   (declare (ignore global))
   (check-list args
     (add-functions-info args 'inline 'inline ext-env)))
 
 (defmethod walk-declaration ((decl (eql 'notinline)) args ext-env &optional global)
   "Adds (INLINE . NOTINLINE) to the information list of the functions in ARGS."
-  
+
   (declare (ignore global))
   (check-list args
     (add-functions-info args 'inline 'notinline ext-env)))
@@ -150,26 +150,26 @@
    information in the environment. If ARGS does not contain an element
    for each quality, the priority for the quality in EXT-ENV is used
    instead."
-  
+
   (declare (ignore global))
 
   (check-list args
     (let ((info (declaration-info 'optimize ext-env)))
       (labels ((find-assoc (item list)
 		 (find item list :key #'ensure-car))
-	   
+
 	       (priority (quality)
 		 (or (find-assoc quality args)
 		     (find-assoc quality info)))
-	     
+
 	       (ensure-quality (quality)
 		 (if (symbolp quality)
 		     (list quality 3)
 		     quality))
-	   
+
 	       (get-priority (quality)
 		 (ensure-quality (priority quality))))
-    
+
 	(setf (declaration-info 'optimize ext-env)
 	      (mapcar #'get-priority +optimize-qualities+))))))
 
@@ -188,7 +188,7 @@
   "If there is a declaration function, for DECL, (defined using
    DEFINE-DECLARATION) in EXT-ENV, it is called and the information
    returned by the function is added to the environment."
-  
+
   (declare (ignore global))
 
   (awhen (declaration-function decl ext-env)
@@ -199,7 +199,7 @@
    environment. TYPE is the first return
    value (either :VARIABLE :FUNCTION or :DECLARE), INFO is the second
    return value."
-  
+
   (flet ((add-binding-info (add-info)
 	   (loop
 	      for (sym key value) in info
@@ -211,4 +211,3 @@
        (add-binding-info #'add-function-info))
       (:declare
        (setf (declaration-info (car info) ext-env) (cdr info))))))
-     

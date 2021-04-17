@@ -25,7 +25,7 @@
 
 ;;;; Adds a macro expansion hook
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 (defvar *previous-hook* #'funcall
   "Contains the previous *MACROEXPAND-HOOK* function, prior to calling
@@ -36,7 +36,7 @@
   "If FORM is a function macro-form and the macro symbol is a member
    of the list +WALK-MACROS+, walks the form, otherwise returns FORM
    as is."
-  
+
   (match form
     ((list* (guard op (member op +walk-macros+)) _)
      (walk-form form))
@@ -50,7 +50,7 @@
   (let ((*macroexpand-hook* *previous-hook*))
     (let* ((form (pre-expand-walk form))
 	   (expansion (funcall *previous-hook* fn form *env*)))
-      
+
       (match form
 	((list* (not '%walk-form) _)
 
@@ -78,5 +78,5 @@
    *MACROEXPAND-HOOK* to. By default it is bound to *PREVIOUS-HOOK*
    which contains the value of the PREVIOUS-HOOK argument to
    ENABLE-HOOK."
-  
+
   (setf *macroexpand-hook* previous-hook))

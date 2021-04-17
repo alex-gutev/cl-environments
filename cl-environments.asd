@@ -71,12 +71,12 @@
 		   (:file "cltl2-interface")
 		   (:file "../full/hook")))
 
-		 #-(or ccl sbcl cmucl allegro lispworks)
-		 (:module "full"
+		 (:module
+		  "full"
 		  :serial t
+		  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
 		  :components
 		  ((:file "package")
-		   (:file "cl-overrides")
 		   (:file "util")
 		   (:file "walker")
 		   (:file "cl-environments")
@@ -87,7 +87,8 @@
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "hook")))
+		   (:file "hook")
+		   (:file "cl-overrides")))
 
 		 (:module
 		  "tools"

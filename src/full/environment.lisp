@@ -25,11 +25,11 @@
 
 ;;;; Extended environment implementation.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 
 (defconstant +optimize-qualities+
-  '(speed safety compilation-speed space debug)  
+  '(speed safety compilation-speed space debug)
   "List of standardoptimization qualities.")
 
 
@@ -37,7 +37,7 @@
   "Returns the initial declaration information applying to a null
    environment. This contains the optimization qualities set to their
    default level 1."
-  
+
   (aprog1 (make-hash-table :test #'eq)
     (setf (gethash 'optimize it) (mapcar (rcurry #'list 1) +optimize-qualities+))))
 
@@ -50,13 +50,13 @@
     :initform nil
     :reader binding-type
     :documentation "The type of binding.")
-   
+
    (local
     :initarg :local
     :initform nil
     :reader local
     :documentation "True if there is a local binding.")
-   
+
    (global
     :initarg :global
     :initform nil
@@ -90,7 +90,7 @@
 ;;; Constructor functions
 
 (defun make-binding (&rest args &key &allow-other-keys)
-  (apply #'make-instance 'binding args))  
+  (apply #'make-instance 'binding args))
 
 (defun add-binding-info (binding key value)
   "Creates a new binding with the pair (KEY . VALUE) added to the
@@ -126,7 +126,7 @@
     :accessor variables
     :documentation
     "Hash table mapping symbols to variable bindings.")
-   
+
    (functions
     :initform (make-hash-table :test #'equal)
     :initarg :functions
@@ -134,7 +134,7 @@
     :documentation
     "Hash table mapping symbols (and lists for SETF functions) to
      function bindings.")
-   
+
    (declarations
     :initform (initial-declarations)
     :initarg :declarations
@@ -180,7 +180,7 @@
 	       functions
 	       declarations
 	       decl-functions) env
-  
+
     (make-instance 'environment
 		   :variables (copy-hash-table variables)
 		   :functions (copy-hash-table functions)
@@ -205,7 +205,7 @@
    environment. ENV is the implementation specific lexical environment
    object, obtained via the &ENVIRONMENT macro parameters, if it is
    NIL the global null environment is returned."
-  
+
   (if (null env)
       *global-environment*
       (get-local-environment env)))
@@ -235,7 +235,7 @@
   (match forms
     ((list (and body (list* 'cl:symbol-macrolet (list (list (eql *env-sym*) _)) _)))
      body)
-    
+
     (_
      `(cl:symbol-macrolet ((,*env-sym* ,env))
 	,@(enclose-forms forms)))))
@@ -258,14 +258,14 @@
     (acond
       ((gethash sym variables)
        it)
-      
+
       ((gethash sym (variables *global-environment*))
        (setf (gethash sym variables) it))
 
       ((constantp sym)
        (setf (gethash sym variables)
 	     (make-binding :binding-type :constant :global t)))
-      
+
       ((specialp sym)
        (setf (gethash sym variables)
 	     (make-binding :binding-type :special :global t))))))
@@ -273,7 +273,7 @@
 (defun (setf variable-binding) (binding sym env)
   "Sets the binding for the variable with symbol SYM, in the
    environment ENV, to the `binding' object BINDING."
-  
+
   (setf (gethash sym (variables env)) binding))
 
 
@@ -377,7 +377,7 @@
 (defun add-variables-info (vars key value env)
   "Adds the pair (KEY . VALUE) to the declaration information of the
    variable-bindings of each symbol in VARS."
-  
+
   (mapc (rcurry #'add-variable-info key value env) vars))
 
 
@@ -397,10 +397,10 @@
     (acond
       ((gethash fn functions)
        it)
-      
+
       ((gethash fn (functions *global-environment*))
        (setf (gethash fn functions) it))
-      
+
       ((global-function-type fn)
        (setf (gethash fn functions)
 	     (make-binding :binding-type it :global t))))))
@@ -408,7 +408,7 @@
 (defun (setf function-binding) (binding fn env)
   "Sets the function binding for the symbol FN, in the environment
    ENV, to the `binding' object BINDING."
-  
+
   (setf (gethash fn (functions env)) binding))
 
 
@@ -442,7 +442,7 @@
 (defun add-functions-info (fns key value env)
   "Adds the pair (KEY . VALUE) to the declaration information of the
    function-bindings of each symbol in FNS."
-  
+
   (mapc (rcurry #'add-function-info key value env) fns))
 
 
@@ -453,7 +453,7 @@
    SPECIAL-OPERATOR-P), and has no macro function, :SPECIAL-FORM is
    returned, otherwise :FUNCTION is returned. If FN is not FBOUND NIL
    is returned."
-  
+
   (when (fboundp fn)
     (if (symbolp fn)
 	(cond
@@ -500,7 +500,7 @@
    representation of the environment object (as that is not possible)
    but to silence compiler warnings and errors on some
    implementations."
-  
+
   (if *print-readably*
       (write "#.(make-instance 'cl-environments:environment)" :stream stream)
       (call-next-method)))
