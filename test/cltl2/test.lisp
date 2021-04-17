@@ -27,11 +27,17 @@
 
 (defpackage :cl-environments.test.cltl2
   (:use :cl-environments-cl
+	:cl-environments.util
+
 	:alexandria
 	:fiveam)
 
+  (:import-from :cl-environments.util
+		:symb)
+
   (:export :cltl2-test
 	   :env-info
+	   :info
 	   :info=))
 
 (in-package :cl-environments.test.cltl2)
@@ -52,6 +58,10 @@
     `(macrolet ((,get-info (&environment ,env)
 		  `',(multiple-value-list ,form)))
        (,get-info))))
+
+(defmacro info (type thing)
+  (with-gensyms (env)
+    `(env-info (,(symb type '-information) ',thing ,env) ,env)))
 
 (defun decl= (got expected)
   (loop
