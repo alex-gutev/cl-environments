@@ -25,16 +25,16 @@
 
 ;;;; Test that environment information is extracted from LET forms.
 
-(defpackage :cl-environments.test.full.let-forms
+(defpackage :cl-environments.test.cltl2.let-forms
   (:use :cl-environments-cl
-	:cl-environments.test.full
+	:cl-environments.test.cltl2
 	:fiveam))
 
-(in-package :cl-environments.test.full.let-forms)
+(in-package :cl-environments.test.cltl2.let-forms)
 
 (def-suite let-forms
     :description "Test extraction of environment information from LET forms"
-    :in full-walker-test)
+    :in cltl2-test)
 
 (in-suite let-forms)
 

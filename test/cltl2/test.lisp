@@ -25,24 +25,24 @@
 
 ;;;; Master test suite for full code walker implementation
 
-(defpackage :cl-environments.test.full
+(defpackage :cl-environments.test.cltl2
   (:use :cl-environments-cl
 	:alexandria
 	:fiveam)
 
-  (:export :full-walker-test
+  (:export :cltl2-test
 	   :env-info
 	   :info=))
 
-(in-package :cl-environments.test.full)
+(in-package :cl-environments.test.cltl2)
 
-(def-suite full-walker-test
+(def-suite cltl2-test
     :description "Tests for the full CLTL2 implementation using code-walker")
 
-(in-suite full-walker-test)
+(in-suite cltl2-test)
 
 (defun test-cl-environments ()
-  (run! 'full-walker-test))
+  (run! 'cltl2-test))
 
 
 ;;; Utilities

@@ -25,16 +25,16 @@
 
 ;;;; Test that environment information is extracted from FLET forms.
 
-(defpackage :cl-environments.test.full.flet-forms
+(defpackage :cl-environments.test.cltl2.flet-forms
   (:use :cl-environments-cl
-	:cl-environments.test.full
+	:cl-environments.test.cltl2
 	:fiveam))
 
-(in-package :cl-environments.test.full.flet-forms)
+(in-package :cl-environments.test.cltl2.flet-forms)
 
 (def-suite flet-forms
     :description "Test extraction of environment information from FLET forms"
-    :in full-walker-test)
+    :in cltl2-test)
 
 (in-suite flet-forms)
 

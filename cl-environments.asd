@@ -122,4 +122,4 @@
 		   (:file "labels"))))))
 
   :perform (test-op (o s)
-		    (uiop:symbol-call :cl-environments.test.full :test-cl-environments)))
+		    (uiop:symbol-call :cl-environments.test.cltl2 :test-cl-environments)))
