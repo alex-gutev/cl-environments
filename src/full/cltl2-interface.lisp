@@ -56,7 +56,7 @@
   "Returns information about the declaration DECL-NAME in the
    environment ENV."
 
-  (declaration-info decl-name (get-environment env)))
+  (nth-value 0 (declaration-info decl-name (get-environment env))))
 
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
