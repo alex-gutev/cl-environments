@@ -49,7 +49,7 @@
   (flet ((enclose-binding (binding)
 	   (match binding
 	     ((list var initform)
-	      `(,var ,(walk-form initform)))
+	      `(,var ,(enclose-form initform)))
 	     (_ binding))))
 
     (loop

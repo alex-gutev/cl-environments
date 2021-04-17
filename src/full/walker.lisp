@@ -80,7 +80,7 @@
 
   (multiple-value-bind (form expanded-p) (macroexpand-1 form *env*)
     (if expanded-p
-	(walk-form form)
+	(enclose-form form)
 	form)))
 
 
@@ -109,9 +109,10 @@
    FUNCTION is neither a macro nor special operator it is assumed to
    be a function, all arguments are walked."
 
-  (if (and (symbolp function) (macro-function function *env*))
-      (cons function args)
-      (walk-function function args)))
+  (multiple-value-bind (form expanded-p) (macroexpand-1 (cons function args) *env*)
+    (if expanded-p
+	(enclose-form form)
+	(walk-function function args))))
 
 
 (defun walk-function (function args)
@@ -122,7 +123,7 @@
 
   (flet ((walk-args (args)
 	   (check-list args
-	     (walk-forms args))))
+	     (enclose-forms args))))
 
     (match function
       ((cons 'cl:lambda _)

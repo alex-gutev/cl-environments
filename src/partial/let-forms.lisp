@@ -44,11 +44,11 @@
   "Walks the bindings of a LET form. Adds the variable bindings to the
    environment ENV and encloses the init-forms of the bindings (if any)
    in the code walking macro. Returns the new bindings list."
-  
+
   (flet ((enclose-binding (binding)
 	   (match binding
 	     ((list var initform)
-	      `(,var ,(walk-form initform)))
+	      `(,var ,(enclose-form initform)))
 	     (_ binding))))
 
     (mapcar #'enclose-binding bindings)))
@@ -92,7 +92,7 @@
    bindings introduced by the LET*. Each init-form is enclosed in an
    environment which contains all the previous bindings copied from
    BODY-ENV."
-  
+
   (flet ((enclose-binding (binding env)
 	   (match binding
 	     ((list var initform)
@@ -117,7 +117,7 @@
    is enclosed. The body of each function is enclosed in an
    environment containing the variables in the function's lambda list,
    however it does not contain the functions themselves."
-  
+
   (let* ((env (get-environment *env*)))
     (match-form ((&rest fns) . body) args
       (cons (mapcar (rcurry #'walk-local-fn env) fns)
@@ -131,7 +131,7 @@
    LABELS, and the variables in the function's lambda list. All
    declarations, bound to the functions introduced by the LABELS, are
    added to the environments of the function bodies."
-  
+
   (match-form ((&rest fns) . body) args
     (multiple-value-bind (body body-env) (walk-body body)
       (let ((env (copy-environment (get-environment *env*))))
@@ -141,7 +141,7 @@
 		 (match-form (name . _) fn
 		   (setf (function-binding name env) ; Copy binding from BODY-ENV to ENV
 			 (function-binding name body-env)))))
-	     
+
 	     (walk-fns (fns)
 	       (loop
 		  for fn in fns
@@ -170,7 +170,7 @@
    body is enclosed in this environment. The new lambda-list and body
    are returned. This function can be used both for lexical function
    definitions and for global function definitions."
-  
+
   (match-form (lambda-list . body) def
     (let ((lambda-list (walk-lambda-list lambda-list env)))
       (cons lambda-list (walk-body body documentation)))))

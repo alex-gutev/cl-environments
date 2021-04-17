@@ -38,7 +38,7 @@
 
     (cons op
 	  (check-list args
-	    (walk-forms args))))
+	    (enclose-forms args))))
 
   (set-walker-functions
    '(cl:catch
@@ -58,13 +58,13 @@
   "Walks the body of the BLOCK form (excluding the block name symbol)"
 
   (match-form (name &rest forms) args
-    `(,name ,@(walk-forms forms))))
+    `(,name ,@(enclose-forms forms))))
 
 (defwalker cl:return-from (args)
   "Walks the result-form of the RETURN-FROM form."
 
   (match-form (name form) args
-    `(,name ,(walk-form form))))
+    `(,name ,(enclose-form form))))
 
 
 ;;; EVAL-WHEN
@@ -73,7 +73,7 @@
   "Walks the body of the EVAL-WHEN form."
 
   (match-form (situation &rest forms) args
-    (cons situation (walk-forms forms))))
+    (cons situation (enclose-forms forms))))
 
 
 ;;; FUNCTION
@@ -136,7 +136,7 @@
 
   (check-list args
     (loop for (var form) on args by #'next-2
-       nconc (list var (walk-form form)))))
+       nconc (list var (enclose-form form)))))
 
 
 ;;; TAGBODY
@@ -147,7 +147,7 @@
   (flet ((walk-form (form)
 	   (if (atom form)
 	       form
-	       (walk-form form))))
+	       (enclose-form form))))
 
     (check-list args
       (mapcar #'walk-form args))))
@@ -164,7 +164,7 @@
   "Walks the value form."
 
   (match-form (type form) args
-    `(,type ,(walk-form form))))
+    `(,type ,(enclose-form form))))
 
 
 ;;; Clisp specific special forms

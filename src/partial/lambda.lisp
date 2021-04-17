@@ -42,7 +42,7 @@
   "Signals a `MALFORMED-LAMBDA-LIST' condition for the lambda list at
    position LIST. A SKIP-WALK restart is established which simply
    returns NIL."
-  
+
   (restart-case
       (error 'malformed-lambda-list :position list)
     (skip-walk ())))
@@ -51,13 +51,13 @@
 (defun lambda-list-keyword-p (sym)
   "Checks wether SYM names a lambda list keyword, i.e. checks whether
    SYM is a member of LAMBDA-LIST-KEYWORDS."
-  
+
   (member sym lambda-list-keywords))
 
 (defun var-symbol-p (thing)
   "Returns true if THING is a symbol which can be used as a
    variable-name."
-  
+
   (and thing (symbolp thing) (not (keywordp thing)) (lambda-list-keyword-p thing)))
 
 
@@ -83,7 +83,7 @@
    keyword appeared in the correct position. The arguments themselves
    are not checked for correct syntax, it is the responsibility of FN
    to do so."
-  
+
   (declare (special envp))
 
   (let* (new-list
@@ -97,7 +97,7 @@
 
 	 (collect (state &rest things)
 	   (mapc (curry #'map-collect state) things))
-	 
+
 	 (guard (condition list)
 	   (unless condition
 	     (lambda-walk-error list)))
@@ -107,7 +107,7 @@
 	     ((list* (guard arg (not (lambda-list-keyword-p arg))) rest)
 	      (collect state arg)
 	      rest)
-	     
+
 	     (_
 	      (lambda-walk-error list)
 	      list))))
@@ -118,7 +118,7 @@
 
 	 (guard (and destructurep (eq from-state :start)) list)
 	 (collect nil '&whole)
-	 
+
 	 (next (consume-arg :whole rest) :from :required))
 
 	(:optional
@@ -134,7 +134,7 @@
 
 	 (guard (and (or (eq keyword '&rest) destructurep)
 		     (member from-state '(:start :required :optional))) list)
-	 
+
 	 (collect nil keyword)
 	 (next (consume-arg :rest rest)))
 
@@ -181,7 +181,7 @@
 	     (declare (special collector envp))
 	     (next var-list :from :start))
 	   (funcall collector new-list))
-	 
+
 	 (next rest))
 
 	(:required
@@ -190,7 +190,7 @@
 
 	 (collect :required var)
 	 (next rest))
-	
+
 	(arg
 	 (cons var rest)
 	 :from (:optional :key :aux)
@@ -212,7 +212,7 @@
 	 rest
 	 (lambda-walk-error rest)
 	 (nconc new-list rest)))
-      
+
       new-list)))
 
 (defun walk-lambda-list (list env &key ((:destructure destructurep)) ((:env envp)))
@@ -241,25 +241,25 @@
 	     (match (ensure-list arg)
 	       ((cons var (optional (cons initform (and rest (optional (list var-sp))))))
 
-		`(,var ,(walk-form initform) ,@rest))))
+		`(,var ,(enclose-form initform) ,@rest))))
 
 	   (walk-key (arg)
 	     "Walks keyword arguments. Walks the init form if any."
-  
+
 	     (match (ensure-list arg)
 	       ((cons
 		 (and (or (list _ var) var) arg)
 		 (optional (cons initform (and rest (optional (list var-sp))))))
 
-		`(,arg ,(walk-form initform) ,@rest))))
+		`(,arg ,(enclose-form initform) ,@rest))))
 
 	   (walk-aux (arg)
 	     "Walks auxiliary variables. Walks the init form if any."
-  
+
 	     (match (ensure-list arg)
 	       ((cons var (optional (list initform)))
 
-		`(,var ,(walk-form initform))))))
+		`(,var ,(enclose-form initform))))))
 
     (handler-bind
   	((malformed-lambda-list #'skip-walk))

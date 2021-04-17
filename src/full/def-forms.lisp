@@ -119,7 +119,7 @@
 
   (match-form (name init-form . doc) args
     (add-global-variable name)
-    (list* name (walk-form init-form) doc)))
+    (list* name (enclose-form init-form) doc)))
 
 (defwalker cl:defvar (args)
   "Walks DEFVAR forms. Adds the variable binding (of type :SPECIAL) to
@@ -130,7 +130,7 @@
     (cons name
 	  (destructuring-bind (&optional (init-form nil init-p) &rest doc) args
 	    (when init-p
-	      (cons (walk-form init-form) doc))))))
+	      (cons (enclose-form init-form) doc))))))
 
 
 ;;;; Constant Definitions
@@ -141,7 +141,7 @@
 
   (match-form (name init-form . doc) args
     (add-global-variable name :constant)
-    (list* name (walk-form init-form) doc)))
+    (list* name (enclose-form init-form) doc)))
 
 
 ;;;; Macros
