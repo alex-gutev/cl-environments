@@ -59,6 +59,7 @@
 	   :defparameter
 	   :defvar
 	   :defconstant
+	   :define-symbol-macro
 
 	   :declaim)
 
@@ -117,6 +118,7 @@
   (defparameter name value &rest args)
   (defvar name &rest args)
   (defconstant name value &rest args)
+  (define-symbol-macro symbol expansion)
 
   (declaim &rest declaration-specifiers))
 
