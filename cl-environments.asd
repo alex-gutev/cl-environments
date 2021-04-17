@@ -109,21 +109,14 @@
   :author "Alexander Gutev"
   :license "MIT"
   :serial t
-  :depends-on (:cl-environments :prove :prove-asdf)
-  :defsystem-depends-on (:prove-asdf)
+  :depends-on (:cl-environments :fiveam)
   :components ((:module "test"
 		:components
-		((:module "generic"
-			  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
-			  :components
-			  ((:test-file "declarations")
-			   (:test-file "full")))
-
-		 (:module "partial"
-			  :if-feature (:or :ccl :cmucl)
-			  :components
-			  ((:file "package")
-			   (:test-file "declarations"))))))
-
-  :perform (asdf:test-op :after (op c)
-			 (funcall (intern #.(string :run) :prove) c :reporter :fiveam)))
+		((:module
+		  "full"
+		  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
+		  :components
+		  ((:file "test")
+		   (:file "let")
+		   (:file "letstar")
+		   (:file "flet")))))))
