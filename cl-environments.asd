@@ -120,7 +120,8 @@
 		   (:file "letstar")
 		   (:file "flet")
 		   (:file "labels")
-		   (:file "macrolet"))))))
+		   (:file "macrolet")
+		   (:file "lambda"))))))
 
   :perform (test-op (o s)
 		    (uiop:symbol-call :cl-environments.test.cltl2 :test-cl-environments)))
