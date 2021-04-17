@@ -113,8 +113,7 @@
   :components ((:module "test"
 		:components
 		((:module
-		  "full"
-		  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
+		  "cltl2"
 		  :components
 		  ((:file "test")
 		   (:file "let")
