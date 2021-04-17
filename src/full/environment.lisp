@@ -79,12 +79,7 @@
     variable bindings"))
 
 (defmethod make-load-form ((object binding) &optional env)
-  (multiple-value-bind (create init)
-      (make-load-form-saving-slots object :environment env)
-
-    (values
-     (enclose-in-env nil create)
-     (and init (enclose-in-env nil init)))))
+  (make-load-form-saving-slots object :environment env))
 
 
 ;;; Constructor functions
@@ -157,12 +152,7 @@
     lexical environment obtained via code walking."))
 
 (defmethod make-load-form ((object environment) &optional env)
-  (multiple-value-bind (create init)
-      (make-load-form-saving-slots object :environment env)
-
-    (values
-     (enclose-in-env nil create)
-     (and init (enclose-in-env nil init)))))
+  (make-load-form-saving-slots object :environment env))
 
 (defvar *global-environment* (make-instance 'environment)
   "The global 'null' extended environment object.")
