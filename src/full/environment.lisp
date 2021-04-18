@@ -164,13 +164,7 @@
 
   (with-slots (variables functions declarations decl-functions) object
     (values
-     `(make-instance
-       'environment
-
-       :variables (alist-hash-table ',(hash-table-alist variables) :test #'eq)
-       :functions (alist-hash-table ',(hash-table-alist functions) :test #'eq)
-       :declarations (alist-hash-table ',(hash-table-alist declarations) :test #'eq)
-       :decl-functions (alist-hash-table ',(hash-table-alist decl-functions) :test #'eq))
+     `(make-instance 'environment)
 
      `(progn
 	(setf (slot-value ,object 'variables)
