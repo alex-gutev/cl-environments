@@ -53,7 +53,6 @@
 		 (:file "other/lispworks"
 			:if-feature :lispworks)
 
-		 #+(or ccl cmucl)
 		 (:module
 		  "partial"
 		  :serial t
