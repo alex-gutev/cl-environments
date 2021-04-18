@@ -110,6 +110,12 @@
 
   (equal got exp))
 
+
+;;; SUBTYPEP does not work on ABCL for function types. It's not
+;;; necessary anyway since ABCL does not provided FUNCTION-INFORMATION
+;;; there the result should be exactly as expected.
+
+#-abcl
 (defmethod decl-key= ((key (eql 'type)) got exp)
   "Compare TYPE declaration information fields.
 
@@ -118,6 +124,7 @@
 
   (subtypep got exp))
 
+#-abcl
 (defmethod decl-key= ((key (eql 'ftype)) got exp)
   "Compare FTYPE declaration information fields.
 
