@@ -44,8 +44,8 @@
 		   (:file "util")
 		   (:file "macro-util")))
 
-		 #+sbcl
-		 (:file "other/sbcl")
+		 (:file "other/sbcl"
+			:if-feature :sbcl)
 
 		 #+allegro
 		 (:file "other/allegro")

@@ -26,7 +26,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :sb-cltl2))
 
-(defpackage :cl-environments
+(defpackage :cl-environments.cltl2
   (:use :common-lisp
 	:sb-cltl2
 	:alexandria
@@ -44,9 +44,27 @@
 	   :define-declaration
 
 	   :enable-hook
-	   :disable-hook))
+	   :disable-hook
 
-(in-package :cl-environments)
+	   :walk-environment))
+
+(defpackage :cl-environments-cl
+  (:nicknames :cl-environments)
+  (:use :common-lisp
+	:cl-environments.util
+	:cl-environments.cltl2)
+
+  (:export :variable-information
+	   :function-information
+	   :declaration-information
+	   :define-declaration
+
+	   :enable-hook
+	   :disable-hook
+
+	   :walk-environment))
+
+(in-package :cl-environments.cltl2)
 
 
 ;; SBCL includes declaration name in arguments
@@ -57,9 +75,6 @@
        (declare (ignorable ,env-var))
        (let ((,arg-var (rest ,args)))
 	 ,@body))))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (reexport-all-symbols :cl))
 
 
 (defun enable-hook (&optional previous-hook)
@@ -73,3 +88,12 @@
    the code walker is required."
 
   (declare (ignore previous-hook)))
+
+(defmacro walk-environment (&body forms)
+  `(progn ,@forms))
+
+
+(in-package :cl-environments-cl)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (reexport-all-symbols :cl))
