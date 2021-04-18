@@ -54,24 +54,66 @@
 ;;; Utilities
 
 (defmacro env-info (form &optional (env (gensym "ENV")))
+  "Evaluate FORM in an environment where the variable named by ENV is
+   bound to the lexical environment in which the macro appears. All
+   return values of FORM are returned in a list."
+
   (with-gensyms (get-info)
     `(macrolet ((,get-info (&environment ,env)
 		  `',(multiple-value-list ,form)))
        (,get-info))))
 
 (defmacro info (type thing)
+  "Retrieve information about a binding/declaration from the environment.
+
+   TYPE is the type of binding to retrieve information for, either
+   VARIABLE, FUNCTION or DECLARATION.
+
+   THING is the name of the binding (or declaration in the case of
+   TYPE being DECLARATION) of which to retrieve the information."
+
   (with-gensyms (env)
     `(env-info (,(symb type '-information) ',thing ,env) ,env)))
 
 (defun decl= (got expected)
+  "Check that the declaration information GOT has all the keys in the
+   declaration information EXPECTED. It may have more keys."
+
   (loop
      for (key . value) in expected
      for assoc = (assoc key got)
-     always (and assoc (equal (cdr assoc) value))))
+     always (and assoc (decl-key= key (cdr assoc) value))))
 
 (defun info= (got expected)
+  "Check that the binding information GOT is equal to expected.
+
+   GOT and EXPECTED are expected to be lists of three elements the
+   first two being the binding type and whether it is local or global,
+   both are compared directly with EQ. The third element is the
+   declaration information compared with DECL="
+
   (destructuring-bind (&optional got-type got-local got-decls) got
     (destructuring-bind (exp-type exp-local exp-decls) expected
       (and (eq got-type exp-type)
 	   (eq got-local exp-local)
 	   (decl= got-decls exp-decls)))))
+
+
+;;;; Comparing various declaration keys
+
+(defgeneric decl-key= (key got exp)
+  (:documentation
+   "Compare the values for a given declaration information key."))
+
+(defmethod decl-key= ((key t) got exp)
+  "Compare values with EQUAL."
+
+  (equal got exp))
+
+(defmethod decl-key= ((key (eql 'type)) got exp)
+  "Compare TYPE declaration information fields.
+
+   Returns true if the type GOT is a subtype of the expected type
+   EXP."
+
+  (subtypep got exp))
