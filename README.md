@@ -40,12 +40,12 @@ implementations which do not provide the CLTL2 API natively, unless
 the forms which modify the environment are walked by the code walker.
 
 The `CL-ENVIRONMENTS-CL` package is a clone of the `COMMON-LISP`
-package with the exception that it exports the environment the symbols
-in the `CL-ENVIRONMENTS.CLTL2` package and all CL special operators,
-which modify the environment, are shadowed with macros which invoke
-the code walker. This package should be used, instead of the
-`COMMON-LISP` package, in order to be able to obtain accurate
-information about the environment.
+package with the exception that it exports the symbols in the
+`CL-ENVIRONMENTS.CLTL2` package and all CL special operators, which
+modify the environment, are shadowed with macros which invoke the code
+walker. This package should be used, instead of the `COMMON-LISP`
+package, in order to be able to obtain accurate information about the
+environment.
 
 
 ### Package `CL-ENVIRONMENTS.CLTL2` - Environment Access API
