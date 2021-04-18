@@ -47,11 +47,11 @@
 		 (:file "other/sbcl"
 			:if-feature :sbcl)
 
-		 #+allegro
-		 (:file "other/allegro")
+		 (:file "other/allegro"
+			:if-feature :allegro)
 
-		 #+lispworks
-		 (:file "other/lispworks")
+		 (:file "other/lispworks"
+			:if-feature :lispworks)
 
 		 #+(or ccl cmucl)
 		 (:module

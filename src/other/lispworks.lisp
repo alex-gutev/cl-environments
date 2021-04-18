@@ -1,6 +1,6 @@
 ;;;; allegro.lisp
 ;;;;
-;;;; Copyright 2018 Alexander Gutev
+;;;; Copyright 2018-2021 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(defpackage :cl-environments
+(defpackage :cl-environments.cltl2
   (:use :common-lisp
 	:alexandria
 	:hcl
@@ -37,9 +37,27 @@
 	   :define-declaration
 
 	   :enable-hook
-	   :disable-hook))
+	   :disable-hook
 
-(in-package :cl-environments)
+	   :walk-environment))
+
+(defpackage :cl-environments-cl
+  (:nicknames :cl-environments)
+  (:use :common-lisp
+	:cl-environments.util
+	:cl-environments.cltl2)
+
+  (:export :variable-information
+	   :function-information
+	   :declaration-information
+	   :define-declaration
+
+	   :enable-hook
+	   :disable-hook
+
+	   :walk-environment))
+
+(in-package :cl-environments.cltl2)
 
 ;; Declaration name is included in arguments
 
@@ -49,12 +67,6 @@
        (declare (ignorable ,env-var))
        (let ((,arg-var (rest ,args)))
 	 ,@body))))
-
-
-;;; Reexport symbols in CL package
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (reexport-all-symbols :cl))
 
 
 (defun enable-hook (&optional (previous-hook *macroexpand-hook*))
@@ -68,3 +80,14 @@
    the code walker is required."
 
   (declare (ignore previous-hook)))
+
+(defmacro walk-environment (&body forms)
+  `(progn ,@forms))
+
+
+;;; Reexport symbols in CL package
+
+(in-package :cl-environments-cl)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (reexport-all-symbols :cl))
