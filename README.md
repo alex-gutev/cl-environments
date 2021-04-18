@@ -13,8 +13,8 @@ this library is simply a wrapper which handles the peculiarities of
 each implementation.
 
 ON implementations, which do not provide the CLTL2 environment access
-API, the environment information is extracted using a code-walker
-bound to `*MACROEXPAND-HOOK*`.
+API, the environment information is extracted by code-walking the
+forms which modify the environment.
 
 The following functions/macros are provided by this library on all
 implementations:
@@ -24,54 +24,35 @@ implementations:
 * `DECLARATION-INFORMATION`
 * `DEFINE-DECLARATION`
 
-`AUGMENT-ENVIRONMENT` is not provided as it cannot be implemented on
-implementations which do not provide the functionality natively, since it
-requires that all functions, which take an environment parameter, be
-overridden to handle the extended environment objects.
+At the moment `AUGMENT-ENVIRONMENT` is not provided as it cannot be
+implemented on implementations which do not provide the functionality
+natively, since it requires that all functions, which take an
+environment parameter, be overridden to handle the extended
+environment objects. A version of this function will be implemented
+for all implementations in a future release.
 
 ## Documentation
 
-To be able to use the environment access functions, **`ENABLE-HOOK`**
-has to be called to ensure that the code walker is set as the
-macroexpansion hook on implementations where the code-walker is
-required. On implementations where the code-walker is not required
-`ENABLE-HOOK` and `DISABLE-HOOK` do nothing.
+The environment access API is provided by the package
+`CL-ENVIRONMENTS.CLTL2`. The functions exported by this package can be
+used directly, however they will not return meaningful information on
+implementations which do not provide the CLTL2 API natively, unless
+the forms which modify the environment are walked by the code walker.
 
-The `CL-ENVIRONMENTS` package is a clone of the `COMMON-LISP` package
-with the exception that all CL special operators, which modify the
-environment, are shadowed and replaced with macro definitions to
-ensure that the code-walker walks all forms, including forms appearing
-at top-level. This package should be used, instead of the
+The `CL-ENVIRONMENTS-CL` package is a clone of the `COMMON-LISP`
+package with the exception that it exports the environment the symbols
+in the `CL-ENVIRONMENTS.CLTL2` package and all CL special operators,
+which modify the environment, are shadowed with macros which invoke
+the code walker. This package should be used, instead of the
 `COMMON-LISP` package, in order to be able to obtain accurate
-information about the environment from top-level special forms.
-
-#### ENABLE-HOOK
-
-Function: `ENABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
-
-Sets the code-walker as the `*MACROEXPAND-HOOK*` if
-necessary. `PREVIOUS-HOOK`, if provided, is the function to restore
-`*MACROEXPAND-HOOK*` to when calling `DISABLE-HOOK`. If not provided
-defaults to the current value of `*MACROEXPAND-HOOK*`.
+information about the environment.
 
 
-#### DISABLE-HOOK
-
-Function: `DISABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
-
-Restores `*MACROEXPAND-HOOK*` to its previous value prior to calling
-`ENABLE-HOOK`.
-
-If `PREVIOUS-HOOK` is provided restores `*MACROEXPAND-HOOK*` to that
-value instead.
-
-
-### Environment Access Functions
+### Package `CL-ENVIRONMENTS.CLTL2` - Environment Access API
 
 See [Common Lisp the Language
 2](https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html) for
 the Environments API specification.
-
 
 #### VARIABLE-INFORMATION
 
@@ -176,7 +157,50 @@ If the first value is `:DECLARE` the second value should be a `CONS` of
 the form `(KEY . VALUE)`. `VALUE` will be returned by
 `DECLARATION-INFORMATION` for the declaration named `KEY`.
 
-### Utilities
+#### WALK-ENVIRONMENT
+
+Macro: `WALK-ENVIRONMENT &BODY FORMS`
+
+Ensure that the forms in `FORMS` are walked and the environment
+information is extracted.
+
+On implementations which provide the CLTL2 API natively this simply
+expands to a `PROGN` form.
+
+#### ENABLE-HOOK
+
+Function: `ENABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
+
+Bind the code-walker to the `*MACROEXPAND-HOOK*`.
+
+`PREVIOUS-HOOK`, if provided, is the function to restore
+`*MACROEXPAND-HOOK*` to when calling `DISABLE-HOOK`. If not provided
+defaults to the current value of `*MACROEXPAND-HOOK*`.
+
+This function should be used if there are top-level macro forms which
+need to be walked, or you need the expansion of compiler-macros to be
+walked, in order for the environment information to be extracted from
+them.
+
+On implementations which provide the CLTL2 API natively this function
+is a no-op.
+
+
+#### DISABLE-HOOK
+
+Function: `DISABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
+
+Restores `*MACROEXPAND-HOOK*` to its previous value prior to calling
+`ENABLE-HOOK`.
+
+If `PREVIOUS-HOOK` is provided restores `*MACROEXPAND-HOOK*` to that
+value instead.
+
+On implementations which provide the CLTL2 API natively this function
+is a no-op.
+
+
+### Package `CL-ENVIRONMENTS.TOOLS` - Utilities
 
 The package `cl-environments.tools` provides a number of functions for
 obtaining information about forms occurring in a particular
@@ -219,14 +243,7 @@ environment `ENV`.
 ## Status
 
 Supports: Clisp, CCL, ECL, ABCL, CMUCL, SBCL, Allegro CL and LispWorks.
-
-Defaults to the full code-walker implementation on other CL
-implementations. This will work if the implementation does not expand
-the standard CL macros to implementation-specific special forms.
-
-
 Tested on: Clisp, CCL, ECL, ABCL, CMUCL and SBCL.
-
 
 ## Issues
 
