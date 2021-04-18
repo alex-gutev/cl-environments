@@ -39,7 +39,7 @@
 
 (in-suite define-declaration)
 
-
+
 ;;; Variable Declarations
 
 (define-declaration foo-type (args)
@@ -72,6 +72,36 @@
      :declare
      (cons 'foobar-types types))))
 
+
+;;; Custom declarations in global functions
+
+(defun test-function (a b)
+  (declare (foo-type foo1 a b))
+
+  (+ a b)
+  (values
+   (info variable a)
+   (info variable b)))
+
+(defmacro test-macro (form)
+  (declare (foo-type macfoo form))
+
+  (list form)
+  `',(info variable form))
+
+(defgeneric test-generic (a)
+  (:method ((a number))
+    (declare (foo-type genericfoo a))
+    (1+ a)
+    (info variable a)))
+
+(defmethod test-generic ((str string))
+  (declare (foo-type stringfoo str))
+  (string-capitalize str)
+  (info variable str))
+
+
+;;; Tests
 
 (test variable-declarations
   :description "Custom declarations applying to variables"
@@ -106,3 +136,23 @@
       (first (info declaration foobar-types)))
 
     '(foo1 foo2 bar3))))
+
+(test in-global-definitions
+  :descript "Test usage of custom declarations in global definitions"
+
+  (multiple-value-bind (info1 info2)
+      (test-function 1 2)
+
+    (is (info= info1 '(:lexical t ((foo-type . foo1)))))
+    (is (info= info2 '(:lexical t ((foo-type . foo1))))))
+
+  (is
+   (info= (test-macro x) '(:lexical t ((foo-type . macfoo)))))
+
+  (is
+   (info= (test-generic 1)
+	  '(:lexical t ((foo-type . genericfoo)))))
+
+  (is
+   (info= (test-generic "hello")
+	  '(:lexical t ((foo-type . stringfoo))))))
