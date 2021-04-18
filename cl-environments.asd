@@ -67,6 +67,7 @@
 		   (:file "declarations")
 		   (:file "lambda")
 		   (:file "let-forms")
+		   (:file "def-forms")
 		   (:file "../full/special-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")

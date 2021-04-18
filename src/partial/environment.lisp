@@ -67,6 +67,8 @@
    "The extended environment class. Stores information about the
     lexical environment obtained via code walking."))
 
+(defmethod make-load-form ((object environment) &optional env)
+  (make-load-form-saving-slots object :environment env))
 
 (defvar *global-environment* (make-instance 'environment)
   "The global 'null' extended environment object.")
