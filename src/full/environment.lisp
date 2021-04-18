@@ -151,8 +151,36 @@
    "The extended environment class. Stores information about the
     lexical environment obtained via code walking."))
 
+#-abcl
 (defmethod make-load-form ((object environment) &optional env)
   (make-load-form-saving-slots object :environment env))
+
+;;; The default method is not sufficient for ABCL as it doesn't make a
+;;; load form for HASH-TABLE's.
+
+#+abcl
+(defmethod make-load-form ((object environment) &optional env)
+  (declare (ignore env))
+
+  (with-slots (variables functions declarations decl-functions) object
+    (values
+     `(make-instance
+       'environment
+
+       :variables (alist-hash-table ',(hash-table-alist variables) :test #'eq)
+       :functions (alist-hash-table ',(hash-table-alist functions) :test #'eq)
+       :declarations (alist-hash-table ',(hash-table-alist declarations) :test #'eq)
+       :decl-functions (alist-hash-table ',(hash-table-alist decl-functions) :test #'eq))
+
+     `(progn
+	(setf (slot-value ,object 'variables)
+	      (alist-hash-table ',(hash-table-alist variables) :test #'eq))
+	(setf (slot-value ,object 'functions)
+	      (alist-hash-table ',(hash-table-alist functions) :test #'eq))
+	(setf (slot-value ,object 'declarations)
+	      (alist-hash-table ',(hash-table-alist declarations) :test #'eq))
+	(setf (slot-value ,object 'decl-functions)
+	      (alist-hash-table ',(hash-table-alist decl-functions) :test #'eq))))))
 
 (defvar *global-environment* (make-instance 'environment)
   "The global 'null' extended environment object.")
