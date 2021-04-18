@@ -221,7 +221,7 @@
 
 ;;; Local Environments
 
-(defvar *env-sym* (gensym "ENV")
+(defvar *env-sym* 'local-environment-symbol-macro
   "The symbol of the symbol macro used to store the extended
    environment objects. The forms, located within the environment, are
    enclosed in a SYMBOL-MACROLET with the symbol macro expanding to
