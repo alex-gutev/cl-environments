@@ -151,7 +151,7 @@
    "The extended environment class. Stores information about the
     lexical environment obtained via code walking."))
 
-#-abcl
+#- (or clisp abcl)
 (defmethod make-load-form ((object environment) &optional env)
   (make-load-form-saving-slots object :environment env))
 
@@ -175,6 +175,24 @@
 	      (alist-hash-table ',(hash-table-alist declarations) :test #'eq))
 	(setf (slot-value ,object 'decl-functions)
 	      (alist-hash-table ',(hash-table-alist decl-functions) :test #'eq))))))
+
+;;; Clisp has a problem with serializing the DECL-FUNCTIONS
+;;; slot. These are cleared out since they are a copy of what's stored
+;;; in the global environment anyway.
+
+#+clisp
+(defmethod make-load-form ((object environment) &optional env)
+  (declare (ignore env))
+
+  (with-slots (variables functions declarations decl-functions) object
+    (values
+     `(make-instance 'environment)
+
+     `(progn
+	(setf (slot-value ,object 'variables) ',variables)
+	(setf (slot-value ,object 'functions) ',functions)
+	(setf (slot-value ,object 'declarations) ',declarations)))))
+
 
 (defvar *global-environment* (make-instance 'environment)
   "The global 'null' extended environment object.")
