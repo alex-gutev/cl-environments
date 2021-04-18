@@ -128,7 +128,7 @@
 
   (flet ((walk-args (args)
 	   (check-list args
-	     (enclose-forms args))))
+	     (walk-forms args))))
 
     (match function
       ((cons 'cl:lambda _)
