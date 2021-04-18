@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 ;;;; Code-walkers for: LET, LET*, FLET, LABELS, MACROLET and
 ;;;; SYMBOL-MACROLET.

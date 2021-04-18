@@ -23,7 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 
 ;;; DECLAIM code-walker
@@ -32,7 +32,7 @@
   "Walks DECLAIM forms. Walks the declarations, as global
    declarations, and adds the declaration information to the global
    environment."
-  
+
   (check-list args
     (dolist (arg args args)
       (match-form (decl &rest args) arg
@@ -45,11 +45,11 @@
 (defun walk-declarations (decl ext-env)
   "Walks the declare expressions in DECL and adds the information to
    EXT-ENV."
-  
+
   (labels ((walk-decl (decl)
 	     (match-form (decl . args) decl
 	       (walk-declaration decl args ext-env)))
-	   
+
 	   (walk-declare (decl)
 	     (match-form ('cl:declare &rest decl) decl
 	       (mapc #'walk-decl decl))))
@@ -72,7 +72,7 @@
    environment. TYPE is the first return
    value (either :VARIABLE :FUNCTION or :DECLARE), INFO is the second
    return value."
-  
+
   (flet ((add-binding-info (add-info)
 	   (loop
 	      for (sym key value) in info
@@ -84,4 +84,3 @@
        (add-binding-info #'add-function-info))
       (:declare
        (setf (declaration-info (car info) ext-env) (cdr info))))))
-     

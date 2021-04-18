@@ -25,7 +25,7 @@
 
 ;;;; Extended environment implementation.
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 
 ;;; Environments
@@ -37,7 +37,7 @@
     :accessor variables
     :documentation
     "Hash table mapping symbols to variable bindings.")
-   
+
    (functions
     :initform (make-hash-table :test #'equal)
     :initarg :functions
@@ -45,7 +45,7 @@
     :documentation
     "Hash table mapping symbols (and lists for SETF functions) to
      function bindings.")
-   
+
    (declarations
     :initform (make-hash-table :test #'eq)
     :initarg :declarations
@@ -84,7 +84,7 @@
 	       functions
 	       declarations
 	       decl-functions) env
-  
+
     (make-instance 'environment
 		   :variables (copy-hash-table variables)
 		   :functions (copy-hash-table functions)
@@ -109,7 +109,7 @@
    environment. ENV is the implementation specific lexical environment
    object, obtained via the &ENVIRONMENT macro parameters, if it is
    NIL the global null environment is returned."
-  
+
   (if (null env)
       *global-environment*
       (get-local-environment env)))
@@ -139,7 +139,7 @@
   (match forms
     ((list (and body (list* 'cl:symbol-macrolet (list (list (eql *env-sym*) _)) _)))
      body)
-    
+
     (_
      `(cl:symbol-macrolet ((,*env-sym* ,env))
 	,@(enclose-forms forms)))))
@@ -162,14 +162,14 @@
     (acond
       ((gethash sym variables)
        it)
-      
+
       ((gethash sym (variables *global-environment*))
        (setf (gethash sym variables) it)))))
 
 (defun (setf variable-binding) (binding sym env)
   "Sets the binding for the variable with symbol SYM, in the
    environment ENV, to the `binding' object BINDING."
-  
+
   (setf (gethash sym (variables env)) binding))
 
 
@@ -183,7 +183,7 @@
 (defun add-variables-info (vars key value env)
   "Adds the pair (KEY . VALUE) to the declaration information of the
    variable-bindings of each symbol in VARS."
-  
+
   (mapc (rcurry #'add-variable-info key value env) vars))
 
 
@@ -203,14 +203,14 @@
     (acond
       ((gethash fn functions)
        it)
-      
+
       ((gethash fn (functions *global-environment*))
        (setf (gethash fn functions) it)))))
 
 (defun (setf function-binding) (binding fn env)
   "Sets the function binding for the symbol FN, in the environment
    ENV, to the `binding' object BINDING."
-  
+
   (setf (gethash fn (functions env)) binding))
 
 
@@ -225,7 +225,7 @@
 (defun add-functions-info (fns key value env)
   "Adds the pair (KEY . VALUE) to the declaration information of the
    function-bindings of each symbol in FNS."
-  
+
   (mapc (rcurry #'add-function-info key value env) fns))
 
 
@@ -250,4 +250,3 @@
   "Sets the declaration function for the user-defined declaration
    NAME."
   (setf (gethash name (decl-functions env)) fn))
-

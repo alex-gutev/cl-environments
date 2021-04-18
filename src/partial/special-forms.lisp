@@ -23,30 +23,7 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments)
-
-
-;;; FUNCTION
-
-(defwalker cl:function (args)
-  "If the body of the FUNCTION form is a lambda expression, it is
-   walked as a function definition. Otherwise the form arguments are
-   returned as is."
-
-  (match args
-    ((list (list* 'cl:lambda expr))
-     (list (cons 'cl:lambda (walk-fn-def expr (get-environment *env*)))))
-    
-    (_ args)))
-
-
-;;; LOCALLY
-
-(defwalker cl:locally (args)
-  "Encloses the body of the LOCALLY form in an environment, augmented
-   with the declaration information."
-  
-  (walk-body args))
+(in-package :cl-environments.cltl2)
 
 
 ;;; CCL specific special forms

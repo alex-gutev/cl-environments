@@ -54,11 +54,12 @@
 		 (:file "other/lispworks")
 
 		 #+(or ccl cmucl)
-		 (:module "partial"
+		 (:module
+		  "partial"
 		  :serial t
+		  :if-feature (:or :ccl :cmucl)
 		  :components
 		  ((:file "../full/package")
-		   (:file "../full/cl-overrides")
 		   (:file "../full/util")
 		   (:file "../full/walker")
 		   (:file "cl-environments")
@@ -69,7 +70,8 @@
 		   (:file "../full/special-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
-		   (:file "../full/hook")))
+		   (:file "../full/hook")
+		   (:file "../full/cl-overrides")))
 
 		 (:module
 		  "full"

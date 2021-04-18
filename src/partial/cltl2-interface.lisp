@@ -27,7 +27,7 @@
 ;;;; DECLARATION-INFORMATION FUNCTIONS as specified in Common Lisp the
 ;;;; Language 2 (CLTL2)
 
-(in-package :cl-environments)
+(in-package :cl-environments.cltl2)
 
 (defmacro cltl2-fn (fn &rest args)
   `(,(intern (symbol-name fn)
@@ -85,17 +85,17 @@
    is :DECLARE the second value must be a CONS of the (KEY . VALUE),
    which is added to the declarations list of the lexical
    environment."
-  
+
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (declaim (declaration ,decl-name))
      (setf (declaration-function ',decl-name *global-environment*)
 	   (lambda (,arg-var ,env-var)
 	     (declare (ignorable ,env-var))
 	     ,@body))
-     
+
      #+ccl (ccl:define-declaration ,decl-name (,arg-var)
        (let (,env-var)
 	 (declare (ignorable ,env-var))
 	 ,@body))
-     
+
      ',decl-name))
