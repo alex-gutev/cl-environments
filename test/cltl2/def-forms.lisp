@@ -116,6 +116,9 @@
 (test declaim
   :description "Test that global declarations are added to environment"
 
+  ;; Fails on CMUCL, where the native DECLARATION-INFORMATION function
+  ;; is used.
+
   (is (member 'my-declaration
 	      (first (info declaration declaration)))))
 

@@ -71,7 +71,8 @@
 
     (is (info=
 	 (env-info (variable-information 'dvar env) env)
-	 '(:special t ((type . number)))))
+	 #-sbcl '(:special t ((type . number)))
+	 #+sbcl '(:special nil ((type . number)))))
 
     (is (info=
 	 (env-info (variable-information 'lvar env) env)
@@ -79,7 +80,8 @@
 
     (is (info=
 	 (env-info (variable-information '*global-var* env) env)
-	 '(:special t nil)))))
+	 #-sbcl '(:special t nil)
+	 #+sbcl '(:special nil nil)))))
 
 (test let*-binding-dynamic-extent
   (let* ((func (lambda (a b) (+ a b))))
@@ -88,8 +90,12 @@
 
     (is (info=
 	 (env-info (variable-information 'func env) env)
-	 '(:lexical t ((dynamic-extent . t)
-		       (type . (function (number number) number))))))))
+	 ;; CMUCL ignores DYNAMIC-EXTENT here
+
+	 #-cmucl '(:lexical t ((dynamic-extent . t)
+			       (type . (function (number number) number))))
+
+	 #+cmucl '(:lexical t ((type . (function (number number) number))))))))
 
 (test let*-info-in-init-form
   (let ((outer-var (* 8 7)))
@@ -118,4 +124,6 @@
 
       (is (info=
 	   (env-info (variable-information 'outer-var env) env)
-	   '(:special t ((dynamic-extent . t) (type . string))))))))
+	   #-(or sbcl cmucl) '(:special t ((dynamic-extent . t) (type . string)))
+	   #+sbcl '(:special nil ((type . string)))
+	   #+cmucl '(:special t ((type . string))))))))

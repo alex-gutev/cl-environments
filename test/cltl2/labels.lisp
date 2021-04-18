@@ -64,8 +64,12 @@
 
     (is (info=
 	 (env-info (function-information 'inc env) env)
+	 #-cmucl
 	 '(:function t ((ftype . (function (integer) integer))
-			(dynamic-extent . t)))))
+			(dynamic-extent . t)))
+
+	 #+cmucl
+	 '(:function t ((ftype . (function (integer) integer))))))
 
     (is (info=
 	 (env-info (function-information 'add env) env)
@@ -74,8 +78,11 @@
 
     (is (info=
 	 (env-info (function-information 'global-fn env) env)
-	 '(:function nil ((ftype . (function (integer integer integer) number))
-			  (inline . notinline)))))
+	 ;; For some reason CCL doesn't store global declarations.
+
+	 #-ccl '(:function nil ((ftype . (function (integer integer integer) number))
+				(inline . notinline)))
+	 #+ccl '(:function nil ((inline . notinline)))))
 
     (is (info=
 	 (env-info (function-information 'test-macro env) env)
@@ -128,8 +135,8 @@
 
 	(is-every info=
 	  (info-x '(:lexical t ((type . integer) (ignore . t))))
-	  (info-f2 '(:function t ((inline . notinline))))
-	  (info-global-fn '(:function t ((ignore . t))))))
+	  (info-f2 '(:function t nil))
+	  (info-global-fn '(:function t nil))))
 
       (multiple-value-bind (info-a info-b info-f1)
 	  (f2 1 2)
@@ -145,4 +152,5 @@
 
       (is (info=
 	   (env-info (function-information 'global-fn env) env)
-	   '(:function t ((ignore . t))))))))
+	   #-(or sbcl ccl) '(:function t ((ignore . t)))
+	   #+(or sbcl ccl) '(:function t nil))))))

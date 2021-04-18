@@ -64,8 +64,12 @@
 
     (is (info=
 	 (env-info (function-information 'inc env) env)
-	 '(:function t ((ftype . (function (integer) integer))
-			(dynamic-extent . t)))))
+	 ;; CMUCL ignores DYNAMIC-EXTENT here
+
+	 #-cmucl '(:function t ((ftype . (function (integer) integer))
+				(dynamic-extent . t)))
+
+	 #+cmucl '(:function t ((ftype . (function (integer) integer))))))
 
     (is (info=
 	 (env-info (function-information 'add env) env)
@@ -74,8 +78,12 @@
 
     (is (info=
 	 (env-info (function-information 'global-fn env) env)
-	 '(:function nil ((ftype . (function (integer integer integer) number))
-			  (inline . notinline)))))
+	 ;; CCL sometimes doesn't store global declarations
+
+	 #-ccl '(:function nil ((ftype . (function (integer integer integer) number))
+				(inline . notinline)))
+
+	 #+ccl '(:function nil ((inline . notinline)))))
 
     (is (info=
 	 (env-info (function-information 'test-macro env) env)
@@ -130,7 +138,9 @@
 	  (info-x '(:lexical t ((type . integer) (ignore . t))))
 	  (info-f2 '(:function t ((ftype . (function (number number) number))
       				  (inline . inline))))
-	  (info-global-fn '(:function nil ((ftype . (function (integer integer integer) number)))))))
+
+	  #-ccl (info-global-fn '(:function nil ((ftype . (function (integer integer integer) number)))))
+	  #+ccl (info-global-fn '(:function nil nil))))
 
       (multiple-value-bind (info-a info-b info-f1)
 	  (f2 1 2)
@@ -146,4 +156,5 @@
 
       (is (info=
 	   (env-info (function-information 'global-fn env) env)
-	   '(:function t ((ignore . t))))))))
+	   #-(or sbcl ccl cmucl) '(:function t ((ignore . t)))
+	   #+(or sbcl ccl cmucl) '(:function t nil))))))
