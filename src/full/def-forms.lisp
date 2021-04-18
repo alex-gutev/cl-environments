@@ -1,6 +1,6 @@
 ;;;; def-forms.lisp
 ;;;;
-;;;; Copyright 2017 Alexander Gutev
+;;;; Copyright 2017-2021 Alexander Gutev
 ;;;;
 ;;;; Permission is hereby granted, free of charge, to any person
 ;;;; obtaining a copy of this software and associated documentation
@@ -28,11 +28,6 @@
 ;;;; Code-walkers for forms which modify the global environment such
 ;;;; as global function, variable, macro definition forms and
 ;;;; global declaration (DECLAIM) forms.
-
-;;;; The code-walkers for function and macro definition forms serve
-;;;; only to add the function/macro to the global environment. The
-;;;; actual code-walking of the lambda lists and bodies is done on the
-;;;; macro expansion of the definition forms.
 
 ;;; DEFUN
 
