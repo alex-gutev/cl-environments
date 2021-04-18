@@ -117,3 +117,11 @@
    EXP."
 
   (subtypep got exp))
+
+(defmethod decl-key= ((key (eql 'ftype)) got exp)
+  "Compare FTYPE declaration information fields.
+
+   Returns true if the type GOT is a subtype of the expected type
+   EXP."
+
+  (subtypep got exp))
