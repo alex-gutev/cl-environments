@@ -47,7 +47,7 @@
   form)
 
 (test function-types
-  :description "Test extracting function information"
+  "Test extracting function information"
 
   (flet ((inc (a)
 	   (1+ a))
@@ -102,7 +102,7 @@
 	 '(nil nil nil)))))
 
 (test shadowing
-  :description "Test lexical shadowing of functions"
+  "Test lexical shadowing of functions"
 
   (flet ((f2 (a b)
 	   (+ a b)))

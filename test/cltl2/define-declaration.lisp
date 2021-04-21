@@ -104,7 +104,7 @@
 ;;; Tests
 
 (test variable-declarations
-  :description "Custom declarations applying to variables"
+  "Custom declarations applying to variables"
 
   (is
    (info=
@@ -116,7 +116,7 @@
     '(:lexical t ((foo-type . my-foo))))))
 
 (test function-declarations
-  :description "Custom declarations applying to functions"
+  "Custom declarations applying to functions"
 
   (is
    (info=
@@ -128,7 +128,7 @@
     '(:function t ((bar-type . my-bar))))))
 
 (test other-declarations
-  :description "Custom declarations neither applying to variables nor functions"
+  "Custom declarations neither applying to variables nor functions"
 
   (is
    (equal

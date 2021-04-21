@@ -84,37 +84,37 @@
 (declaim (declaration my-declaration))
 
 (test defun
-  :description "Test extracting environment information in DEFUN"
+  "Test extracting environment information in DEFUN"
 
   (is (info= (test-function 1) '(:lexical t ((ignore . t))))))
 
 (test defmacro
-  :description "Test extracting environment information in DEFMACRO"
+  "Test extracting environment information in DEFMACRO"
 
   (is (info= (test-macro 'x) '(:lexical t ((ignore . t))))))
 
 (test defgeneric
-  :description "Test extracting environment information in DEFGENERIC"
+  "Test extracting environment information in DEFGENERIC"
 
   (is (info= (test-generic 100) '(:lexical t ((type . integer))))))
 
 (test defmethod
-  :description "Test extracting environment information in DEFMETHOD"
+  "Test extracting environment information in DEFMETHOD"
 
   (is (info= (test-generic "hello") '(:lexical t ((type . string))))))
 
 (test defparameter
-  :description "Test extracting environment information in DEFPARAMETER"
+  "Test extracting environment information in DEFPARAMETER"
 
   (is (info= *test-param* '(:lexical t ((type . null))))))
 
 (test defvar
-  :description "Test extracting environment information in DEFPARAMETER"
+  "Test extracting environment information in DEFPARAMETER"
 
   (is (info= *test-var* '(:lexical t ((type . null))))))
 
 (test declaim
-  :description "Test that global declarations are added to environment"
+  "Test that global declarations are added to environment"
 
   ;; Fails on CMUCL, where the native DECLARATION-INFORMATION function
   ;; is used.
@@ -123,7 +123,7 @@
 	      (first (info declaration declaration)))))
 
 (test global-definitions
-  :description "Test that global definitions added to environment"
+  "Test that global definitions added to environment"
 
   (is (info= (info function test-function)
 	     '(:function nil nil)))

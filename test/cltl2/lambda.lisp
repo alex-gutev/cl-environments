@@ -39,7 +39,7 @@
 (in-suite lambda-forms)
 
 (test lambda-arg-information
-  :description "Test that lambda arguments are added to environment"
+  "Test that lambda arguments are added to environment"
 
   (let ((f (lambda (x)
 	     (declare (ignore x))
@@ -50,7 +50,7 @@
 	       '(:lexical t ((ignore . t)))))))
 
 (test lambda-optional-args
-  :description "Test LAMBDA form with all argument types"
+  "Test LAMBDA form with all argument types"
 
   (let ((f (lambda (a &optional (b (info variable a)) c &rest d &key (e (info variable d) ep) ((:argf f) (info variable ep)) g &allow-other-keys &aux (h (info variable f)))
 	     (declare (ignore a b c d e ep f g h))
@@ -64,7 +64,7 @@
 	(info-f '(:lexical t nil))))))
 
 (test lambda-closure
-  :description "Test information of variables in LAMBDA closure"
+  "Test information of variables in LAMBDA closure"
 
   (let ((x 1)
 	(y 2))

@@ -40,7 +40,7 @@
 (in-suite special-forms)
 
 (test block
-  :description "Accessing environment information in BLOCK forms"
+  "Accessing environment information in BLOCK forms"
 
   (is
    (info=
@@ -55,7 +55,7 @@
     '(:lexical t ((type . integer))))))
 
 (test catch
-  :description "Accessing environment information in CATCH forms"
+  "Accessing environment information in CATCH forms"
 
   (is
    (info=
@@ -70,7 +70,7 @@
     '(:lexical t ((type . integer))))))
 
 (test eval-when
-  :description "Accessing environment information in CATCH forms"
+  "Accessing environment information in CATCH forms"
 
   (is
    (info=
@@ -83,7 +83,7 @@
     '(:lexical t ((ignore . t))))))
 
 (test if
-  :description "Accessing environment information in IF forms"
+  "Accessing environment information in IF forms"
 
   (is
    (info=
@@ -108,7 +108,7 @@
     '(:lexical t ((ignore . t))))))
 
 (test locally
-  :description "Accessing environment information in LOCALLY forms"
+  "Accessing environment information in LOCALLY forms"
 
   (is (subsetp
        '((speed 2) (safety 3) (space 0))
@@ -118,7 +118,7 @@
        :test #'equal)))
 
 (test multiple-value-call
-  :description "Accessing environment information in MULTIPLE-VALUE-CALL forms"
+  "Accessing environment information in MULTIPLE-VALUE-CALL forms"
 
   (is
    (info=
@@ -132,7 +132,7 @@
     '(:lexical t ((ignore . t))))))
 
 (test multiple-value-prog1
-  :description "Accessing environment information in MULTIPLE-VALUE-PROG1 forms"
+  "Accessing environment information in MULTIPLE-VALUE-PROG1 forms"
 
   (is
    (info=
@@ -146,7 +146,7 @@
     '(:lexical t ((ignore . t))))))
 
 (test progn
-  :description "Accessing environment information in PROGN forms"
+  "Accessing environment information in PROGN forms"
 
   (let (info-a info-b)
     (setf
@@ -166,7 +166,7 @@
     (is (info= info-b '(:lexical t ((type . string)))))))
 
 (test progv
-  :description "Accessing environment information in PROGV forms"
+  "Accessing environment information in PROGV forms"
 
   (is
    (info=
@@ -180,7 +180,7 @@
     '(:lexical t ((ignore . t))))))
 
 (test setq
-  :description "Accessing environment information in SETQ forms"
+  "Accessing environment information in SETQ forms"
 
   (let (info1 info2)
     (setq
@@ -199,7 +199,7 @@
       (info2 '(:lexical t ((type . integer)))))))
 
 (test tagbody
-  :description "Accessing environment information in TAGBODY forms"
+  "Accessing environment information in TAGBODY forms"
 
   (is
    (info=
@@ -222,7 +222,7 @@
     '(:lexical t ((type . string))))))
 
 (test the
-  :description "Accessing environment information in THE forms"
+  "Accessing environment information in THE forms"
 
   (is
    (info=
@@ -236,7 +236,7 @@
     '(:lexical t ((ignore . t))))))
 
 (test unwind-protect
-  :description "Accessing environment information in UNWIND-PROTECT forms"
+  "Accessing environment information in UNWIND-PROTECT forms"
 
   (is
    (info=

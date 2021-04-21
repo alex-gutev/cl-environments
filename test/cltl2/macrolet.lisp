@@ -47,7 +47,7 @@
 (define-symbol-macro global-symbol-macro "Hello World")
 
 (test macro-types
-  :description "Test extracting lexical macro information"
+  "Test extracting lexical macro information"
 
   (macrolet ((pass-through (form)
 	       "Pass through macro"
@@ -57,7 +57,7 @@
 	       '(:macro t nil)))))
 
 (test macro-shadowing
-  :description "Test shadowing of global macros by lexical macros"
+  "Test shadowing of global macros by lexical macros"
 
   (is (info= (info function test-macro)
 	     '(:macro nil nil)))
@@ -69,7 +69,7 @@
 	       '(:macro t nil)))))
 
 (test function-shadowing
-  :description "Test shadowing of global functions by lexical macros"
+  "Test shadowing of global functions by lexical macros"
 
   (is (info= (info function global-fn)
 	     '(:function nil nil)))
@@ -81,7 +81,7 @@
 	       '(:macro t nil)))))
 
 (test symbol-macro-types
-  :description "Test extraction of lexical symbol macro information"
+  "Test extraction of lexical symbol macro information"
 
   (symbol-macrolet ((sym-macro "a symbol macro")
 		    (sym-macro2 2))
@@ -91,7 +91,7 @@
       ((info variable sym-macro2) '(:symbol-macro t nil)))))
 
 (test symbol-macro-shadowing
-  :description "Test shadowing of global symbol macros with lexical symbol macros"
+  "Test shadowing of global symbol macros with lexical symbol macros"
 
   (is (info= (info variable global-symbol-macro)
 	     '(:symbol-macro nil nil)))
@@ -101,7 +101,7 @@
 	       '(:symbol-macro t nil)))))
 
 (test var-shadow-symbol-macro
-  :description "Test shadowing of symbol macros with lexical variables"
+  "Test shadowing of symbol macros with lexical variables"
 
   (symbol-macrolet ((sym-macro "macro"))
     (is (info= (info variable sym-macro)
