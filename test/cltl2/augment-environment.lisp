@@ -371,3 +371,28 @@ in augmented environment."
       (in-lexical-environment (env)
 	(let ((env (augment-environment env :symbol-macro '((greetings greeting-list)))))
 	  (macroexpand 'the-greetings env)))))))
+
+
+;;; Shadowing Global Macros with local functions/variables
+
+(test shadow-global-macro
+  "Test shadowing of a global macro with local function."
+
+  (is
+   (expansion=
+    '((global-macro (+ 1 2)) nil)
+
+    (in-lexical-environment (env)
+      (let ((env (augment-environment env :function '(global-macro local-fn))))
+	(macroexpand '(global-macro (+ 1 2)) env))))))
+
+(test shadow-global-symbol-macro
+  "Test shadowing of a global symbol-macro with local variable."
+
+  (is
+   (expansion=
+    '(a-global-symbol-macro nil)
+
+    (in-lexical-environment (env)
+      (let ((env (augment-environment env :variable '(x y z a-global-symbol-macro))))
+	(macroexpand 'a-global-symbol-macro env))))))
