@@ -37,6 +37,10 @@
 	   :declaration-information
 	   :define-declaration
 
+	   :augment-environment
+	   :augmented-macroexpand-1
+	   :augmented-macroexpand
+
 	   :enable-hook
 	   :disable-hook
 
@@ -63,7 +67,10 @@
 	   :defconstant
 	   :define-symbol-macro
 
-	   :declaim)
+	   :declaim
+
+	   :macroexpand
+	   :macroexpand-1)
 
   (:documentation
    "Package exporting the CLTL2 environments API and shadowing the
@@ -124,6 +131,14 @@
 
   (declaim &rest declaration-specifiers))
 
+
+;;; Shadow macroexpansion functions
+
+(defun macroexpand (form &optional environment)
+  (augmented-macroexpand form environment))
+
+(defun macroexpand-1 (form &optional environment)
+  (augmented-macroexpand-1 form environment))
 
 
 ;;; Re-export all symbols imported from the CL package except symbols

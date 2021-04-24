@@ -41,6 +41,10 @@
 	   :declaration-information
 	   :define-declaration
 
+	   :augment-environment
+	   :augmented-macroexpand-1
+	   :augmented-macroexpand
+
 	   :enable-hook
 	   :disable-hook
 

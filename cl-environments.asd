@@ -89,6 +89,7 @@
 		   (:file "def-forms")
 		   (:file "special-forms")
 		   (:file "cltl2-interface")
+		   (:file "augment-environment")
 		   (:file "hook")
 		   (:file "cl-overrides")))
 

@@ -254,13 +254,21 @@
 	*global-environment*)))
 
 
-(defun enclose-in-env (env forms)
-  "Encloses FORMS in the extended environment object ENV. Returns
-   FORMS wrapped in a SYMBOL-MACROLET, defining a symbol macro,
-   *ENV-SYM*, which expands to the environment object ENV. If FORMS is
-   already a list containing a SYMBOL-MACROLET form defining the
-   symbol macro *ENV-SYM*, the SYMBOL-MACROLET form is simply
-   returned."
+(defun enclose-in-env (env forms &key (walk-forms t))
+  "Enclose FORMS in an extended environment object.
+
+   ENV is the extended `ENVIRONMENT' object in which to enclose
+   forms.
+
+   FORMS is the list of forms to enclose in the environment. FORMS are
+   enclosed in a SYMBOL-MACROLET which defines a symbol macro, with
+   the name given by the value of the global variable *ENV-SYM*, which
+   expands to the extended environment object.
+
+   If WALK-FORMS is true, each form is surrounded in the code walker
+   macro, otherwise they are inserted as is.
+
+   A single SYMBOL-MACROLET form is returned."
 
   (match forms
     ((list (and body (list* 'cl:symbol-macrolet (list (list (eql *env-sym*) _)) _)))
@@ -268,7 +276,9 @@
 
     (_
      `(cl:symbol-macrolet ((,*env-sym* ,env))
-	,@(enclose-forms forms)))))
+	,@ (if walk-forms
+	       (enclose-forms forms)
+	       forms)))))
 
 
 ;;; Variables
