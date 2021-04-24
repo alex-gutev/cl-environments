@@ -38,7 +38,7 @@
    information."
 
   (slot-values (binding-type local declarations)
-      (variable-binding variable (get-environment env))
+      (variable-binding variable (extended-environment env))
     (values binding-type local declarations)))
 
 (defun function-information (function &optional env)
@@ -49,14 +49,25 @@
    value is an association list containing declaration information."
 
   (slot-values (binding-type local declarations)
-      (function-binding function (get-environment env))
+      (function-binding function (extended-environment env))
     (values binding-type local declarations)))
 
 (defun declaration-information (decl-name &optional env)
   "Returns information about the declaration DECL-NAME in the
    environment ENV."
 
-  (nth-value 0 (declaration-info decl-name (get-environment env))))
+  (nth-value 0 (declaration-info decl-name (extended-environment env))))
+
+(defun extended-environment (env)
+  "Retrieve the extended environment object for ENV.
+
+   If ENV is a lexical environment the extended environment is
+   retrieved using GET-ENVIRONMENT, otherwise if it is an
+   `ENVIRONMENT' object it is returned as is."
+
+  (typecase env
+    (environment env)
+    (otherwise (get-environment env))))
 
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
