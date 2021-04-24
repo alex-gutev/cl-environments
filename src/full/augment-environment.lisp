@@ -279,3 +279,58 @@
 
     (otherwise
      (macroexpand form environment))))
+
+(defun augmented-macro-function (symbol &optional environment)
+  "Retrieve the macro function for a symbol.
+
+   SYMBOL the symbol for which the macro function is retrieved.
+
+   ENVIRONMENT is the lexical environment which is searched for the
+   macro definition. If NIL defaults to the global environment.
+
+   If SYMBOL does not name a symbol in ENVIRONMENT, returns NIL."
+
+  (typecase environment
+    (augmented-environment
+     (get-augmented-macro-function symbol environment))
+
+    (otherwise
+     (macro-function symbol environment))))
+
+(defun get-augmented-macro-function (symbol environment)
+  "Retrieve the macro function for a symbol in an `AUGMENTED-ENVIRONMENT'.
+
+   If SYMBOL does not name a macro added to the augmented environment,
+   the BASE-ENVIRONMENT of the augmented environment is searched.
+
+   SYMBOL is the symbol naming the macro.
+
+   ENVIRONMENT is the `AUGMENTED-ENVIRONMENT' object."
+
+
+  (with-slots (macro-functions functions base-environment)
+      environment
+
+    (when-let (binding (gethash symbol functions))
+      (case (binding-type binding)
+	(:macro
+	 (gethash symbol macro-functions))
+
+	(:function nil)
+
+	(otherwise
+	 (macro-function symbol base-environment))))))
+
+(defun augmented-get-setf-expansion (place &optional environment)
+  "Determine the SETF expansion for PLACE in ENVIRONMENT."
+
+  (typecase environment
+    (augmented-environment
+     (with-gensyms (env)
+       (eval-in-augmented-env
+	environment
+	env
+	`(get-setf-expansion ',place ,env))))
+
+    (otherwise
+     environment)))

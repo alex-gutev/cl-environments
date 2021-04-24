@@ -44,6 +44,8 @@
 	   :augment-environment
 	   :augmented-macroexpand-1
 	   :augmented-macroexpand
+	   :augmented-macro-function
+	   :augmented-get-setf-expansion
 
 	   :enable-hook
 	   :disable-hook

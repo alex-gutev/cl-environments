@@ -40,6 +40,8 @@
 	   :augment-environment
 	   :augmented-macroexpand-1
 	   :augmented-macroexpand
+	   :augmented-macro-function
+	   :augmented-get-setf-expansion
 
 	   :enable-hook
 	   :disable-hook
@@ -47,7 +49,9 @@
 	   :walk-environment)
 
   (:import-from :cl-environments.cltl2
-		:enclose-form)
+		:enclose-form
+		:augmented-environment
+		:base-environment)
 
   (:shadow :flet
 	   :labels
@@ -69,8 +73,15 @@
 
 	   :declaim
 
+	   ;; Shadowed functions which take ENVIRONMENT parameters.
 	   :macroexpand
-	   :macroexpand-1)
+	   :macroexpand-1
+	   :macro-function
+	   :compiler-macro-function
+	   :constantp
+	   :get-setf-expansion
+	   :typep
+	   :subtypep)
 
   (:documentation
    "Package exporting the CLTL2 environments API and shadowing the
@@ -132,7 +143,7 @@
   (declaim &rest declaration-specifiers))
 
 
-;;; Shadow macroexpansion functions
+;;; Shadow functions which take ENVIRONMENT parameter
 
 (defun macroexpand (form &optional environment)
   (augmented-macroexpand form environment))
@@ -140,6 +151,49 @@
 (defun macroexpand-1 (form &optional environment)
   (augmented-macroexpand-1 form environment))
 
+(defun macro-function (symbol &optional environment)
+  (augmented-macro-function symbol environment))
+
+(defun (setf macro-function) (new-fn symbol &optional (environment nil environment-p))
+  ;; Technically Calling (SETF MACRO-FUNCTION) with a non-NIL
+  ;; environment parameter is undefined, but we want to preserve the
+  ;; actual behaviour on the implementation.
+
+  (if environment-p
+      (setf (cl:macro-function symbol environment) (get-base-environment new-fn))
+      (setf (cl:macro-function symbol) new-fn)))
+
+(defun compiler-macro-function (symbol &optional environment)
+  (cl:compiler-macro-function symbol (get-base-environment environment)))
+
+(defun (setf compiler-macro-function) (new-fn symbol &optional (environment nil environment-p))
+  ;; Technically Calling (SETF COMPILER-MACRO-FUNCTION) with a non-NIL
+  ;; environment parameter is undefined, but we want to preserve the
+  ;; actual behaviour on the implementation.
+
+  (if environment-p
+      (setf (cl:compiler-macro-function symbol (get-base-environment environment)) new-fn)
+      (setf (cl:compiler-macro-function symbol) new-fn)))
+
+(defun constantp (form &optional environmnet)
+  (cl:constantp form (get-base-environment environmnet)))
+
+(defun get-setf-expansion (place &optional environment)
+  (augmented-get-setf-expansion place environment))
+
+(defun typep (object type-specifier &optional environment)
+  (cl:typep object type-specifier (get-base-environment environment)))
+
+(defun subtypep (type-1 type-2 &optional environment)
+  (cl:subtypep type-1 type-2 (get-base-environment environment)))
+
+(defun get-base-environment (environment)
+  (typecase environment
+    (augmented-environment
+     (base-environment environment))
+
+    (otherwise
+     environment)))
 
 ;;; Re-export all symbols imported from the CL package except symbols
 ;;; which have been shadowed
