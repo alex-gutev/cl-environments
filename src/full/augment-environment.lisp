@@ -193,50 +193,55 @@
    retrieved using VARIABLE-INFORMATION, FUNCTION-INFORMATION and
    DECLARATION-INFORMATION."
 
-  (let ((aug-env (copy-environment (get-environment env))))
-    (flet ((macro-cons (macro)
-	     (destructuring-bind (name fn) macro
-	       (cons name fn)))
+  (let ((aug-env (make-augmented-environment env)))
+    (with-slots (macro-functions symbol-macros) aug-env
+      (flet ((add-macro (macro)
+	       (add-function (first macro) aug-env :binding-type :macro))
 
-	   (symbol-macro-cons (macro)
-	     (destructuring-bind (name expansion) macro
-	       (cons name expansion)))
+	     (add-variable (variable)
+	       (add-variable variable aug-env))
 
-	   (add-macro (macro)
-	     (add-function (first macro) aug-env :binding-type :macro))
+	     (add-symbol-macro (macro)
+	       (add-symbol-macro (first macro) aug-env))
 
-	   (add-variable (variable)
-	     (add-variable variable aug-env))
+	     (add-function (function)
+	       (add-function function aug-env))
 
-	   (add-symbol-macro (macro)
-	     (add-symbol-macro (first macro) aug-env))
+	     (add-declaration (decl)
+	       (destructuring-bind (decl . args) decl
+		 (walk-declaration decl args aug-env)))
 
-	   (add-function (function)
-	     (add-function function aug-env))
+	     (add-macro-function (macro)
+	       (destructuring-bind (name fn) macro
+		 (setf (gethash name macro-functions) fn)))
 
-	   (add-declaration (decl)
-	     (destructuring-bind (decl . args) decl
-	       (walk-declaration decl args aug-env))))
+	     (add-symbol-macro-expansion (macro)
+	       (destructuring-bind (name expansion) macro
+		 (setf (gethash name symbol-macros) expansion))))
 
-      (mapc #'add-variable variable)
-      (mapc #'add-symbol-macro symbol-macro)
-      (mapc #'add-function function)
-      (mapc #'add-macro macro)
-      (mapc #'add-declaration declare)
+	(mapc #'add-variable variable)
+	(mapc #'add-symbol-macro symbol-macro)
+	(mapc #'add-function function)
+	(mapc #'add-macro macro)
+	(mapc #'add-declaration declare)
 
-      (change-class
-       aug-env
-       'augmented-environment
-       :base-environment env
+	(mapc #'add-macro-function macro)
+	(mapc #'add-symbol-macro-expansion symbol-macro)
 
-       :macro-functions
-       (alist-hash-table
-	(mapcar #'macro-cons macro)
-	:test #'eq)
+	aug-env))))
 
-       :symbol-macros
-       (alist-hash-table
-	(mapcar #'symbol-macro-cons symbol-macro))))))
+(defun make-augmented-environment (environment)
+  "Make an `AUGMENTED-ENVIRONMENT' based on ENVIRONMENT, which may be
+   either a lexical environment or another `AUGMENTED-ENVIRONMENT'."
+
+  (typecase environment
+    (augmented-environment
+     (copy-augmented-environment environment))
+
+    (otherwise
+     (let ((env (copy-environment (get-environment environment))))
+       (change-class env 'augmented-environment
+		     :base-environment environment)))))
 
 (defun augmented-macroexpand-1 (form &optional environment)
   "Expands a macro form, like CL:MACROEXPAND-1, in a given lexical or augmented environment.
