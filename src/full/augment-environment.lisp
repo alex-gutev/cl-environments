@@ -339,3 +339,62 @@
 
     (otherwise
      environment)))
+
+
+;;; Definition of ENCLOSE and PARSE-MACRO
+
+(defun enclose (lambda-expression &optional environment)
+  "Return a function object that is equivalent to what would be
+   obtained by evaluating `(FUNCTION ,LAMBDA-EXPRESSION) in the
+   environment ENVIRONMENT."
+
+  (typecase environment
+    (augmented-environment
+     (with-gensyms (env-var)
+       (eval-in-augmented-env
+	environment
+	env-var
+	`(function ,lambda-expression))))
+
+    (null (compile nil lambda-expression))
+
+    (otherwise
+     (enclose lambda-expression (augment-environment environment)))))
+
+(defun parse-macro (name lambda-list body &optional environment)
+  "Parse a macro definition form (as found in MACROLET or DEFMACRO) into a macro function.
+
+   NAME is the name of the macro. The body of the macro is enclosed in
+   a block with this name.
+
+   LAMBDA-LIST is the macro lambda-list.
+
+   BODY is the list of forms comprising the macro body.
+
+   ENVIRONMENT is the lexical environment in which the macro
+   definition form is to be parsed. This is used to expand macros used
+   in the macro definition."
+
+  (let ((env-var (gensym "ENV")))
+    (flet ((walk-arg (type arg)
+	     (case type
+	       (:environment
+		(setf env-var arg)
+		nil)
+
+	       ((nil)
+		(unless (eq arg '&environment)
+		  arg))
+
+	       (otherwise arg))))
+
+      (let ((lambda-list (map-lambda-list #'walk-arg lambda-list :destructure t :env t)))
+	(with-gensyms (whole-var)
+	  (enclose
+	   `(lambda (,whole-var ,env-var)
+	      (declare (ignorable ,env-var))
+	      (block ,name
+		(destructuring-bind ,lambda-list ,whole-var
+		  ,@body)))
+
+	   environment))))))

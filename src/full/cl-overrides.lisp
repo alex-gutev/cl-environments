@@ -43,6 +43,9 @@
 	   :augmented-macro-function
 	   :augmented-get-setf-expansion
 
+	   :enclose
+	   :parse-macro
+
 	   :enable-hook
 	   :disable-hook
 
