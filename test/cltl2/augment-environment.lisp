@@ -64,6 +64,8 @@
 
   `(in-global ,form))
 
+(define-symbol-macro a-global-symbol-macro "A Global Symbol Macro!")
+
 
 ;;; Macro Augmented Environment Tests
 
@@ -305,6 +307,17 @@ in augmented environment."
 				  (formula (* (+ x y) z))))))
 
 	(macroexpand 'symmacro env))))))
+
+(test global-symbol-macroexpand
+  "Test MACROEXPAND of global symbol-macro in symbol-macro augmented environment."
+
+  (is
+   (expansion=
+    '("A Global Symbol Macro!" t)
+
+    (in-lexical-environment (env)
+      (let ((env (augment-environment env :symbol-macro '((local-macro a-global-symbol-macro)))))
+	(macroexpand 'local-macro env))))))
 
 (test macroexpand-symbol-macro-and-macro
   "Test MACROEXPAND in augmented environment with macros and symbol-macros."
