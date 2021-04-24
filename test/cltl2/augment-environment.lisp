@@ -55,6 +55,12 @@
       (and (equal got-form expected-form)
 	   (not (xor got-expanded-p expected-expanded-p))))))
 
+(defun optimize= (expected got)
+  "Test that the OPTIMIZE declaration information GOT is equal to
+   EXPECTED."
+
+  (subsetp expected got :test #'equal))
+
 
 ;;; Test Macro Definitions
 
@@ -425,3 +431,82 @@ in augmented environment."
     (in-lexical-environment (env)
       (let ((env (augment-environment env :variable '(x y z a-global-symbol-macro))))
 	(macroexpand 'a-global-symbol-macro env))))))
+
+
+;;; Declaration Information
+
+(test augmented-variable-information
+  "Test VARIABLE-INFORMATION on augmented environment."
+
+  (is
+   (info=
+    (let ((x 1) (y 2))
+      (declare (ignorable x y))
+      (in-lexical-environment (env)
+	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
+	  (variable-information 'x env))))
+
+    '(:lexical t ((type . integer)))))
+
+  (is
+   (info=
+    (let ((x 1) (y 2))
+      (declare (ignorable x y))
+      (in-lexical-environment (env)
+	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
+	  (variable-information 'y env))))
+
+    '(:special t ((type . integer))))))
+
+(test augmented-variable-information-symbol-macro
+  "Test VARIABLE-INFORMATION on symbol-macro augmented environment."
+
+  (is
+   (info=
+    (in-lexical-environment (env)
+      (let ((env (augment-environment env :symbol-macro '((local-sym-macro (+ 1 2))))))
+	(variable-information 'local-sym-macro env)))
+
+    '(:symbol-macro t nil))))
+
+(test augmented-function-information
+  "Test FUNCTION-INFORMATION on augmented environment."
+
+  (is
+   (info=
+    (flet ((add (a b) (+ a b)))
+      (in-lexical-environment (env)
+	(let ((env (augment-environment
+		    env
+		    :declare '((ftype (function (number number) number) add)))))
+	  (function-information 'add env))))
+
+    '(:function t ((ftype . (function (number number) number)))))))
+
+(test augmented-function-information-macro
+  "Test FUNCTION-INFORMATION on macro augmented environment."
+
+  (is
+   (info=
+    (in-lexical-environment (env)
+      (flet ((macro (form env)
+	       (declare (ignore env))
+
+	       (destructuring-bind (name thing) form
+		 (declare (ignore name))
+		 thing)))
+
+	(let ((env (augment-environment env :macro `((loc-macro1 ,#'macro)))))
+	  (function-information 'loc-macro1 env))))
+
+    '(:macro t nil))))
+
+(test augmented-declaration-information
+  (is
+   (optimize=
+    '((speed 3) (safety 0) (space 1))
+
+    (first
+     (in-lexical-environment (env)
+       (let ((env (augment-environment env :declare '((optimize (speed 3) (safety 0) (space 1))))))
+	 (declaration-information 'optimize env)))))))
