@@ -510,3 +510,36 @@ in augmented environment."
      (in-lexical-environment (env)
        (let ((env (augment-environment env :declare '((optimize (speed 3) (safety 0) (space 1))))))
 	 (declaration-information 'optimize env)))))))
+
+(test augment-variable-keep-information
+  "Test that augmenting an environment with variables does not replace existing information."
+
+  (is
+   (info=
+    (let ((x 1))
+      (declare (type integer x))
+      (in-lexical-environment (env)
+	(let ((env (augment-environment
+		    env
+		    :variable '(w y z)
+		    :declare '((type integer y) (special y)))))
+	  (variable-information 'x env))))
+
+    '(:lexical t ((type . integer))))))
+
+(test augment-function-keep-information
+  "Test that augmenting an environment with functions does not replace existing information."
+
+  (is
+   (info=
+    (flet ((add (a b) (+ a b)))
+      (declare (ftype (function (number number) number) add))
+
+      (in-lexical-environment (env)
+	(let ((env (augment-environment
+		    env
+		    :function '(inc f g)
+		    :declare '((ftype (function (integer) *) inc)))))
+	  (function-information 'add env))))
+
+    '(:function t ((ftype . (function (number number) number)))))))
