@@ -37,6 +37,7 @@
 
   (:export :cltl2-test
 	   :env-info
+	   :in-lexical-environment
 	   :info
 	   :info=))
 
@@ -62,6 +63,22 @@
     `(macrolet ((,get-info (&environment ,env)
 		  `',(multiple-value-list ,form)))
        (,get-info))))
+
+(defmacro in-lexical-environment ((env-var) &body forms)
+  "Evaluate forms in the current lexical environment.
+
+   ENV-VAR is the name of the variable to which the lexical
+   environment is bound. This binding is visible to FORMS.
+
+   FORMS is the list of forms which are evaluated in an explicit
+   PROGN. The forms are evaluated during macroexpansion, and this form
+   is substituted by a quoted list containing the all the return
+   values of the last form in FORMS."
+
+  (with-gensyms (expand)
+    `(macrolet ((,expand (&environment ,env-var)
+		  `',(multiple-value-list (progn ,@forms))))
+       (,expand))))
 
 (defmacro info (type thing)
   "Retrieve information about a binding/declaration from the environment.
