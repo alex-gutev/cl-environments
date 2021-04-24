@@ -85,6 +85,35 @@
 	(let ((env (augment-environment env :macro (list (list 'test-macro #'macro-function)))))
 	  (macroexpand-1 '(test-macro (+ 1 2)) env)))))))
 
+(test macroexpand-1-multiple
+  "Test MACROEXPAND-1 in an environment augmented with multiple macros."
+
+  (is
+   (expansion=
+    '((macro2 (pprint "Hello World")) t)
+
+    (in-lexical-environment (env)
+      (flet ((macro1 (form env)
+	       (declare (ignore env))
+
+	       (destructuring-bind (name thing) form
+		 (declare (ignore name))
+		 `(macro2 (pprint ,thing))))
+
+	     (macro2 (form env)
+	       (declare (ignore env))
+
+	       (destructuring-bind (name form) form
+		 (declare (ignore name))
+		 `(in-macro2 ,form))))
+
+	(let ((env (augment-environment
+		    env
+		    :macro `((macro1 ,#'macro1)
+			     (macro2 ,#'macro2)))))
+
+	  (macroexpand-1 '(macro1 "Hello World") env)))))))
+
 (test macroexpand
   "Test MACROEXPAND in an environment augmented with multiple macros."
 
