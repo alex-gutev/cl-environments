@@ -543,3 +543,162 @@ in augmented environment."
 	  (function-information 'add env))))
 
     '(:function t ((ftype . (function (number number) number)))))))
+
+
+;;; Augmenting Augmented Environments
+
+(test augment-augmented-macro
+  "Test augmenting a macro augmented environment."
+
+  (is
+   (expansion=
+    '((macro2 (wrap1 "Hello World")) t)
+
+    (in-lexical-environment (env)
+      (flet ((macro1 (form env)
+	       (declare (ignore env))
+
+	       (destructuring-bind (name thing) form
+		 (declare (ignore name))
+		 `(macro2 (wrap1 ,thing))))
+
+	     (macro2 (form env)
+	       (declare (ignore env))
+
+	       (destructuring-bind (name form) form
+		 (declare (ignore name))
+		 `(in-macro2 ,form))))
+
+	(let* ((env1 (augment-environment
+		      env
+		      :macro `((macro1 ,#'macro1))))
+
+	       (env2 (augment-environment
+		      env1
+		      :macro `((macro2 ,#'macro2)))))
+
+	  (macroexpand-1 '(macro1 "Hello World") env2)))))))
+
+(test augment-augmented-symbol-macro
+  "Test augmenting a symbol-macro augmented environment."
+
+  (is
+   (expansion=
+    '(formula t)
+
+    (in-lexical-environment (env)
+      (let* ((env1 (augment-environment
+		    env
+		    :symbol-macro '((symmacro formula))))
+
+	     (env2 (augment-environment
+		    env1
+		    :symbol-macro '((formula (* (+ x y) z))))))
+
+	(macroexpand-1 'symmacro env2))))))
+
+(test augment-augmented-variable
+  "Test augmenting a variable augmented environment."
+
+  (let* ((env1 (augment-environment
+		nil
+		:variable '(x)
+		:declare '((type integer x) (special x))))
+
+	 (env2 (augment-environment
+		env1
+		:variable '(y)
+		:declare '((type string y)))))
+
+    (is (info=
+	 (multiple-value-list (variable-information 'x env2))
+	 '(:special t ((type . integer)))))
+
+    (is (info=
+	 (multiple-value-list (variable-information 'y env2))
+	 '(:lexical t ((type . string)))))))
+
+(test augment-augmented-function
+  "Test augmenting a function augmented environment."
+
+  (let* ((env1 (augment-environment
+		nil
+		:function '(f1)
+		:declare '((ftype (function (number) number) f1))))
+
+	 (env2 (augment-environment
+		env1
+		:function '(f2)
+		:declare '((ftype (function (string string) string) f2)))))
+
+    (is (info=
+	 (multiple-value-list (function-information 'f1 env2))
+	 '(:function t ((ftype . (function (number) number))))))
+
+    (is (info=
+	 (multiple-value-list (function-information 'f2 env2))
+	 '(:function t ((ftype . (function (string string) string))))))))
+
+(test augment-augmented-declaration
+  "Test augmenting a declaration augmented environment."
+
+  (let* ((env1 (augment-environment
+		nil
+		:variable '(x)
+		:declare '((special x)
+			   (optimize (speed 3)))))
+
+	 (env2 (augment-environment
+		env1
+		:declare '((type integer x)
+			   (optimize (space 3) (safety 0))))))
+
+    (is (info=
+	 (multiple-value-list (variable-information 'x env2))
+	 '(:special t ((type . integer)))))
+
+    (is (optimize=
+	 '((speed 3) (space 3) (safety 0))
+	 (declaration-information 'optimize env2)))))
+
+(test augment-augmented-copy
+  "Test that augmenting an augmented environment does not modify the original."
+
+  (let* ((env1 (augment-environment
+		nil
+		:variable '(x)
+		:declare '((special x)
+			   (optimize (speed 3)))))
+
+	 (env2 (augment-environment
+		env1
+		:declare '((type integer x)
+			   (optimize (space 3) (safety 0))))))
+
+    (is (not (eq env1 env2))
+	"Environment not copied. Original returned.")
+
+    (is (not (eq (cl-environments.cltl2::variables env1)
+		 (cl-environments.cltl2::variables env2)))
+
+	"Variable information not copied.")
+
+    (is (not (eq (cl-environments.cltl2::functions env1)
+		 (cl-environments.cltl2::functions env2)))
+
+	"Function information not copied.")
+
+    (is (not (eq (cl-environments.cltl2::declarations env1)
+		 (cl-environments.cltl2::declarations env2)))
+
+	"Declaration information not copied.")
+
+    (is (not (eq (cl-environments.cltl2::macro-functions env1)
+		 (cl-environments.cltl2::macro-functions env2)))
+
+	"Macro function table not copied.")
+
+    (is (not (eq (cl-environments.cltl2::symbol-macros env1)
+		 (cl-environments.cltl2::symbol-macros env2)))
+
+	"Symbol-macro expansion table not copied.")))
