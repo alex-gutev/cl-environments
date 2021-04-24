@@ -127,7 +127,8 @@
 		   (:file "lambda")
 		   (:file "special-forms")
 		   (:file "def-forms")
-		   (:file "define-declaration"))))))
+		   (:file "define-declaration")
+		   (:file "augment-environment"))))))
 
   :perform (test-op (o s)
 		    (uiop:symbol-call :cl-environments.test.cltl2 :test-cl-environments)))
