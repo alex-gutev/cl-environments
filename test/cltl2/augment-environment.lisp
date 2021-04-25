@@ -702,3 +702,50 @@ in augmented environment."
 		 (cl-environments.cltl2::symbol-macros env2)))
 
 	"Symbol-macro expansion table not copied.")))
+
+
+;;; ENCLOSE and PARSE-MACRO Tests
+
+(test enclose-nil-environment
+  "Test ENCLOSE function in NIL (global) environment."
+
+  (let ((f (enclose '(lambda (a b) (+ 1 a b)) nil)))
+    (is-every =
+      (4 (funcall f 1 2))
+      (4 (funcall f 2 1))
+      (6 (funcall f 2 3))
+      (1 (funcall f 0 0)))))
+
+(test enclose-lexical-environment
+  "Test ENCLOSE in lexical environment."
+
+  (macrolet ((local-wrap (form)
+	       ``(:wrap ,,form)))
+
+    (let ((f (first
+	      (in-lexical-environment (env)
+		(enclose '(lambda (x) (local-wrap (* 2 x))) env)))))
+
+      (is-every equal
+	('(:wrap 2) (funcall f 1))
+	('(:wrap 10) (funcall f 5))
+	('(:wrap 14) (funcall f 7))
+	('(:wrap 0) (funcall f 0))))))
+
+(test enclose-augmented-environment
+  "Test ENCLOSE in augmented environment."
+
+  (macrolet ((local-mac (form)
+	       ``(:in-local ,,form)))
+
+    (let ((f
+	   (first
+	    (in-lexical-environment (env)
+	      (let ((env (augment-environment env :symbol-macro '((delta 15)))))
+		(enclose '(lambda (x) (local-mac (+ delta x))) env))))))
+
+      (is-every equal
+	('(:in-local 15) (funcall f 0))
+	('(:in-local 16) (funcall f 1))
+	('(:in-local 20) (funcall f 5))
+	('(:in-local 25) (funcall f 10))))))
