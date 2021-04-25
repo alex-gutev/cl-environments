@@ -55,5 +55,10 @@
 
 	   :walk-environment)
 
+  #+ccl
+  (:import-from :ccl
+		:augment-environment
+		:enclose)
+
   (:documentation
    "Package exporting the base CLTL2 environments API."))
