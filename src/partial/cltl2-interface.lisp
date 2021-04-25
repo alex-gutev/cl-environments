@@ -114,33 +114,7 @@
 
 #+ccl
 (defun enclose-macro (name lambda-list body &optional environment)
-  ;; Implement ENCLOSE-MACRO in terms of ENCLOSE since CCL:PARSE-MACRO
-  ;; completely ignores the ENVIRONMENT parameter.
-
-  (let ((env-var (gensym "ENV")))
-    (flet ((walk-arg (type arg)
-	     (case type
-	       (:environment
-		(setf env-var arg)
-		nil)
-
-	       ((nil)
-		(unless (eq arg '&environment)
-		  arg))
-
-	       (otherwise arg))))
-
-      (let ((lambda-list (map-lambda-list #'walk-arg lambda-list :destructure t :env t)))
-	(with-gensyms (name-var whole-var)
-	  (enclose
-	   `(lambda (,whole-var ,env-var)
-	      (declare (ignorable ,env-var))
-	      (block ,name
-		(destructuring-bind (,name-var ,@lambda-list) ,whole-var
-		  (declare (ignore ,name-var))
-		  ,@body)))
-
-	   environment))))))
+  (enclose (ccl:parse-macro name lambda-list body environment) environment))
 
 #+cmucl
 (defun enclose (lambda-expression &optional env)
