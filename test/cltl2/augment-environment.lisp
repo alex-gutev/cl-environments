@@ -751,12 +751,12 @@ in augmented environment."
 	('(:in-local 25) (funcall f 10))))))
 
 
-;;; PARSE-MACRO Tests
+;;; ENCLOSE-MACRO Tests
 
-(test parse-macro-nil-environment
-  "Test PARSE-MACRO in a NIL (global) environment."
+(test enclose-macro-nil-environment
+  "Test ENCLOSE-MACRO in a NIL (global) environment."
 
-  (let ((mac (parse-macro
+  (let ((mac (enclose-macro
 	      'a-macro '(a (b c) &body forms)
 	      '(`(let ((,a (+ ,b ,c)))
 		   ,@forms))
@@ -768,10 +768,10 @@ in augmented environment."
 	(pprint x)
 	(fn x))
 
-      (funcall mac '(x (1 2) (pprint x) (fn x)) nil)))))
+      (funcall mac '(a-macro x (1 2) (pprint x) (fn x)) nil)))))
 
-(test parse-macro-with-environment-parameter
-  "Test PARSE-MACRO with &ENVIRONMENT parameter."
+(test enclose-macro-with-environment-parameter
+  "Test ENCLOSE-MACRO with &ENVIRONMENT parameter."
 
   (let ((var-x 1) (var-y 3))
     (declare (special var-y))
@@ -780,15 +780,15 @@ in augmented environment."
 	 '((:lexical :special nil))
 
 	 (in-lexical-environment (env)
-	   (let ((mac (parse-macro
+	   (let ((mac (enclose-macro
 		       'info-mac '(type &rest things &environment env)
 		       '((let ((fn (symbolicate type '-information)))
 			   (mapcar (lambda (x) (funcall fn x env)) things))))))
 
-	     (funcall mac '(variable var-x var-y var-z) env)))))))
+	     (funcall mac '(info-mac variable var-x var-y var-z) env)))))))
 
-(test parse-macro-lexical-environment
-  "Test PARSE-MACRO in a lexical environment."
+(test enclose-macro-lexical-environment
+  "Test ENCLOSE-MACRO in a lexical environment."
 
   (macrolet ((local-pass (sym form)
 	       ``(,',sym ,,form)))
@@ -797,16 +797,16 @@ in augmented environment."
 	 '((:macro-wrap (* (+ 1 2) 3)))
 
 	 (in-lexical-environment (env)
-	   (let ((mac (parse-macro
+	   (let ((mac (enclose-macro
 		       'wrap-macro '(form)
 		       '((return-from wrap-macro (local-pass :macro-wrap form)))
 
 		       env)))
 
-	     (funcall mac '((* (+ 1 2) 3)) nil)))))))
+	     (funcall mac '(wrap-macro (* (+ 1 2) 3)) nil)))))))
 
-(test parse-macro-augmented-environment
-  "Test PARSE-MACRO in an augmented environment."
+(test enclose-macro-augmented-environment
+  "Test ENCLOSE-MACRO in an augmented environment."
 
   (macrolet ((local-wrap (sym form)
 	       ``(,,sym ,,form)))
@@ -816,10 +816,10 @@ in augmented environment."
 
 	 (in-lexical-environment (env)
 	   (let* ((env (augment-environment env :symbol-macro '((wrapper :in-wrapper))))
-		  (mac (parse-macro
+		  (mac (enclose-macro
 			'wrap-macro '(form)
 			'((local-wrap wrapper form))
 
 			env)))
 
-	     (funcall mac '((main-form a b c)) nil)))))))
+	     (funcall mac '(wrap-macro (main-form a b c)) nil)))))))

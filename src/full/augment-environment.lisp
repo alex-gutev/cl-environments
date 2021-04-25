@@ -341,7 +341,7 @@
      environment)))
 
 
-;;; Definition of ENCLOSE and PARSE-MACRO
+;;; Definition of ENCLOSE and ENCLOSE-MACRO
 
 (defun enclose (lambda-expression &optional environment)
   "Return a function object that is equivalent to what would be
@@ -361,7 +361,7 @@
     (otherwise
      (enclose lambda-expression (augment-environment environment)))))
 
-(defun parse-macro (name lambda-list body &optional environment)
+(defun enclose-macro (name lambda-list body &optional environment)
   "Parse a macro definition form (as found in MACROLET or DEFMACRO) into a macro function.
 
    NAME is the name of the macro. The body of the macro is enclosed in
@@ -373,7 +373,10 @@
 
    ENVIRONMENT is the lexical environment in which the macro
    definition form is to be parsed. This is used to expand macros used
-   in the macro definition."
+   in the macro definition.
+
+   Returns a function object which is suitable as a macro-function
+   passed in the :MACRO argument of AUGMENT-ENVIRONMENT."
 
   (let ((env-var (gensym "ENV")))
     (flet ((walk-arg (type arg)
@@ -389,12 +392,13 @@
 	       (otherwise arg))))
 
       (let ((lambda-list (map-lambda-list #'walk-arg lambda-list :destructure t :env t)))
-	(with-gensyms (whole-var)
+	(with-gensyms (name-var whole-var)
 	  (enclose
 	   `(lambda (,whole-var ,env-var)
 	      (declare (ignorable ,env-var))
 	      (block ,name
-		(destructuring-bind ,lambda-list ,whole-var
+		(destructuring-bind (,name-var ,@lambda-list) ,whole-var
+		  (declare (ignore ,name-var))
 		  ,@body)))
 
 	   environment))))))
