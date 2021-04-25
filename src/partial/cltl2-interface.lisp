@@ -141,3 +141,33 @@
 		  ,@body)))
 
 	   environment))))))
+
+#+cmucl
+(defun enclose (lambda-expression &optional env)
+  (flet ((walk-form (subform context env)
+	   (declare (ignore context))
+
+	   ;; Expand symbol-macros since WALKER:MACROEXPAND-ALL does
+	   ;; not.
+
+	   (typecase subform
+	     (symbol
+	      (macroexpand-1 subform env))
+
+	     (otherwise
+	      subform))))
+
+    (compile
+     nil
+     (walker:macroexpand-all ;; Expand all macros
+      (walker:walk-form lambda-expression env #'walk-form) ;; Expand SYMBOL-MACROS
+      env))))
+
+#+cmucl
+(defun enclose-macro (name lambda-list body &optional env)
+  (enclose
+   (extensions:parse-macro
+    name lambda-list
+    `((block ,name ,@body)) ; Wrap in BLOCK since PARSE-MACRO does not
+    env)
+   env))

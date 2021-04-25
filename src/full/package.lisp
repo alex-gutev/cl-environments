@@ -60,5 +60,9 @@
 		:augment-environment
 		:enclose)
 
+  #+cmucl
+  (:import-from :extensions
+		:augment-environment)
+
   (:documentation
    "Package exporting the base CLTL2 environments API."))
