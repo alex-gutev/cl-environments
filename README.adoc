@@ -1,0 +1,500 @@
+= CL-ENVIRONMENTS - CLTL2 Environment Access Compatibility Layer =
+:AUTHOR: Alexander Gutev
+:EMAIL: <alex.gutev@mail.bg>
+:toc: preamble
+:toclevels: 4
+:icons: font
+:idprefix:
+
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:caution-caption: :fire:
+:important-caption: :exclamation:
+:warning-caption: :warning:
+endif::[]
+
+This library provides a uniform API, as specified in
+https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html[Common
+Lisp the Language 2], for accessing information in
+implementation-defined lexical environment objects. All major Common
+Lisp implementations are supported, even those which don't support the
+CLTL2 environment access API.
+
+== Summary ==
+
+On implementations, which provide the CLTL2 environment access API,
+this library is simply a wrapper which handles the peculiarities of
+each implementation.
+
+ON implementations, which do not provide the CLTL2 environment access
+API, the environment information is extracted by code-walking the
+forms which modify the environment.
+
+The following functions/macros, from the CLTL2 API, are provided by
+this library:
+
+* `VARIABLE-INFORMATION`
+* `FUNCTION-INFORMATION`
+* `DECLARATION-INFORMATION`
+* `DEFINE-DECLARATION`
+* `AUGMENT-ENVIRONMENT`
+* `ENCLOSE`
+* `PARSE-MACRO`
+
+== Usage ==
+
+The environment access API is provided by the package
+`CL-ENVIRONMENTS.CLTL2`. The functions exported by this package can be
+used directly, however they will not return meaningful information on
+implementations which do not provide the CLTL2 API natively, unless
+the forms which modify the environment are walked by the code walker.
+
+The `CL-ENVIRONMENTS-CL` package, nickname `CL-ENVIRONMENTS`, is a
+clone of the `COMMON-LISP` package with the exception that it exports
+the symbols in the `CL-ENVIRONMENTS.CLTL2` package and all CL special
+operators, which modify the environment, are shadowed with macros
+which invoke the code walker. This package should be used, instead of
+the `COMMON-LISP` package, in order to be able to obtain accurate
+information about the environment.
+
+== Package CL-ENVIRONMENTS.CLTL2
+
+=== Environments API ===
+
+See https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node102.html[Common
+Lisp the Language 2] for the Environments API specification. This
+library adheres to that specification as closely as possible.
+
+==== VARIABLE-INFORMATION ====
+
+Function: `VARIABLE-INFORMATION SYMBOL &OPTIONAL ENV`
+
+Returns information about the variable binding for symbol `SYMBOL` in
+the lexical environment `ENV`.
+
+`SYMBOL`:: The symbol for which the variable binding information is
+retrieved.
+
+`ENV`:: The environment from which to retrieve the binding
+information. Defaults to the `NIL` global environment if it is not
+provided.
+
+Returns three values:
+
+1. The binding type identified by one of the following symbols:
++
+--
+`NIL`:: No apparent variable binding for `SYMBOL` in `ENV`
+`:LEXICAL`:: `SYMBOL` refers to a lexical variable.
+`:SPECIAL`:: `SYMBOL` refers to a special variable.
+`:SYMBOL-MACRO`:: `SYMBOL` refers to a symbol-macro.
+`:CONSTANT`:: `SYMBOL` refers to a constant, defined by `DEFCONSTANT`, or is a keyword.
+--
+
+
+2. `T` if there is a local variable binding for `SYMBOL`, `NIL`
+otherwise.
+
+3. An alist containing the declaration information applying to the
+variable.
+
+==== FUNCTION-INFORMATION
+
+Function: `FUNCTION-INFORMATION SYMBOL &OPTIONAL ENV`
+
+Returns information about the function binding for `SYMBOL` in the
+environment `ENV`.
+
+`SYMBOL`:: The symbol for which the function binding information is
+retrieved.
+
+`ENV`:: The environment from which to retrieve the binding
+information. Defaults to the global `NIL` environment if it is not
+provided.
+
+Returns three values:
+
+1. The binding type identified by one of the following symbols:
++
+--
+`NIL`:: No apparent function binding for `SYMBOL` in `ENV`.
+`:FUNCTION`:: `SYMBOL` refers to a function.
+`:MACRO`:: `SYMBOL` refers to a macro.
+`:SPECIAL-FORM`:: `SYMBOL` refers to a special operator, which does
+not have an associated macro function.
+--
+
+2. `T` if there is a local fucntion binding for `SYMBOL`, `NIL`
+otherwise.
+
+3.  An alist containing the declaration information applying to the
+function.
+
+==== DECLARATION-INFORMATION ====
+
+Function: `DECLARATION-INFORMATION NAME &OPTIONAL ENV`
+
+Returns information about declarations which neither apply to
+variables nor functions.
+
+`NAME`:: The declaration name.
+
+`ENV`:: The environment from which to retrieve the declaration
+information. Defaults to the global `NIL` environment if it is not
+provided.
+
+
+==== DEFINE-DECLARATION ====
+
+Macro: `DEFINE-DECLARATION NAME (ARG-VAR &OPTIONAL ENV-VAR) &BODY BODY`
+
+Define a handler for a custom (non-standard) declaration.
+
+`NAME`:: The name of the declaration for which to define a handler.
++
+--
+IMPORTANT: The name should not be the same as a standard CL
+declaration, nor an implementation-specific declaration.
+--
+
+`ARG-VAR`:: The name of the variable to which, the argument list of
+the declaration (the `CDR` of the declaration expression
+`(NAME . ARGS)`) is bound.
+
+`ENV-VAR`:: The name of the variable to which the lexical environment,
+in which the declaration occurs, is bound.
+
+`BODY`:: The forms comprising the body of the declaration handler
+function, in an implicit `PROGN`.
+
+The declaration handler function should return two values:
+
+1. A keyword identifying what the declaration applies to:
++
+--
+`:VARIABLE`:: The declaration applies to variable bindings.
+`:FUNCTION`:: The declaration applies to function bindings.
+`:DECLARE`:: The declaration neither applies to variable nor function bindings.
+--
+
+2. The declaration information which should be added to the environment.
++
+--
+If the first value is either `:VARIABLE` or `:FUNCTION`, the second
+value should be a list where each element is of the form `(SYMBOL KEY
+VALUE)` where `SYMBOL` is the `SYMBOL` naming the binding to which the
+declaration applies. The `CONS` `(KEY . VALUE)` will be included in
+the alist returned by `VARIABLE-INFORMATION`/`FUNCTION-INFORMATION`
+for the symbol `SYMBOL`.
+
+If the first value is `:DECLARE` the second value should be a `CONS` of
+the form `(KEY . VALUE)`. `VALUE` will be returned by
+`DECLARATION-INFORMATION` for the declaration named `KEY`.
+--
+
+==== AUGMENT-ENVIRONMENT ====
+
+Function: `AUGMENT-ENVIRONMENT ENV &KEY :VARIABLE :SYMBOL-MACRO :FUNCTION :MACRO :DECLARE`
+
+Create a new environment by augmenting an existing environment with
+new information.
+
+`ENV`:: The existing environment to augment.
+
+`VARIABLE`:: List of symbols which will be bound as variables in the
+new environment.
+
+`SYMBOL-MACRO`:: List of symbol-macro definitions, that will be
+present in the new environment, each of the form `(NAME EXPANSION)`.
+
+`FUNCTION`:: List of symbols which will be bound as functions in the
+new environment.
+
+`MACRO`:: List of macro definitions, that will be present in the new
+environment. Each item of this list should be of the form `(NAME
+MACRO-FUNCTION)` where `MACRO-FUNCTION` is a function of two
+arguments, the entire macro form and the implementation specific
+lexical environment in which the macro is expanded.
++
+--
+TIP: A macro definition form can be converted to a function using the
+`ENCLOSE-MACRO` function.
+--
+
+`DECLARE`:: List of declaration specifiers, as if by
+`DECLARE`. Information about these declarations will be included in
+the environment and can be retrieved using `VARIABLE-INFORMATION`,
+`FUNCTION-INFORMATION` and `DECLARATION-INFORMATION`.
+
+Returns a new environment object.
+
+IMPORTANT: For this function to work correctly across all
+implementations, it must be able to extract information about the
+local bindings in the environment `ENV`. This means that on
+implementations which do not support the CLTL2 API, all local binding
+forms in ENV must have been walked by the code walker.
+
+CAUTION: If this function is not provided natively by the
+implementation, the object returned is not a native environment object
+and is thus not suitable to be passed to built-in functions which take
+such an argument. The `CL-ENVIRONMENTS-CL` package provides shadowed
+definitions of all functions in the `COMMON-LISP` package, that accept
+an environment parameter, which can be used with either a native
+environment or an environment returned by `AUGMENT-ENVIRONMENT`.
+
+
+==== ENCLOSE ====
+
+Function: `ENCLOSE LAMBDA-EXPRESSION &OPTIONAL ENVIRONMENT`
+
+Evaluate a lambda-expression in an environment and return the
+resulting function object.
+
+WARNING: The `LAMBDA-EXPRESSION` may reference local and global macro
+and symbol-macro definitions in `ENVIRONMENT`, however the behaviour
+is undefined if it references any local variable or function bindings
+in the environment.
+
+`LAMBDA-EXPRESSION`:: The lambda-expression.
+
+`ENVIRONMENT`:: The environment.
+
+Returns a function object.
+
+IMPORTANT: This function has the same limitations as
+`AUGMENT-ENVIRONMENT` in that on implementations which do not support
+the CLTL2 API, the local bindings in the environment must have been
+walked, with the code-walker, in order for them to be known to this
+function.
+
+==== PARSE-MACRO ====
+
+Function: `PARSE-MACRO NAME LAMBDA-LIST BODY &OPTIONAL ENVIRONMENT`
+
+Parse a macro definition form (as found in `MACROLET` or `DEFMACRO`)
+into a lambda-expression of two arguments, suitable for use as a macro
+function.
+
+The resulting lambda-expression can be converted into a function
+object, suitable to be passed as a macro-function in the `:MACRO`
+argument of `AUGMENT-ENVIRONMENT`, with the `ENCLOSE` function.
+
+TIP: The `ENCLOSE-MACRO` function combines `PARSE-MACRO` and `ENCLOSE`
+into a single step.
+
+`NAME`:: The symbol naming the macro.
+
+`LAMBDA-LIST`:: The macro lambda-list.
+
+`BODY`:: The forms comprising the macro's body.
+
+`ENVIRONMENT`:: The environment in which the definition is found.
+
+NOTE: Most implementations of this function, if not all, including the
+implementation provided by this library for compilers which don't
+support CLTL2, don't expand macros in the macro body. Thus don't rely
+on this function to return a fully macro-expanded form.
+
+Returns a lambda-expression of two arguments: the entire macro form
+and the environment in which it is expanded.
+
+==== ENCLOSE-MACRO ====
+
+Function: `PARSE-MACRO NAME LAMBDA-LIST BODY &OPTIONAL ENVIRONMENT`
+
+Parse a macro definition form (as found in `MACROLET` or `DEFMACRO`)
+into a macro function.
+
+This function is equivalent to the following:
+
+--------------------------------------------------
+(enclose (parse-macro name lambda-list body environment) environment)
+--------------------------------------------------
+
+`NAME`:: The symbol naming the macro.
+
+`LAMBDA-LIST`:: The macro lambda-list.
+
+`BODY`:: The forms comprising the macro's body.
+
+`ENVIRONMENT`:: The environment in which the macro definition is
+found. This is necessary in order for macros and symbol-macros used in
+`BODY` to be expanded correctly.
+
+NOTE: See `AUGMENT-ENVIRONMENT` and `ENCLOSE` for limitations of this
+function.
+
+Returns a function object of two arguments, suitable as a
+macro-function to be passed in the `:MACRO` argument of
+`AUGMENT-ENVIRONMENT`.
+
+=== Wrapper Functions ===
+
+The `CL-ENVIRONMENTS.CLTL2` package also provides wrapper functions,
+over standard common lisp functions which take an environment
+parameter, that work with both native environments and _augmented
+environments_ returned by `AUGMENT-ENVIRONMENT`.
+
+The following wrapper functions are provided, which are equivalent to
+the functions in the `COMMON-LISP` package with the same names but
+without the leading `AUGMENTED-`:
+
+* `AUGMENTED-MACROEXPAND-1`
+* `AUGMENTED-MACROEXPAND`
+* `AUGMENTED-MACRO-FUNCTION`
+* `AUGMENTED-GET-SETF-EXPANSION`
+
+The `CL-ENVIRONMENTS-CL` package shadows the following `COMMON-LISP`
+functions with definitions which can accept either a native
+environment object or an environment returned by
+`AUGMENT-ENVIRONMENT`:
+
+* `MACROEXPAND-1`
+* `MACROEXPAND`
+* `MACRO-FUNCTION`
+* `COMPILER-MACRO-FUNCTION`
+* `CONSTANTP`
+* `GET-SETF-EXPANSION`
+* `TYPEP`
+* `SUBTYPEP`
+
+=== Ensuring Code Walking ===
+
+The `CL-ENVIRONMENTS-CL` package already shadows all standard common
+lisp special forms, which introduce an environment, with macros that
+invoke the code-walker, in order for the environment information to be
+extracted on implementations which do not support the CLTL2 API.
+
+However, this may not be enough if you have a top-level third-party
+macro which does not expand into one of the shadowing macros from the
+`CL-ENVIRONMENTS-CL` package, or if you use an implementation-specific
+special form which the code-walker does not know how to walk. The
+`WALK-ENVIRONMENT` macro exported by both the `CL-ENVIRONMENTS.CLTL2`
+and `CL-ENVIRONMENTS-CL` package allows you to explicitly tell the
+code-walker to walk a particular form.
+
+.Example
+--------------------------------------------------
+;; WALK-ENVIRONMENT ensures that the third party DEFINE-CUSTOM-THING
+;; macro is walked.
+
+(walk-environment
+  (define-custom-thing ...))
+--------------------------------------------------
+
+Compiler-macro expansions and top-level macro forms which are not
+contained in a `WALK-ENVIRONMENT` or in a shadowing macro of a special
+form are not walked. For the environment information to be extracted
+in these cases there is the option of binding the code-walker to
+`++*MACROEXPAND-HOOK*++` so that it is called on each macro expansion. The
+`ENABLE-HOOK` function binds the code-walker to `++*MACROEXPAND-HOOK*++`
+and the `DISABLE-HOOK` function restores it's previous value.
+
+==== WALK-ENVIRONMENT ====
+
+Macro: `WALK-ENVIRONMENT &BODY FORMS`
+
+Ensure that forms are walked by the code-walker.
+
+`FORMS`:: The forms to be walked by the code-walker. These are
+evaluated in an implicit `PROGN`.
+
+NOTE: On implementations which provide the CLTL2 API natively, this
+simply expands into a `PROGN`.
+
+==== ENABLE-HOOK ====
+
+Function: `ENABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
+
+Bind the code-walker to the `++*MACROEXPAND-HOOK*++`.
+
+`PREVIOUS-HOOK`:: The function to restore `++*MACROEXPAND-HOOK*++` to when
+calling `DISABLE-HOOK`. If not provided defaults to the current value
+of `++*MACROEXPAND-HOOK*++`.
+
+TIP: This function should be used if there are top-level macro forms which
+need to be walked, or you need the expansion of compiler-macros to be
+walked, in order for the environment information to be extracted from
+them.
+
+NOTE: On implementations which provide the CLTL2 API natively this function
+is a no-op.
+
+==== DISABLE-HOOK ====
+
+Function: `DISABLE-HOOK &OPTIONAL PREVIOUS-HOOK`
+
+Restore `++*MACROEXPAND-HOOK*++` to its previous value prior to calling
+`ENABLE-HOOK`.
+
+`PREVIOUS-HOOK`:: If provided restore `++*MACROEXPAND-HOOK*++` to this
+value instead.
+
+NOTE: On implementations which provide the CLTL2 API natively this
+function is a no-op.
+
+
+== Package CL-ENVIRONMENTS.TOOLS ==
+
+The package `CL-ENVIRONMENTS.TOOLS` provides a number of functions for
+obtaining information about forms occurring in a particular
+environment. These functions make use of the information return by the
+`*-INFORMATION` functions.
+
+=== GET-RETURN-TYPE ===
+
+Function `GET-RETURN-TYPE FORM ENV`
+
+Determine the value type of the form `FORM` in the environment `ENV`.
+
+The return value type can be determined if `FORM` is:
+
+* A symbol naming a variable for which there is a `TYPE` declaration.
+* A list where the `CAR` is a function for which there is an `FTYPE`
+  declaration.
+* A `THE` form.
+* A macro/symbol-macro which expands to one of the above.
+
+Additionally value the types of the following special forms can also
+be determined:
+
+* `PROGN`
+
+=== GET-RETURN-TYPES ===
+
+Function `GET-RETURN-TYPES FORMS ENV`
+
+Determines the value type of each form in `FORMS`, in the environment
+`ENV`.
+
+Returns a list where each element is the value type of the
+corresponding form in `FORMS`.
+
+=== GET-VALUE-TYPE ===
+
+Function `GET-VALUE-TYPE FORM ENV &OPTIONAL (N 0)`
+
+Returns the value type of the ``N``'th value value of `FORM` in the
+environment `ENV`.
+
+
+== Status ==
+
+Supports: Clisp, CCL, ECL, ABCL, CMUCL, SBCL, Allegro CL and LispWorks.
+Tested on: Clisp, CCL, ECL, ABCL, CMUCL and SBCL.
+
+=== Issues ===
+
+==== ABCL ====
+
+* Some individual forms (such as `DEFUN`) cannot be compiled using C-c
+  C-c in slime while `*MACROEXPAND-HOOK*` is set to the code walker,
+  the entire file can still be compiled using C-c C-k.
+
+* ABCL passes `NIL` as the environment parameter to compiler macro
+  functions thus there is no way to obtain any information about the
+  lexical environment in which the form appears. The environment
+  information functions: `VARIABLE-INFORMATION`, `FUNCTION-INFORMATION`
+  and `DECLARATION-INFORMATION` can only return information about global
+  bindings/declarations when called from inside a compiler macro.
