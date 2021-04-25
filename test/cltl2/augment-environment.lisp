@@ -704,7 +704,7 @@ in augmented environment."
 	"Symbol-macro expansion table not copied.")))
 
 
-;;; ENCLOSE and PARSE-MACRO Tests
+;;; ENCLOSE Tests
 
 (test enclose-nil-environment
   "Test ENCLOSE function in NIL (global) environment."
@@ -749,3 +749,77 @@ in augmented environment."
 	('(:in-local 16) (funcall f 1))
 	('(:in-local 20) (funcall f 5))
 	('(:in-local 25) (funcall f 10))))))
+
+
+;;; PARSE-MACRO Tests
+
+(test parse-macro-nil-environment
+  "Test PARSE-MACRO in a NIL (global) environment."
+
+  (let ((mac (parse-macro
+	      'a-macro '(a (b c) &body forms)
+	      '(`(let ((,a (+ ,b ,c)))
+		   ,@forms))
+	      nil)))
+
+    (is
+     (equal
+      '(let ((x (+ 1 2)))
+	(pprint x)
+	(fn x))
+
+      (funcall mac '(x (1 2) (pprint x) (fn x)) nil)))))
+
+(test parse-macro-with-environment-parameter
+  "Test PARSE-MACRO with &ENVIRONMENT parameter."
+
+  (let ((var-x 1) (var-y 3))
+    (declare (special var-y))
+
+    (is (equal
+	 '((:lexical :special nil))
+
+	 (in-lexical-environment (env)
+	   (let ((mac (parse-macro
+		       'info-mac '(type &rest things &environment env)
+		       '((let ((fn (symbolicate type '-information)))
+			   (mapcar (lambda (x) (funcall fn x env)) things))))))
+
+	     (funcall mac '(variable var-x var-y var-z) env)))))))
+
+(test parse-macro-lexical-environment
+  "Test PARSE-MACRO in a lexical environment."
+
+  (macrolet ((local-pass (sym form)
+	       ``(,',sym ,,form)))
+
+    (is (equal
+	 '((:macro-wrap (* (+ 1 2) 3)))
+
+	 (in-lexical-environment (env)
+	   (let ((mac (parse-macro
+		       'wrap-macro '(form)
+		       '((return-from wrap-macro (local-pass :macro-wrap form)))
+
+		       env)))
+
+	     (funcall mac '((* (+ 1 2) 3)) nil)))))))
+
+(test parse-macro-augmented-environment
+  "Test PARSE-MACRO in an augmented environment."
+
+  (macrolet ((local-wrap (sym form)
+	       ``(,,sym ,,form)))
+
+    (is (equal
+	 '((:in-wrapper (main-form a b c)))
+
+	 (in-lexical-environment (env)
+	   (let* ((env (augment-environment env :symbol-macro '((wrapper :in-wrapper))))
+		  (mac (parse-macro
+			'wrap-macro '(form)
+			'((local-wrap wrapper form))
+
+			env)))
+
+	     (funcall mac '((main-form a b c)) nil)))))))
