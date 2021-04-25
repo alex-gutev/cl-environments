@@ -456,12 +456,17 @@ in augmented environment."
 	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
 	  (variable-information 'y env))))
 
-    #-ccl
+    #-(or ccl cmucl)
     '(:special t ((type . integer)))
 
     ;; CCL does not recognize Y as a local binding for some reason.
     #+ccl
-    '(:special nil ((type . integer))))))
+    '(:special nil ((type . integer)))
+
+    ;; CMUCL does not add the type declarations to the augmented
+    ;; environment
+    #+cmucl
+    '(:special t nil))))
 
 (test augmented-variable-information-symbol-macro
   "Test VARIABLE-INFORMATION on symbol-macro augmented environment."
@@ -617,7 +622,11 @@ in augmented environment."
 
     (is (info=
 	 (multiple-value-list (variable-information 'x env2))
-	 '(:special t ((type . integer)))))
+	 #-cmucl '(:special t ((type . integer)))
+
+	 ;; CMUCL does not augment the environment with type
+	 ;; information
+	 #+cmucl '(:special t nil)))
 
     (is (info=
 	 (multiple-value-list (variable-information 'y env2))
