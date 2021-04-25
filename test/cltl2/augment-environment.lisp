@@ -446,7 +446,10 @@ in augmented environment."
 	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
 	  (variable-information 'x env))))
 
-    '(:lexical t ((type . integer)))))
+    #-sbcl '(:lexical t ((type . integer)))
+
+    ;; SBCL does not record type information
+    #+sbcl '(:lexical t nil)))
 
   (is
    (info=
@@ -456,12 +459,16 @@ in augmented environment."
 	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
 	  (variable-information 'y env))))
 
-    #-(or ccl cmucl)
+    #-(or sbcl ccl cmucl)
     '(:special t ((type . integer)))
 
     ;; CCL does not recognize Y as a local binding for some reason.
     #+ccl
     '(:special nil ((type . integer)))
+
+    ;; SBCL does not recognize Y as a local binding nor records any
+    ;; type information
+    #+sbcl '(:special nil nil)
 
     ;; CMUCL does not add the type declarations to the augmented
     ;; environment
@@ -491,7 +498,10 @@ in augmented environment."
 		    :declare '((ftype (function (number number) number) add)))))
 	  (function-information 'add env))))
 
-    '(:function t ((ftype . (function (number number) number)))))))
+    #-sbcl '(:function t ((ftype . (function (number number) number))))
+
+    ;; SBCL does not record function type information.
+    #+sbcl '(:function t nil))))
 
 (test augmented-function-information-macro
   "Test FUNCTION-INFORMATION on macro augmented environment."
@@ -622,11 +632,16 @@ in augmented environment."
 
     (is (info=
 	 (multiple-value-list (variable-information 'x env2))
-	 #-cmucl '(:special t ((type . integer)))
+	 #-(or cmucl sbcl) '(:special t ((type . integer)))
 
 	 ;; CMUCL does not augment the environment with type
 	 ;; information
-	 #+cmucl '(:special t nil)))
+	 #+cmucl '(:special t nil)
+
+	 ;; SBCL neither records the special variable as a local
+	 ;; variable nor augments the environment with type
+	 ;; information.
+	 #+sbcl '(:special nil nil)))
 
     (is (info=
 	 (multiple-value-list (variable-information 'y env2))
