@@ -48,6 +48,7 @@
 	   :augmented-get-setf-expansion
 
 	   :enclose
+	   :parse-macro
 	   :enclose-macro
 
 	   :enable-hook
@@ -58,11 +59,13 @@
   #+ccl
   (:import-from :ccl
 		:augment-environment
-		:enclose)
+		:enclose
+		:parse-macro)
 
   #+cmucl
   (:import-from :extensions
-		:augment-environment)
+		:augment-environment
+		:parse-macro)
 
   (:documentation
    "Package exporting the base CLTL2 environments API."))

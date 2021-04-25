@@ -42,6 +42,7 @@
 
 	   :augment-environment
 	   :enclose
+	   :parse-macro
 	   :enclose-macro
 
 	   :augmented-macroexpand-1

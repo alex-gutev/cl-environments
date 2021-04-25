@@ -361,6 +361,47 @@
     (otherwise
      (enclose lambda-expression (augment-environment environment)))))
 
+(defun parse-macro (name lambda-list body &optional environment)
+  "Parse a macro definition form (as found in MACROLET or DEFMACRO).
+
+   NAME is the name of the macro. The body of the macro is enclosed in
+   a block with this name.
+
+   LAMBDA-LIST is the macro lambda-list.
+
+   BODY is the list of forms comprising the macro body.
+
+   ENVIRONMENT is the lexical environment in which the macro
+   definition form is to be parsed. This is used to expand macros used
+   in the macro definition.
+
+   Returns a lambda expression of two arguments which is suitable for
+   use as a macro function."
+
+  (declare (ignore environment))
+
+  (let ((env-var (gensym "ENV")))
+    (flet ((walk-arg (type arg)
+	     (case type
+	       (:environment
+		(setf env-var arg)
+		nil)
+
+	       ((nil)
+		(unless (eq arg '&environment)
+		  arg))
+
+	       (otherwise arg))))
+
+      (let ((lambda-list (map-lambda-list #'walk-arg lambda-list :destructure t :env t)))
+	(with-gensyms (name-var whole-var)
+	  `(lambda (,whole-var ,env-var)
+	     (declare (ignorable ,env-var))
+	     (block ,name
+	       (destructuring-bind (,name-var ,@lambda-list) ,whole-var
+		 (declare (ignore ,name-var))
+		 ,@body))))))))
+
 (defun enclose-macro (name lambda-list body &optional environment)
   "Parse a macro definition form (as found in MACROLET or DEFMACRO) into a macro function.
 
@@ -378,27 +419,6 @@
    Returns a function object which is suitable as a macro-function
    passed in the :MACRO argument of AUGMENT-ENVIRONMENT."
 
-  (let ((env-var (gensym "ENV")))
-    (flet ((walk-arg (type arg)
-	     (case type
-	       (:environment
-		(setf env-var arg)
-		nil)
-
-	       ((nil)
-		(unless (eq arg '&environment)
-		  arg))
-
-	       (otherwise arg))))
-
-      (let ((lambda-list (map-lambda-list #'walk-arg lambda-list :destructure t :env t)))
-	(with-gensyms (name-var whole-var)
-	  (enclose
-	   `(lambda (,whole-var ,env-var)
-	      (declare (ignorable ,env-var))
-	      (block ,name
-		(destructuring-bind (,name-var ,@lambda-list) ,whole-var
-		  (declare (ignore ,name-var))
-		  ,@body)))
-
-	   environment))))))
+  (enclose
+   (parse-macro name lambda-list body environment)
+   environment))
