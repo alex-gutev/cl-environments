@@ -84,11 +84,11 @@
 
     (in-lexical-environment (env)
 
-      (flet ((macro-function (form env)
+      (flet ((macro-fn (form env)
 	       (declare (ignore env))
 	       `(in-macro ,form)))
 
-	(let ((env (augment-environment env :macro (list (list 'test-macro #'macro-function)))))
+	(let ((env (augment-environment env :macro (list (list 'test-macro #'macro-fn)))))
 	  (macroexpand-1 '(test-macro (+ 1 2)) env)))))))
 
 (test macroexpand-1-multiple
