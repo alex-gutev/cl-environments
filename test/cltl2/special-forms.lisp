@@ -44,68 +44,68 @@
 
   (is
    (info=
+    '(:lexical t ((type . integer)))
+
     (walk-environment
       (block x
 	(cl:let ((x 1))
 	  (declare (type integer x))
 
 	  (1+ x)
-	  (return-from x (info variable x)))))
-
-    '(:lexical t ((type . integer))))))
+	  (return-from x (info variable x))))))))
 
 (test catch
   "Accessing environment information in CATCH forms"
 
   (is
    (info=
+    '(:lexical t ((type . integer)))
+
     (walk-environment
       (catch 'x
 	(cl:let ((x 1))
 	  (declare (type integer x))
 
 	  (1+ x)
-	  (throw 'x (info variable x)))))
-
-    '(:lexical t ((type . integer))))))
+	  (throw 'x (info variable x))))))))
 
 (test eval-when
   "Accessing environment information in CATCH forms"
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
       (eval-when (:compile-toplevel :load-toplevel :execute)
 	(cl:let ((x 1))
 	  (declare (ignore x))
-	  (info variable x))))
-
-    '(:lexical t ((ignore . t))))))
+	  (info variable x)))))))
 
 (test if
   "Accessing environment information in IF forms"
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
      (if (evenp (* 2 3))
 	 (cl:let ((var 1))
 	   (declare (ignore var))
-	   (info variable var))))
-
-    '(:lexical t ((ignore . t)))))
+	   (info variable var))))))
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
      (if (oddp (* 2 3))
 	 'true
 
 	 (cl:let ((var 1))
 	   (declare (ignore var))
-	   (info variable var))))
-
-    '(:lexical t ((ignore . t))))))
+	   (info variable var)))))))
 
 (test locally
   "Accessing environment information in LOCALLY forms"
@@ -122,28 +122,28 @@
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
       (multiple-value-call #'identity
 	(cl:let ((x 1))
 	  (declare (ignore x))
 
-	  (info variable x))))
-
-    '(:lexical t ((ignore . t))))))
+	  (info variable x)))))))
 
 (test multiple-value-prog1
   "Accessing environment information in MULTIPLE-VALUE-PROG1 forms"
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
       (multiple-value-prog1
 	  (cl:let ((z "hello"))
 	    (declare (ignore z))
 
-	    (info variable z))))
-
-    '(:lexical t ((ignore . t))))))
+	    (info variable z)))))))
 
 (test progn
   "Accessing environment information in PROGN forms"
@@ -162,22 +162,22 @@
 
 	 (info variable z))))
 
-    (is (info= info-a '(:lexical t ((type . integer)))))
-    (is (info= info-b '(:lexical t ((type . string)))))))
+    (is (info= '(:lexical t ((type . integer))) info-a))
+    (is (info= '(:lexical t ((type . string))) info-b))))
 
 (test progv
   "Accessing environment information in PROGV forms"
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
       (progv nil nil
 	(cl:let ((z "hello"))
 	  (declare (ignore z))
 
-	  (info variable z))))
-
-    '(:lexical t ((ignore . t))))))
+	  (info variable z)))))))
 
 (test setq
   "Accessing environment information in SETQ forms"
@@ -195,14 +195,16 @@
        (info variable var2)))
 
     (is-every info=
-      (info1 '(:lexical t ((ignore . t))))
-      (info2 '(:lexical t ((type . integer)))))))
+      ('(:lexical t ((ignore . t))) info1)
+      ('(:lexical t ((type . integer))) info2))))
 
 (test tagbody
   "Accessing environment information in TAGBODY forms"
 
   (is
    (info=
+    '(:lexical t ((type . string)))
+
     (walk-environment
       (block nil
 	(tagbody
@@ -217,29 +219,29 @@
 	   (return
 	     (cl:let ((z "hello"))
 	       (declare (type string z))
-	       (info variable z))))))
-
-    '(:lexical t ((type . string))))))
+	       (info variable z)))))))))
 
 (test the
   "Accessing environment information in THE forms"
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
       (the list
 	   (cl:let ((z "hello"))
 	     (declare (ignore z))
 
-	     (info variable z))))
-
-    '(:lexical t ((ignore . t))))))
+	     (info variable z)))))))
 
 (test unwind-protect
   "Accessing environment information in UNWIND-PROTECT forms"
 
   (is
    (info=
+    '(:lexical t ((ignore . t)))
+
     (walk-environment
       (unwind-protect
 	   (cl:let ((a-var "hello"))
@@ -247,6 +249,4 @@
 
 	     (info variable a-var))
 
-	(* 2 3)))
-
-    '(:lexical t ((ignore . t))))))
+	(* 2 3))))))

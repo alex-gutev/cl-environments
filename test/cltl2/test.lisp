@@ -91,7 +91,7 @@
      for assoc = (assoc key got)
      always (and assoc (decl-key= key (cdr assoc) value))))
 
-(defun info= (got expected)
+(defun info= (expected got)
   "Check that the binding information GOT is equal to expected.
 
    GOT and EXPECTED are expected to be lists of three elements the

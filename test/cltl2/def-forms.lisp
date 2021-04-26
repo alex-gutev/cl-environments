@@ -86,32 +86,32 @@
 (test defun
   "Test extracting environment information in DEFUN"
 
-  (is (info= (test-function 1) '(:lexical t ((ignore . t))))))
+  (is (info= '(:lexical t ((ignore . t))) (test-function 1))))
 
 (test defmacro
   "Test extracting environment information in DEFMACRO"
 
-  (is (info= (test-macro 'x) '(:lexical t ((ignore . t))))))
+  (is (info= '(:lexical t ((ignore . t))) (test-macro 'x))))
 
 (test defgeneric
   "Test extracting environment information in DEFGENERIC"
 
-  (is (info= (test-generic 100) '(:lexical t ((type . integer))))))
+  (is (info= '(:lexical t ((type . integer))) (test-generic 100))))
 
 (test defmethod
   "Test extracting environment information in DEFMETHOD"
 
-  (is (info= (test-generic "hello") '(:lexical t ((type . string))))))
+  (is (info= '(:lexical t ((type . string))) (test-generic "hello"))))
 
 (test defparameter
   "Test extracting environment information in DEFPARAMETER"
 
-  (is (info= *test-param* '(:lexical t ((type . null))))))
+  (is (info= '(:lexical t ((type . null))) *test-param*)))
 
 (test defvar
   "Test extracting environment information in DEFPARAMETER"
 
-  (is (info= *test-var* '(:lexical t ((type . null))))))
+  (is (info= '(:lexical t ((type . null))) *test-var*)))
 
 (test declaim
   "Test that global declarations are added to environment"
@@ -125,23 +125,23 @@
 (test global-definitions
   "Test that global definitions added to environment"
 
-  (is (info= (info function test-function)
-	     '(:function nil nil)))
+  (is (info= '(:function nil nil)
+	     (info function test-function)))
 
-  (is (info= (info function test-macro)
-	     '(:macro nil nil)))
+  (is (info= '(:macro nil nil)
+	     (info function test-macro)))
 
-  (is (info= (info function test-generic)
-	     '(:function nil nil)))
+  (is (info= '(:function nil nil)
+	     (info function test-generic)))
 
-  (is (info= (info variable *test-param*)
-	     '(:special nil nil)))
+  (is (info= '(:special nil nil)
+	     (info variable *test-param*)))
 
-  (is (info= (info variable *test-var*)
-	     '(:special nil nil)))
+  (is (info= '(:special nil nil)
+	     (info variable *test-var*)))
 
-  (is (info= (info variable +a-constant+)
-	     '(:constant nil nil)))
+  (is (info= '(:constant nil nil)
+	     (info variable +a-constant+)))
 
-  (is (info= (info variable symbol-mac)
-	     '(:symbol-macro nil nil))))
+  (is (info= '(:symbol-macro nil nil)
+	     (info variable symbol-mac))))

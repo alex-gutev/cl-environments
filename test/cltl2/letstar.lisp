@@ -47,20 +47,20 @@
 	     (type string y))
 
     (is (info=
-	 (info variable x)
-	 '(:lexical t ((type . integer)))))
+	 '(:lexical t ((type . integer)))
+	 (info variable x)))
 
     (is (info=
-    	 (info variable y)
-    	 '(:lexical t ((type . string)))))
+    	 '(:lexical t ((type . string)))
+    	 (info variable y)))
 
     (is (info=
-	 (info variable *global-var*)
-	 '(:special nil nil)))
+	 '(:special nil nil)
+	 (info variable *global-var*)))
 
     (is (info=
-    	 (info variable z)
-    	 '(nil nil nil)))))
+    	 '(nil nil nil)
+    	 (info variable z)))))
 
 (test let*-binding-special
   (let* ((dvar (+ 1 2))
@@ -70,18 +70,20 @@
 	     (type number lvar dvar))
 
     (is (info=
-	 (info variable dvar)
 	 #-sbcl '(:special t ((type . number)))
-	 #+sbcl '(:special nil ((type . number)))))
+	 #+sbcl '(:special nil ((type . number)))
+
+	 (info variable dvar)))
 
     (is (info=
-	 (info variable lvar)
-	 '(:lexical t ((type . number)))))
+	 '(:lexical t ((type . number)))
+	 (info variable lvar)))
 
     (is (info=
-	 (info variable *global-var*)
 	 #-sbcl '(:special t nil)
-	 #+sbcl '(:special nil nil)))))
+	 #+sbcl '(:special nil nil)
+
+	 (info variable *global-var*)))))
 
 (test let*-binding-dynamic-extent
   (let* ((func (lambda (a b) (+ a b))))
@@ -89,13 +91,13 @@
 	     (type (function (number number) number) func))
 
     (is (info=
-	 (info variable func)
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
-
 	 #-cmucl '(:lexical t ((dynamic-extent . t)
 			       (type . (function (number number) number))))
 
-	 #+cmucl '(:lexical t ((type . (function (number number) number))))))))
+	 #+cmucl '(:lexical t ((type . (function (number number) number))))
+
+	 (info variable func)))))
 
 (test let*-info-in-init-form
   (let ((outer-var (* 8 7)))
@@ -103,18 +105,18 @@
 
     (let* ((a (progn
 		(is (info=
-		     (info variable outer-var)
-		     '(:lexical t ((type . integer)))))
+		     '(:lexical t ((type . integer)))
+		     (info variable outer-var)))
 		1))
 
 	   (b (progn
 		(is (info=
-		     (info variable outer-var)
-		     '(:lexical t ((type . integer)))))
+		     '(:lexical t ((type . integer)))
+		     (info variable outer-var)))
 
 		(is (info=
-		     (info variable a)
-		     '(:lexical t nil)))))
+		     '(:lexical t nil)
+		     (info variable a)))))
 
 	  (outer-var "string"))
 
@@ -123,7 +125,8 @@
 	       (dynamic-extent outer-var))
 
       (is (info=
-	   (info variable outer-var)
 	   #-(or sbcl cmucl) '(:special t ((dynamic-extent . t) (type . string)))
 	   #+sbcl '(:special nil ((type . string)))
-	   #+cmucl '(:special t ((type . string))))))))
+	   #+cmucl '(:special t ((type . string)))
+
+	   (info variable outer-var))))))

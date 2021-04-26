@@ -108,24 +108,24 @@
 
   (is
    (info=
+    '(:lexical t ((foo-type . my-foo)))
+
     (let ((x 1))
       (declare (foo-type my-foo x))
       (1+ x)
-      (info variable x))
-
-    '(:lexical t ((foo-type . my-foo))))))
+      (info variable x)))))
 
 (test function-declarations
   "Custom declarations applying to functions"
 
   (is
    (info=
+    '(:function t ((bar-type . my-bar)))
+
     (flet ((f (x) (1+ x)))
       (declare (bar-type my-bar f))
       (f 1)
-      (info function f))
-
-    '(:function t ((bar-type . my-bar))))))
+      (info function f)))))
 
 (test other-declarations
   "Custom declarations neither applying to variables nor functions"
@@ -143,16 +143,16 @@
   (multiple-value-bind (info1 info2)
       (test-function 1 2)
 
-    (is (info= info1 '(:lexical t ((foo-type . foo1)))))
-    (is (info= info2 '(:lexical t ((foo-type . foo1))))))
+    (is (info= '(:lexical t ((foo-type . foo1))) info1))
+    (is (info= '(:lexical t ((foo-type . foo1))) info2)))
 
   (is
-   (info= (test-macro x) '(:lexical t ((foo-type . macfoo)))))
+   (info= '(:lexical t ((foo-type . macfoo))) (test-macro x)))
 
   (is
-   (info= (test-generic 1)
-	  '(:lexical t ((foo-type . genericfoo)))))
+   (info= '(:lexical t ((foo-type . genericfoo)))
+	  (test-generic 1)))
 
   (is
-   (info= (test-generic "hello")
-	  '(:lexical t ((foo-type . stringfoo))))))
+   (info= '(:lexical t ((foo-type . stringfoo)))
+	  (test-generic "hello"))))

@@ -63,43 +63,44 @@
 	     (notinline global-fn))
 
     (is (info=
-	 (info function inc)
-
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
 	 #-cmucl '(:function t ((ftype . (function (integer) integer))
 				(dynamic-extent . t)))
 
-	 #+cmucl '(:function t ((ftype . (function (integer) integer))))))
+	 #+cmucl '(:function t ((ftype . (function (integer) integer))))
+
+	 (info function inc)))
 
     (is (info=
-	 (info function add)
 	 '(:function t ((ftype . (function (number number) number))
-			(inline . inline)))))
+			(inline . inline)))
+
+	 (info function add)))
 
     (is (info=
-	 (info function global-fn)
-
 	 ;; CCL sometimes doesn't store global declarations
 	 #-ccl '(:function nil ((ftype . (function (integer integer integer) number))
 				(inline . notinline)))
 
-	 #+ccl '(:function nil ((inline . notinline)))))
+	 #+ccl '(:function nil ((inline . notinline)))
+
+	 (info function global-fn)))
 
     (is (info=
-	 (info function test-macro)
-	 '(:macro nil nil)))
+	 '(:macro nil nil)
+	 (info function test-macro)))
 
     (is (info=
-	 (info function cl:defun)
-	 '(:macro nil nil)))
+	 '(:macro nil nil)
+	 (info function cl:defun)))
 
     (is (info=
-	 (info function cl:if)
-	 '(:special-form nil nil)))
+	 '(:special-form nil nil)
+	 (info function cl:if)))
 
     (is (info=
-	 (info function not-a-function)
-	 '(nil nil nil)))))
+	 '(nil nil nil)
+	 (info function not-a-function)))))
 
 (test shadowing
   "Test lexical shadowing of functions"
@@ -135,9 +136,11 @@
 	  (f1 1)
 
 	(is-every info=
-	  (info-x '(:lexical t ((type . integer) (ignore . t))))
-	  (info-f2 '(:function t ((ftype . (function (number number) number))
-      				  (inline . inline))))
+	  ('(:lexical t ((type . integer) (ignore . t))) info-x)
+
+	  ('(:function t ((ftype . (function (number number) number))
+      			  (inline . inline)))
+	    info-f2)
 
 	  #-ccl (info-global-fn '(:function nil ((ftype . (function (integer integer integer) number)))))
 	  #+ccl (info-global-fn '(:function nil nil))))
@@ -146,15 +149,16 @@
 	  (f2 1 2)
 
 	(is-every info=
-	  (info-a '(:lexical t ((ignore . t))))
-	  (info-b '(:lexical t ((ignore . t))))
-	  (info-f1 '(nil nil nil))))
+	  ('(:lexical t ((ignore . t))) info-a)
+	  ('(:lexical t ((ignore . t))) info-b)
+	  ('(nil nil nil) info-f1)))
 
       (is (info=
-	   (info function f2)
-      	   '(:function t ((inline . notinline)))))
+	   '(:function t ((inline . notinline)))
+      	   (info function f2)))
 
       (is (info=
-	   (info function global-fn)
 	   #-(or sbcl ccl cmucl) '(:function t ((ignore . t)))
-	   #+(or sbcl ccl cmucl) '(:function t nil))))))
+	   #+(or sbcl ccl cmucl) '(:function t nil)
+
+	   (info function global-fn))))))

@@ -46,8 +46,8 @@
 
 	     (info variable x))))
 
-    (is (info= (funcall f 1)
-	       '(:lexical t ((ignore . t)))))))
+    (is (info= '(:lexical t ((ignore . t)))
+	       (funcall f 1)))))
 
 (test lambda-optional-args
   "Test LAMBDA form with all argument types"
@@ -58,10 +58,10 @@
 
     (multiple-value-bind (info-a info-d info-ep info-f) (funcall f 1)
       (is-every info=
-	(info-a '(:lexical t nil))
-	(info-d '(:lexical t nil))
-	(info-ep '(:lexical t nil))
-	(info-f '(:lexical t nil))))))
+	('(:lexical t nil) info-a)
+	('(:lexical t nil) info-d)
+	('(:lexical t nil) info-ep)
+	('(:lexical t nil) info-f)))))
 
 (test lambda-closure
   "Test information of variables in LAMBDA closure"
@@ -79,7 +79,8 @@
 
       (multiple-value-bind (info-x info-y) (funcall f 1)
 	(is-every info=
-	  (info-x '(:lexical t ((type . integer))))
-	  (info-y '(:lexical t ((type . number))))))
+	  ('(:lexical t ((type . integer))) info-x)
+	  ('(:lexical t ((type . number))) info-y)))
 
-      (is (info= (info variable y) '(:lexical t ((type . integer))))))))
+      (is (info= '(:lexical t ((type . integer)))
+		 (info variable y))))))

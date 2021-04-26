@@ -440,25 +440,19 @@ in augmented environment."
 
   (is
    (info=
-    (let ((x 1) (y 2))
-      (declare (ignorable x y))
-      (in-lexical-environment (env)
-	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
-	  (variable-information 'x env))))
-
     #-sbcl '(:lexical t ((type . integer)))
 
     ;; SBCL does not record type information
-    #+sbcl '(:lexical t nil)))
+    #+sbcl '(:lexical t nil)
 
-  (is
-   (info=
     (let ((x 1) (y 2))
       (declare (ignorable x y))
       (in-lexical-environment (env)
 	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
-	  (variable-information 'y env))))
+	  (variable-information 'x env))))))
 
+  (is
+   (info=
     #-(or sbcl ccl cmucl)
     '(:special t ((type . integer)))
 
@@ -473,41 +467,49 @@ in augmented environment."
     ;; CMUCL does not add the type declarations to the augmented
     ;; environment
     #+cmucl
-    '(:special t nil))))
+    '(:special t nil)
+
+    (let ((x 1) (y 2))
+      (declare (ignorable x y))
+      (in-lexical-environment (env)
+	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
+	  (variable-information 'y env)))))))
 
 (test augmented-variable-information-symbol-macro
   "Test VARIABLE-INFORMATION on symbol-macro augmented environment."
 
   (is
    (info=
+    '(:symbol-macro t nil)
+
     (in-lexical-environment (env)
       (let ((env (augment-environment env :symbol-macro '((local-sym-macro (+ 1 2))))))
-	(variable-information 'local-sym-macro env)))
-
-    '(:symbol-macro t nil))))
+	(variable-information 'local-sym-macro env))))))
 
 (test augmented-function-information
   "Test FUNCTION-INFORMATION on augmented environment."
 
   (is
    (info=
+    #-sbcl '(:function t ((ftype . (function (number number) number))))
+
+    ;; SBCL does not record function type information.
+    #+sbcl '(:function t nil)
+
     (flet ((add (a b) (+ a b)))
       (in-lexical-environment (env)
 	(let ((env (augment-environment
 		    env
 		    :declare '((ftype (function (number number) number) add)))))
-	  (function-information 'add env))))
-
-    #-sbcl '(:function t ((ftype . (function (number number) number))))
-
-    ;; SBCL does not record function type information.
-    #+sbcl '(:function t nil))))
+	  (function-information 'add env)))))))
 
 (test augmented-function-information-macro
   "Test FUNCTION-INFORMATION on macro augmented environment."
 
   (is
    (info=
+    '(:macro t nil)
+
     (in-lexical-environment (env)
       (flet ((macro (form env)
 	       (declare (ignore env))
@@ -517,9 +519,7 @@ in augmented environment."
 		 thing)))
 
 	(let ((env (augment-environment env :macro `((loc-macro1 ,#'macro)))))
-	  (function-information 'loc-macro1 env))))
-
-    '(:macro t nil))))
+	  (function-information 'loc-macro1 env)))))))
 
 (test augmented-declaration-information
   (is
@@ -536,6 +536,8 @@ in augmented environment."
 
   (is
    (info=
+    '(:lexical t ((type . integer)))
+
     (let ((x 1))
       (declare (type integer x))
       (in-lexical-environment (env)
@@ -543,15 +545,15 @@ in augmented environment."
 		    env
 		    :variable '(w y z)
 		    :declare '((type integer y) (special y)))))
-	  (variable-information 'x env))))
-
-    '(:lexical t ((type . integer))))))
+	  (variable-information 'x env)))))))
 
 (test augment-function-keep-information
   "Test that augmenting an environment with functions does not replace existing information."
 
   (is
    (info=
+    '(:function t ((ftype . (function (number number) number))))
+
     (flet ((add (a b) (+ a b)))
       (declare (ftype (function (number number) number) add))
 
@@ -560,9 +562,7 @@ in augmented environment."
 		    env
 		    :function '(inc f g)
 		    :declare '((ftype (function (integer) *) inc)))))
-	  (function-information 'add env))))
-
-    '(:function t ((ftype . (function (number number) number)))))))
+	  (function-information 'add env)))))))
 
 
 ;;; Augmenting Augmented Environments
@@ -631,7 +631,6 @@ in augmented environment."
 		:declare '((type string y)))))
 
     (is (info=
-	 (multiple-value-list (variable-information 'x env2))
 	 #-(or cmucl sbcl) '(:special t ((type . integer)))
 
 	 ;; CMUCL does not augment the environment with type
@@ -641,11 +640,13 @@ in augmented environment."
 	 ;; SBCL neither records the special variable as a local
 	 ;; variable nor augments the environment with type
 	 ;; information.
-	 #+sbcl '(:special nil nil)))
+	 #+sbcl '(:special nil nil)
+
+	 (multiple-value-list (variable-information 'x env2))))
 
     (is (info=
-	 (multiple-value-list (variable-information 'y env2))
-	 '(:lexical t ((type . string)))))))
+	 '(:lexical t ((type . string)))
+	 (multiple-value-list (variable-information 'y env2))))))
 
 (test augment-augmented-function
   "Test augmenting a function augmented environment."
@@ -661,12 +662,12 @@ in augmented environment."
 		:declare '((ftype (function (string string) string) f2)))))
 
     (is (info=
-	 (multiple-value-list (function-information 'f1 env2))
-	 '(:function t ((ftype . (function (number) number))))))
+	 '(:function t ((ftype . (function (number) number))))
+	 (multiple-value-list (function-information 'f1 env2))))
 
     (is (info=
-	 (multiple-value-list (function-information 'f2 env2))
-	 '(:function t ((ftype . (function (string string) string))))))))
+	 '(:function t ((ftype . (function (string string) string))))
+	 (multiple-value-list (function-information 'f2 env2))))))
 
 (test augment-augmented-declaration
   "Test augmenting a declaration augmented environment."
@@ -683,8 +684,8 @@ in augmented environment."
 			   (optimize (space 3) (safety 0))))))
 
     (is (info=
-	 (multiple-value-list (variable-information 'x env2))
-	 '(:special t ((type . integer)))))
+	 '(:special t ((type . integer)))
+	 (multiple-value-list (variable-information 'x env2))))
 
     (is (optimize=
 	 '((speed 3) (space 3) (safety 0))

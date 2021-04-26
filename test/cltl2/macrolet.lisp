@@ -53,32 +53,32 @@
 	       "Pass through macro"
 	       form))
 
-    (is (info= (info function pass-through)
-	       '(:macro t nil)))))
+    (is (info= '(:macro t nil)
+	       (info function pass-through)))))
 
 (test macro-shadowing
   "Test shadowing of global macros by lexical macros"
 
-  (is (info= (info function test-macro)
-	     '(:macro nil nil)))
+  (is (info= '(:macro nil nil)
+	     (info function test-macro)))
 
   (macrolet ((test-macro (form)
 	       form))
 
-    (is (info= (info function test-macro)
-	       '(:macro t nil)))))
+    (is (info= '(:macro t nil)
+	       (info function test-macro)))))
 
 (test function-shadowing
   "Test shadowing of global functions by lexical macros"
 
-  (is (info= (info function global-fn)
-	     '(:function nil nil)))
+  (is (info= '(:function nil nil)
+	     (info function global-fn)))
 
   (macrolet ((global-fn (form)
 	       form))
 
-    (is (info= (info function global-fn)
-	       '(:macro t nil)))))
+    (is (info= '(:macro t nil)
+	       (info function global-fn)))))
 
 (test symbol-macro-types
   "Test extraction of lexical symbol macro information"
@@ -87,28 +87,28 @@
 		    (sym-macro2 2))
 
     (is-every info=
-      ((info variable sym-macro) '(:symbol-macro t nil))
-      ((info variable sym-macro2) '(:symbol-macro t nil)))))
+      ('(:symbol-macro t nil) (info variable sym-macro))
+      ('(:symbol-macro t nil) (info variable sym-macro2)))))
 
 (test symbol-macro-shadowing
   "Test shadowing of global symbol macros with lexical symbol macros"
 
-  (is (info= (info variable global-symbol-macro)
-	     '(:symbol-macro nil nil)))
+  (is (info= '(:symbol-macro nil nil)
+	     (info variable global-symbol-macro)))
 
   (symbol-macrolet ((global-symbol-macro "Local symbol macro"))
-    (is (info= (info variable global-symbol-macro)
-	       '(:symbol-macro t nil)))))
+    (is (info= '(:symbol-macro t nil)
+	       (info variable global-symbol-macro)))))
 
 (test var-shadow-symbol-macro
   "Test shadowing of symbol macros with lexical variables"
 
   (symbol-macrolet ((sym-macro "macro"))
-    (is (info= (info variable sym-macro)
-	       '(:symbol-macro t nil)))
+    (is (info= '(:symbol-macro t nil)
+	       (info variable sym-macro)))
 
     (let ((sym-macro 1))
       (declare (type integer sym-macro))
 
-      (is (info= (info variable sym-macro)
-		 '(:lexical t ((type . integer))))))))
+      (is (info= '(:lexical t ((type . integer)))
+		 (info variable sym-macro))))))
