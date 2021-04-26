@@ -47,19 +47,19 @@
 	     (type string y))
 
     (is (info=
-	 (env-info (variable-information 'x env) env)
+	 (info variable x)
 	 '(:lexical t ((type . integer)))))
 
     (is (info=
-    	 (env-info (variable-information 'y env) env)
+    	 (info variable y)
     	 '(:lexical t ((type . string)))))
 
     (is (info=
-	 (env-info (variable-information '*global-var* env) env)
+	 (info variable *global-var*)
 	 '(:special nil nil)))
 
     (is (info=
-    	 (env-info (variable-information 'z env) env)
+    	 (info variable z)
     	 '(nil nil nil)))))
 
 (test let-binding-special
@@ -70,18 +70,18 @@
 	     (type number lvar dvar))
 
     (is (info=
-	 (env-info (variable-information 'dvar env) env)
-	 ;; SBCL does not recognize shadowed binding as local binding
+	 (info variable dvar)
 
+	 ;; SBCL does not recognize shadowed binding as local binding
 	 #-sbcl '(:special t ((type . number)))
 	 #+sbcl '(:special nil ((type . number)))))
 
     (is (info=
-	 (env-info (variable-information 'lvar env) env)
+	 (info variable lvar)
 	 '(:lexical t ((type . number)))))
 
     (is (info=
-	 (env-info (variable-information '*global-var* env) env)
+	 (info variable *global-var*)
 	 #-sbcl '(:special t nil)
 	 #+sbcl '(:special nil nil)))))
 
@@ -91,7 +91,7 @@
 	     (type (function (number number) number) func))
 
     (is (info=
-	 (env-info (variable-information 'func env) env)
+	 (info variable func)
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
 
 	 #-cmucl '(:lexical t ((dynamic-extent . t)
@@ -105,17 +105,17 @@
 
     (let ((a (progn
 	       (is (info=
-		    (env-info (variable-information 'outer-var env) env)
+		    (info variable outer-var)
 		    '(:lexical t ((type . integer)))))
 	       1))
 
 	  (b (progn
 	       (is (info=
-		    (env-info (variable-information 'outer-var env) env)
+		    (info variable outer-var)
 		    '(:lexical t ((type . integer)))))
 
 	       (is (info=
-		    (env-info (variable-information 'a env) env)
+		    (info variable a)
 		    '(nil nil nil)))))
 
 	  (outer-var "string"))
@@ -125,7 +125,7 @@
 	       (dynamic-extent outer-var))
 
       (is (info=
-	   (env-info (variable-information 'outer-var env) env)
+	   (info variable outer-var)
 	   ;; Not recognized as local binding on SBCL, and DYNAMIC-EXTENT
 	   ;; declaration discarded on SBCL and CMUCL
 

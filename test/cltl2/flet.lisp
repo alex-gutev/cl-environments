@@ -63,42 +63,42 @@
 	     (notinline global-fn))
 
     (is (info=
-	 (env-info (function-information 'inc env) env)
-	 ;; CMUCL ignores DYNAMIC-EXTENT here
+	 (info function inc)
 
+	 ;; CMUCL ignores DYNAMIC-EXTENT here
 	 #-cmucl '(:function t ((ftype . (function (integer) integer))
 				(dynamic-extent . t)))
 
 	 #+cmucl '(:function t ((ftype . (function (integer) integer))))))
 
     (is (info=
-	 (env-info (function-information 'add env) env)
+	 (info function add)
 	 '(:function t ((ftype . (function (number number) number))
 			(inline . inline)))))
 
     (is (info=
-	 (env-info (function-information 'global-fn env) env)
-	 ;; CCL sometimes doesn't store global declarations
+	 (info function global-fn)
 
+	 ;; CCL sometimes doesn't store global declarations
 	 #-ccl '(:function nil ((ftype . (function (integer integer integer) number))
 				(inline . notinline)))
 
 	 #+ccl '(:function nil ((inline . notinline)))))
 
     (is (info=
-	 (env-info (function-information 'test-macro env) env)
+	 (info function test-macro)
 	 '(:macro nil nil)))
 
     (is (info=
-	 (env-info (function-information 'cl:defun env) env)
+	 (info function cl:defun)
 	 '(:macro nil nil)))
 
     (is (info=
-	 (env-info (function-information 'cl:if env) env)
+	 (info function cl:if)
 	 '(:special-form nil nil)))
 
     (is (info=
-	 (env-info (function-information 'not-a-function env) env)
+	 (info function not-a-function)
 	 '(nil nil nil)))))
 
 (test shadowing
@@ -114,17 +114,17 @@
 		      (ignore x))
 
 	     (values
-	      (env-info (variable-information 'x env) env)
-	      (env-info (function-information 'f2 env) env)
-	      (env-info (function-information 'global-fn env) env)))
+	      (info variable x)
+	      (info function f2)
+	      (info function global-fn)))
 
 	   (f2 (a b)
 	     (declare (ignore a b))
 
 	     (values
-	      (env-info (variable-information 'a env) env)
-	      (env-info (variable-information 'b env) env)
-	      (env-info (function-information 'f1 env) env)))
+	      (info variable a)
+	      (info variable b)
+	      (info function f1)))
 
 	   (global-fn (x) x))
 
@@ -151,10 +151,10 @@
 	  (info-f1 '(nil nil nil))))
 
       (is (info=
-	   (env-info (function-information 'f2 env) env)
+	   (info function f2)
       	   '(:function t ((inline . notinline)))))
 
       (is (info=
-	   (env-info (function-information 'global-fn env) env)
+	   (info function global-fn)
 	   #-(or sbcl ccl cmucl) '(:function t ((ignore . t)))
 	   #+(or sbcl ccl cmucl) '(:function t nil))))))

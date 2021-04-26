@@ -47,19 +47,19 @@
 	     (type string y))
 
     (is (info=
-	 (env-info (variable-information 'x env) env)
+	 (info variable x)
 	 '(:lexical t ((type . integer)))))
 
     (is (info=
-    	 (env-info (variable-information 'y env) env)
+    	 (info variable y)
     	 '(:lexical t ((type . string)))))
 
     (is (info=
-	 (env-info (variable-information '*global-var* env) env)
+	 (info variable *global-var*)
 	 '(:special nil nil)))
 
     (is (info=
-    	 (env-info (variable-information 'z env) env)
+    	 (info variable z)
     	 '(nil nil nil)))))
 
 (test let*-binding-special
@@ -70,16 +70,16 @@
 	     (type number lvar dvar))
 
     (is (info=
-	 (env-info (variable-information 'dvar env) env)
+	 (info variable dvar)
 	 #-sbcl '(:special t ((type . number)))
 	 #+sbcl '(:special nil ((type . number)))))
 
     (is (info=
-	 (env-info (variable-information 'lvar env) env)
+	 (info variable lvar)
 	 '(:lexical t ((type . number)))))
 
     (is (info=
-	 (env-info (variable-information '*global-var* env) env)
+	 (info variable *global-var*)
 	 #-sbcl '(:special t nil)
 	 #+sbcl '(:special nil nil)))))
 
@@ -89,7 +89,7 @@
 	     (type (function (number number) number) func))
 
     (is (info=
-	 (env-info (variable-information 'func env) env)
+	 (info variable func)
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
 
 	 #-cmucl '(:lexical t ((dynamic-extent . t)
@@ -103,17 +103,17 @@
 
     (let* ((a (progn
 		(is (info=
-		     (env-info (variable-information 'outer-var env) env)
+		     (info variable outer-var)
 		     '(:lexical t ((type . integer)))))
 		1))
 
 	   (b (progn
 		(is (info=
-		     (env-info (variable-information 'outer-var env) env)
+		     (info variable outer-var)
 		     '(:lexical t ((type . integer)))))
 
 		(is (info=
-		     (env-info (variable-information 'a env) env)
+		     (info variable a)
 		     '(:lexical t nil)))))
 
 	  (outer-var "string"))
@@ -123,7 +123,7 @@
 	       (dynamic-extent outer-var))
 
       (is (info=
-	   (env-info (variable-information 'outer-var env) env)
+	   (info variable outer-var)
 	   #-(or sbcl cmucl) '(:special t ((dynamic-extent . t) (type . string)))
 	   #+sbcl '(:special nil ((type . string)))
 	   #+cmucl '(:special t ((type . string))))))))

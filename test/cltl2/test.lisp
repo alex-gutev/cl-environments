@@ -36,7 +36,6 @@
 		:symb)
 
   (:export :cltl2-test
-	   :env-info
 	   :in-lexical-environment
 	   :info
 	   :info=))
@@ -53,16 +52,6 @@
 
 
 ;;; Utilities
-
-(defmacro env-info (form &optional (env (gensym "ENV")))
-  "Evaluate FORM in an environment where the variable named by ENV is
-   bound to the lexical environment in which the macro appears. All
-   return values of FORM are returned in a list."
-
-  (with-gensyms (get-info)
-    `(macrolet ((,get-info (&environment ,env)
-		  `',(multiple-value-list ,form)))
-       (,get-info))))
 
 (defmacro in-lexical-environment ((env-var) &body forms)
   "Evaluate forms in the current lexical environment.
@@ -90,7 +79,8 @@
    TYPE being DECLARATION) of which to retrieve the information."
 
   (with-gensyms (env)
-    `(env-info (,(symb type '-information) ',thing ,env) ,env)))
+    `(in-lexical-environment (,env)
+       (,(symb type '-information) ',thing ,env))))
 
 (defun decl= (got expected)
   "Check that the declaration information GOT has all the keys in the
