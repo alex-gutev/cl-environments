@@ -437,6 +437,14 @@ function is a no-op.
 
 == Package CL-ENVIRONMENTS.TOOLS ==
 
+IMPORTANT: The functionality provided by this package has been moved
+to a separate project
+https://github.com/alex-gutev/cl-form-types[cl-form-types].
+
+WARNING: This package, and the functions exported by it, are
+deprecated and will be removed in a future release.
+
+
 The package `CL-ENVIRONMENTS.TOOLS` provides a number of functions for
 obtaining information about forms occurring in a particular
 environment. These functions make use of the information return by the
