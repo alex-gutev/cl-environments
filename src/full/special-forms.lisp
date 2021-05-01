@@ -166,6 +166,18 @@
   (match-form (type form) args
     `(,type ,(enclose-form form))))
 
+;;; ECL Fixes
+
+#+ecl
+(defwalker multiple-value-bind (args)
+  "ECL has a buggy macroexpansion for MULTIPLE-VALUE-BIND which
+   results in an error at runtime if more/less values are returned
+   than expected."
+
+  (match-form ((&rest vars) form . body) args
+    (let ((env (copy-environment (get-environment *env*))))
+      (mapc (rcurry #'add-variable env) vars)
+      `(,vars ,(enclose-form form) ,@(walk-body body env nil)))))
 
 ;;; Clisp specific special forms
 
