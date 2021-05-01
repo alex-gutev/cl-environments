@@ -130,6 +130,27 @@
 	 (next rest))
 
 	(:rest
+	 (guard
+	  (and (list* (and (or '&rest '&body) keyword)
+		      (and (type list) var-list)
+		      rest)
+	       list)
+	  destructurep)
+
+	 (guard (member from-state '(:start :required :optional)) list)
+
+	 (collect nil keyword)
+
+	 (let (new-list)
+	   (let ((collector (make-simple-collector-to-place new-list))
+		 (envp nil))
+	     (declare (special collector envp))
+	     (next var-list :from :start))
+	   (funcall collector new-list))
+
+	 (next rest))
+
+	(:rest
 	 (and (cons (and (or '&rest '&body) keyword) rest) list)
 
 	 (guard (and (or (eq keyword '&rest) destructurep)
