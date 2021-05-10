@@ -41,10 +41,13 @@
 	   :parse-macro
 	   :enclose-macro
 
+	   :in-environment
 	   :augmented-macroexpand-1
 	   :augmented-macroexpand
 	   :augmented-macro-function
 	   :augmented-get-setf-expansion
+	   :augmented-compiler-macro-function
+	   :augmented-constantp
 
 	   :enable-hook
 	   :disable-hook
@@ -66,10 +69,13 @@
 	   :enclose
 	   :enclose-macro
 
+	   :in-environment
 	   :augmented-macroexpand-1
 	   :augmented-macroexpand
 	   :augmented-macro-function
 	   :augmented-get-setf-expansion
+	   :augmented-compiler-macro-function
+	   :augmented-constantp
 
 	   :enable-hook
 	   :disable-hook
@@ -90,6 +96,17 @@
 (defun enclose-macro (name lambda-list body &optional env)
   (enclose (parse-macro name lambda-list body env) env))
 
+(defmacro in-environment ((env-var &optional (environment env-var)) (&rest bindings) &body forms)
+  (flet ((make-binding (binding)
+	   (match binding
+	     ((type symbol)
+	      (list binding binding))
+
+	     (_ binding))))
+
+    `(let ((,env-var ,environment) ,@(mapcar #'make-binding bindings))
+       ,@forms)))
+
 (defun augmented-macroexpand-1 (form &optional env)
   (macroexpand-1 form env))
 
@@ -101,6 +118,12 @@
 
 (defun augmented-get-setf-expansion (form &optional env)
   (get-setf-expansion form env))
+
+(defun augmented-compiler-macro-function (name &optional environment)
+  (compiler-macro-function name environment))
+
+(defun augmented-constantp (form &optional environment)
+  (constantp form environment))
 
 
 (defun enable-hook (&optional (previous-hook *macroexpand-hook*))
