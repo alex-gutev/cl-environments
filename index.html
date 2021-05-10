@@ -470,13 +470,17 @@ CLTL2 environment access API.</p>
 <li><a href="#function_information">FUNCTION-INFORMATION</a></li>
 <li><a href="#declaration_information">DECLARATION-INFORMATION</a></li>
 <li><a href="#define_declaration">DEFINE-DECLARATION</a></li>
-<li><a href="#augment_environment">AUGMENT-ENVIRONMENT</a></li>
+<li><a href="#augment-environment">AUGMENT-ENVIRONMENT</a></li>
 <li><a href="#enclose">ENCLOSE</a></li>
 <li><a href="#parse_macro">PARSE-MACRO</a></li>
 <li><a href="#enclose_macro">ENCLOSE-MACRO</a></li>
 </ul>
 </li>
-<li><a href="#wrapper_functions">Wrapper Functions</a></li>
+<li><a href="#wrapper_functions">Wrapper Functions</a>
+<ul class="sectlevel3">
+<li><a href="#in_environment">IN-ENVIRONMENT</a></li>
+</ul>
+</li>
 <li><a href="#ensuring_code_walking">Ensuring Code Walking</a>
 <ul class="sectlevel3">
 <li><a href="#walk_environment">WALK-ENVIRONMENT</a></li>
@@ -613,49 +617,29 @@ provided.</p>
 <p>The binding type identified by one of the following symbols:</p>
 <div class="openblock">
 <div class="content">
-<div class="hdlist">
-<table>
-<tr>
-<td class="hdlist1">
-<code>NIL</code>
-</td>
-<td class="hdlist2">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>NIL</code></dt>
+<dd>
 <p>No apparent variable binding for <code>SYMBOL</code> in <code>ENV</code></p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:LEXICAL</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:LEXICAL</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a lexical variable.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:SPECIAL</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:SPECIAL</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a special variable.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:SYMBOL-MACRO</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:SYMBOL-MACRO</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a symbol-macro.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:CONSTANT</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:CONSTANT</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a constant, defined by <code>DEFCONSTANT</code>, or is a keyword.</p>
-</td>
-</tr>
-</table>
+</dd>
+</dl>
 </div>
 </div>
 </div>
@@ -704,42 +688,26 @@ provided.</p>
 <p>The binding type identified by one of the following symbols:</p>
 <div class="openblock">
 <div class="content">
-<div class="hdlist">
-<table>
-<tr>
-<td class="hdlist1">
-<code>NIL</code>
-</td>
-<td class="hdlist2">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>NIL</code></dt>
+<dd>
 <p>No apparent function binding for <code>SYMBOL</code> in <code>ENV</code>.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:FUNCTION</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:FUNCTION</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a function.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:MACRO</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:MACRO</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a macro.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:SPECIAL-FORM</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:SPECIAL-FORM</code></dt>
+<dd>
 <p><code>SYMBOL</code> refers to a special operator, which does
 not have an associated macro function.</p>
-</td>
-</tr>
-</table>
+</dd>
+</dl>
 </div>
 </div>
 </div>
@@ -837,33 +805,21 @@ function, in an implicit <code>PROGN</code>.</p>
 <p>A keyword identifying what the declaration applies to:</p>
 <div class="openblock">
 <div class="content">
-<div class="hdlist">
-<table>
-<tr>
-<td class="hdlist1">
-<code>:VARIABLE</code>
-</td>
-<td class="hdlist2">
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>:VARIABLE</code></dt>
+<dd>
 <p>The declaration applies to variable bindings.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:FUNCTION</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:FUNCTION</code></dt>
+<dd>
 <p>The declaration applies to function bindings.</p>
-</td>
-</tr>
-<tr>
-<td class="hdlist1">
-<code>:DECLARE</code>
-</td>
-<td class="hdlist2">
+</dd>
+<dt class="hdlist1"><code>:DECLARE</code></dt>
+<dd>
 <p>The declaration neither applies to variable nor function bindings.</p>
-</td>
-</tr>
-</table>
+</dd>
+</dl>
 </div>
 </div>
 </div>
@@ -892,7 +848,7 @@ the form <code>(KEY . VALUE)</code>. <code>VALUE</code> will be returned by
 </div>
 </div>
 <div class="sect3">
-<h4 id="augment_environment">AUGMENT-ENVIRONMENT</h4>
+<h4 id="augment-environment">AUGMENT-ENVIRONMENT</h4>
 <div class="paragraph">
 <p>Function: <code>AUGMENT-ENVIRONMENT ENV &amp;KEY :VARIABLE :SYMBOL-MACRO :FUNCTION :MACRO :DECLARE</code></p>
 </div>
@@ -1203,6 +1159,12 @@ without the leading <code>AUGMENTED-</code>:</p>
 <li>
 <p><code>AUGMENTED-GET-SETF-EXPANSION</code></p>
 </li>
+<li>
+<p><code>AUGMENTED-COMPILER-MACRO-FUNCTION</code></p>
+</li>
+<li>
+<p><code>AUGMENTED-CONSTANTP</code></p>
+</li>
 </ul>
 </div>
 <div class="paragraph">
@@ -1238,6 +1200,89 @@ environment object or an environment returned by
 <p><code>SUBTYPEP</code></p>
 </li>
 </ul>
+</div>
+<div class="sect3">
+<h4 id="in_environment">IN-ENVIRONMENT</h4>
+<div class="paragraph">
+<p>Macro <code>IN-ENVIRONMENT (ENV-VAR &amp;OPTIONAL (ENVIRONMENT ENV-VAR)) (&amp;REST BINDINGS) &amp;BODY FORMS</code></p>
+</div>
+<div class="paragraph">
+<p>Evaluate <code>FORMS</code> in a dynamic environment in which a native
+environment object, that is equivalent to an augmented environment
+object (returned by <a href="#augment-environment">AUGMENT-ENVIRONMENT</a>), is available.</p>
+</div>
+<div class="paragraph">
+<p>This macro is necessary to be able to pass augmented environment
+objects to functions which expect a native environment object, for
+which there is no wrapper function.</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>ENV-VAR</code></dt>
+<dd>
+<p>Symbol naming the variable to which the native environment
+object is bound. This binding is made available to <code>FORMS</code>.</p>
+</dd>
+<dt class="hdlist1"><code>ENVIRONMENT</code></dt>
+<dd>
+<p>Form which evaluates to the environment, which may be
+either a native or augmented environment object. <code>ENVIRONMENT</code> is
+evaluated in the environment of the macro form. If not provided the
+variable with name given by <code>ENV-VAR</code> is evaluated in the environment
+of the macro-form.</p>
+</dd>
+<dt class="hdlist1"><code>BINDINGS</code></dt>
+<dd>
+<p>List of bindings as if by <code>LET</code> to make available to
+<code>FORMS</code>. The difference from <code>LET</code> is that the <em>init-forms</em> are
+evaluated in the environment of the macro form but the bindings are
+made available in the dynamic environment in which <code>FORMS</code> are
+evaluated. If no init-form is given for a binding, the variable is
+bound to the value of the variable in the environment of the
+macro-form.</p>
+</dd>
+<dt class="hdlist1"><code>FORMS</code></dt>
+<dd>
+<p>List of forms to evaluate with <code>ENV-VAR</code> bound to a native
+environment object equivalent of an augmented environment, and with
+the bindings specified by <code>BINDINGS</code>. The values returned by the last
+form in <code>FORMS</code> are returned by the <code>IN-ENVIRONMENT</code> form.</p>
+<div class="openblock">
+<div class="content">
+<div class="admonitionblock caution">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-caution" title="Caution"></i>
+</td>
+<td class="content">
+These forms might be evaluated in a dynamic environment where
+they do not have access to the local variable, function and macro
+definitions of the environment of the macro-form, hence the need for
+<code>BINDINGS</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+On implementations where <code>AUGMENT-ENVIRONMENT</code> is provided
+natively, this macro simply expands to a <code>LET</code> and <code>FORMS</code> are
+executed in the same environment as the macro form.
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -1392,6 +1437,33 @@ function is a no-op.
 <div class="sect1">
 <h2 id="package_cl_environments_tools">Package CL-ENVIRONMENTS.TOOLS</h2>
 <div class="sectionbody">
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+The functionality provided by this package has been moved
+to a separate project
+<a href="https://github.com/alex-gutev/cl-form-types">cl-form-types</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+This package, and the functions exported by it, are
+deprecated and will be removed in a future release.
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>The package <code>CL-ENVIRONMENTS.TOOLS</code> provides a number of functions for
 obtaining information about forms occurring in a particular
@@ -1499,7 +1571,7 @@ bindings/declarations when called from inside a compiler macro.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2021-04-25 18:49:22 +0200
+Last updated 2021-05-10 09:39:32 +0200
 </div>
 </div>
 </body>
