@@ -162,6 +162,69 @@
 (defmacro with-augmented-environment (environment (env-var) &body forms)
   `(eval-in-augmented-env ,environment ',env-var '(progn ,@forms)))
 
+(defmacro in-environment ((env-var &optional (environment env-var)) (&rest bindings) &body forms)
+  "Evaluate FORMS with access to a given environment.
+
+   ENV-VAR is the name of the variable to which the native environment
+   object is bound. This binding is made available to forms.
+
+   If ENVIRONMENT evaluates to an augmented environment object, FORMS
+   are evaluated in an environment in which ENV-VAR is bound to a
+   native lexical environment object which is equivalent to the
+   augmented environment. Otherwise ENV-VAR is bound to
+   ENVIRONMENT. If ENVIRONMENT is not given, the variable with name
+   given by ENV-VAR is evaluated in the current environment, to obtain
+   the environment object, and then a binding to the native
+   environment object is made under the same variable in the
+   environment in which FORMS are evaluated.
+
+   ENVIRONMENT is a form which evaluates to an environment object,
+   which may be either a native environment or an augmented
+   environment object.
+
+   BINDINGS is a list of bindings which will be made available to
+   FORMS. Each element of is a list of the form (NAME INITFORM) where
+   NAME is the name of the variable which will be available to FORMS
+   and INITFORM is the form to which it is bound. INITFORM is
+   evaluated in the environment in which this macro-form is found. A
+   binding may be a symbol by itself in which case it is a short-form
+   for (NAME NAME).
+
+   FORMS is the list of forms which are evaluated, in an implicit
+   PROGN. The binding to the variable name given by ENV-VAR and the
+   bindings specified in BINDINGS are available to the forms. The
+   forms may be executed in a dynamically created environment and thus
+   they do not have access to any lexical variable, function and macro
+   definitions in the environment of the macro form."
+
+  (flet ((make-binding (var)
+	   (ematch var
+	     ((type symbol)
+	      ``(,',var ',,var))
+
+	     ((list (and (type symbol) name) initform)
+	      ``(,',name ',,initform))))
+
+	 (make-let-binding (var)
+	   (ematch var
+	     ((type symbol)
+	      (list var var))
+
+	     ((list (and (type symbol) name) initform)
+	      (list name initform)))))
+
+    (with-gensyms (env)
+      `(let ((,env ,environment))
+	 (typecase ,env
+	   (augmented-environment
+	    (eval-in-augmented-env
+	     ,env
+	     ',env-var
+	     `(let ,(list ,@(mapcar #'make-binding bindings)) ,@',forms)))
+
+	   (otherwise
+	    (let ((,env-var ,env) ,@(mapcar #'make-let-binding bindings)) ,@forms)))))))
+
 
 ;;; Definition of AUGMENT-ENVIRONMENT
 
@@ -253,16 +316,10 @@
    augmented environment returned by AUGMENT-ENVIRONMENT. If NIL
    defaults to the global environment."
 
-  (typecase environment
-    (augmented-environment
-     (with-gensyms (env)
-       (eval-in-augmented-env
-	environment
-	env
-	`(macroexpand-1 ',form ,env))))
+  (in-environment (environment)
+      (form)
 
-    (otherwise
-     (macroexpand-1 form environment))))
+    (macroexpand-1 form environment)))
 
 (defun augmented-macroexpand (form &optional environment)
   "Expands a macro form, like CL:MACROEXPAND, in a given lexical or augmented environment.
@@ -274,16 +331,10 @@
    augmented environment returned by AUGMENT-ENVIRONMENT. If NIL
    defaults to the global environment."
 
-  (typecase environment
-    (augmented-environment
-     (with-gensyms (env)
-       (eval-in-augmented-env
-	environment
-	env
-	`(macroexpand ',form ,env))))
+  (in-environment (environment)
+      (form)
 
-    (otherwise
-     (macroexpand form environment))))
+    (macroexpand form environment)))
 
 (defun augmented-macro-function (symbol &optional environment)
   "Retrieve the macro function for a symbol.
@@ -329,16 +380,10 @@
 (defun augmented-get-setf-expansion (place &optional environment)
   "Determine the SETF expansion for PLACE in ENVIRONMENT."
 
-  (typecase environment
-    (augmented-environment
-     (with-gensyms (env)
-       (eval-in-augmented-env
-	environment
-	env
-	`(get-setf-expansion ',place ,env))))
+  (in-environment (environment)
+      (place)
 
-    (otherwise
-     environment)))
+    (get-setf-expansion place environment)))
 
 
 ;;; Definition of ENCLOSE and ENCLOSE-MACRO
