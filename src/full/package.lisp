@@ -42,10 +42,13 @@
 	   :define-declaration
 
 	   :augment-environment
+	   :in-environment
 	   :augmented-macroexpand-1
 	   :augmented-macroexpand
 	   :augmented-macro-function
 	   :augmented-get-setf-expansion
+	   :augmented-compiler-macro-function
+	   :augmented-constantp
 
 	   :enclose
 	   :parse-macro

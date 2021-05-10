@@ -385,6 +385,22 @@
 
     (get-setf-expansion place environment)))
 
+(defun augmented-compiler-macro-function (name &optional environment)
+  "Return the compiler-macro-function for function NAME in ENVIRONMENT."
+
+  (in-environment (environment)
+      (name)
+
+    (compiler-macro-function name environment)))
+
+(defun augmented-constantp (form &optional environment)
+  "Determine if FORM is a constant form in ENVIRONMENT."
+
+  (in-environment (environment)
+      (form)
+
+    (constantp form environment)))
+
 
 ;;; Definition of ENCLOSE and ENCLOSE-MACRO
 

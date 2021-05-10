@@ -38,10 +38,13 @@
 	   :define-declaration
 
 	   :augment-environment
+	   :in-environment
 	   :augmented-macroexpand-1
 	   :augmented-macroexpand
 	   :augmented-macro-function
 	   :augmented-get-setf-expansion
+	   :augmented-compiler-macro-function
+	   :augmented-constantp
 
 	   :enclose
 	   :parse-macro
@@ -186,7 +189,7 @@
        (setf (cl:macro-function symbol) new-fn)))
 
  (defun compiler-macro-function (symbol &optional environment)
-   (cl:compiler-macro-function symbol (get-base-environment environment)))
+   (augmented-compiler-macro-function symbol environment))
 
  (defun (setf compiler-macro-function) (new-fn symbol &optional (environment nil environment-p))
    (declare (ignorable environment environment-p))
@@ -203,8 +206,8 @@
    #+ecl
    (setf (cl:compiler-macro-function symbol) new-fn))
 
- (defun constantp (form &optional environmnet)
-   (cl:constantp form (get-base-environment environmnet)))
+ (defun constantp (form &optional environment)
+   (augmented-constantp form environment))
 
  (defun get-setf-expansion (place &optional environment)
    (augmented-get-setf-expansion place environment))
