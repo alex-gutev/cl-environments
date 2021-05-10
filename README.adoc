@@ -193,6 +193,7 @@ the form `(KEY . VALUE)`. `VALUE` will be returned by
 `DECLARATION-INFORMATION` for the declaration named `KEY`.
 --
 
+[[augment-environment]]
 ==== AUGMENT-ENVIRONMENT ====
 
 Function: `AUGMENT-ENVIRONMENT ENV &KEY :VARIABLE :SYMBOL-MACRO :FUNCTION :MACRO :DECLARE`
@@ -344,6 +345,8 @@ without the leading `AUGMENTED-`:
 * `AUGMENTED-MACROEXPAND`
 * `AUGMENTED-MACRO-FUNCTION`
 * `AUGMENTED-GET-SETF-EXPANSION`
+* `AUGMENTED-COMPILER-MACRO-FUNCTION`
+* `AUGMENTED-CONSTANTP`
 
 The `CL-ENVIRONMENTS-CL` package shadows the following `COMMON-LISP`
 functions with definitions which can accept either a native
@@ -358,6 +361,51 @@ environment object or an environment returned by
 * `GET-SETF-EXPANSION`
 * `TYPEP`
 * `SUBTYPEP`
+
+==== IN-ENVIRONMENT ====
+
+Macro `IN-ENVIRONMENT (ENV-VAR &OPTIONAL (ENVIRONMENT ENV-VAR)) (&REST BINDINGS) &BODY FORMS`
+
+Evaluate `FORMS` in a dynamic environment in which a native
+environment object, that is equivalent to an augmented environment
+object (returned by <<augment-environment>>), is available.
+
+This macro is necessary to be able to pass augmented environment
+objects to functions which expect a native environment object, for
+which there is no wrapper function.
+
+`ENV-VAR`:: Symbol naming the variable to which the native environment
+object is bound. This binding is made available to `FORMS`.
+
+`ENVIRONMENT`:: Form which evaluates to the environment, which may be
+either a native or augmented environment object. `ENVIRONMENT` is
+evaluated in the environment of the macro form. If not provided the
+variable with name given by `ENV-VAR` is evaluated in the environment
+of the macro-form.
+
+`BINDINGS`:: List of bindings as if by `LET` to make available to
+`FORMS`. The difference from `LET` is that the _init-forms_ are
+evaluated in the environment of the macro form but the bindings are
+made available in the dynamic environment in which `FORMS` are
+evaluated. If no init-form is given for a binding, the variable is
+bound to the value of the variable in the environment of the
+macro-form.
+
+`FORMS`:: List of forms to evaluate with `ENV-VAR` bound to a native
+environment object equivalent of an augmented environment, and with
+the bindings specified by `BINDINGS`. The values returned by the last
+form in `FORMS` are returned by the `IN-ENVIRONMENT` form.
++
+--
+CAUTION: These forms might be evaluated in a dynamic environment where
+they do not have access to the local variable, function and macro
+definitions of the environment of the macro-form, hence the need for
+`BINDINGS`.
+--
+
+NOTE: On implementations where `AUGMENT-ENVIRONMENT` is provided
+natively, this macro simply expands to a `LET` and `FORMS` are
+executed in the same environment as the macro form.
 
 === Ensuring Code Walking ===
 
