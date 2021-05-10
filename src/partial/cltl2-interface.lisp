@@ -100,6 +100,17 @@
 
      ',decl-name))
 
+(defmacro in-environment ((env-var &optional (environment env-var)) (&rest bindings) &body forms)
+  (flet ((make-binding (binding)
+	   (match binding
+	     ((type symbol)
+	      (list binding binding))
+
+	     (_ binding))))
+
+    `(let ((,env-var ,environment) ,@(mapcar #'make-binding bindings))
+       ,@forms)))
+
 (defun augmented-macroexpand-1 (form &optional environment)
   (macroexpand-1 form environment))
 
@@ -111,6 +122,12 @@
 
 (defun augmented-get-setf-expansion (form &optional environment)
   (get-setf-expansion form environment))
+
+(defun augmented-compiler-macro-function (name &optional environment)
+  (compiler-macro-function name environment))
+
+(defun augmented-constantp (form &optional environment)
+  (constantp form environment))
 
 #+ccl
 (defun enclose-macro (name lambda-list body &optional environment)
