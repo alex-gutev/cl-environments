@@ -64,7 +64,7 @@
    environment ENV."
 
   (let ((ext-env (get-environment env)))
-    (if (declaration-function decl-name ext-env)
+    (if (declaration-function decl-name)
 	(declaration-info decl-name (get-environment env))
 	(cltl2-fn declaration-information decl-name env))))
 
@@ -88,7 +88,7 @@
 
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (declaim (declaration ,decl-name))
-     (setf (declaration-function ',decl-name *global-environment*)
+     (setf (declaration-function ',decl-name)
 	   (lambda (,arg-var ,env-var)
 	     (declare (ignorable ,env-var))
 	     ,@body))

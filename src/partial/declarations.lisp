@@ -64,7 +64,7 @@
    DEFINE-DECLARATION) in EXT-ENV, it is called and the information
    returned by the function is added to the environment."
 
-  (awhen (declaration-function decl ext-env)
+  (awhen (declaration-function decl)
     (multiple-value-call #'add-decl-info (funcall it args *env*) ext-env)))
 
 (defun add-decl-info (type info ext-env)

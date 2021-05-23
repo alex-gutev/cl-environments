@@ -52,16 +52,7 @@
     :accessor declarations
     :documentation
     "Hash-table of declaration information neither applying to
-     variables nor functions.")
-
-   (decl-functions
-    :initform (make-hash-table :test #'eq)
-    :initarg :decl-functions
-    :accessor decl-functions
-    :documentation
-    "Functions which handle user-defined declarations. Stored as a
-     hash table where the key is the user-defined declaration name and
-     the value is the function."))
+     variables nor functions."))
 
   (:documentation
    "The extended environment class. Stores information about the
@@ -73,6 +64,9 @@
 (defvar *global-environment* (make-instance 'environment)
   "The global 'null' extended environment object.")
 
+(defvar *declaration-functions* (make-hash-table :test #'eq)
+  "Hash-table mapping custom declaration names to the functions which
+   implement them.")
 
 (defun copy-environment (env)
   "Copies the environment object ENV. A shallow copy of the hash
@@ -82,16 +76,12 @@
    to LEX-ENV, if the LEX-ENV argument is supplied, otherwise it is
    set to the same value is in ENV."
 
-  (with-slots (variables
-	       functions
-	       declarations
-	       decl-functions) env
+  (with-slots (variables functions declarations) env
 
     (make-instance 'environment
 		   :variables (copy-hash-table variables)
 		   :functions (copy-hash-table functions)
-		   :declarations (copy-hash-table declarations)
-		   :decl-functions (copy-hash-table decl-functions))))
+		   :declarations (copy-hash-table declarations))))
 
 
 
@@ -243,12 +233,12 @@
   (setf (gethash name (declarations env)) value))
 
 
-(defun declaration-function (name env)
+(defun declaration-function (name)
   "Returns the declaration function for the user-defined declaration
    NAME."
-  (gethash name (decl-functions env)))
+  (gethash name *declaration-functions*))
 
-(defun (setf declaration-function) (fn name env)
+(defun (setf declaration-function) (fn name)
   "Sets the declaration function for the user-defined declaration
    NAME."
-  (setf (gethash name (decl-functions env)) fn))
+  (setf (gethash name *declaration-functions*) fn))
