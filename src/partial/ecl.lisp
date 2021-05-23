@@ -33,43 +33,51 @@
 (defun variable-information (variable &optional env)
   "Return information about the variable VARIABLE in the environment ENV."
 
-  (let ((env (or env c::*cmp-env-root*)))
-    (acond
-      ((c::cmp-env-search-var variable env)
-       (if (c::var-p it)
-	   (values
-	    (var-kind it)
-	    t
-	    (list
-	     (cons 'type (c::var-type it))
-	     (cons 'ignore (var-ignorable? it))))
+  (let ((extra (variable-binding variable (get-environment env)))
+	(env (or env c::*cmp-env-root*)))
 
-	   (values
-	    (local-var-kind variable env)
-	    t
-	    (list
-	     (cons 'type (c::variable-type-in-env variable env))))))
+    (multiple-value-bind (type local decl)
+	(native-var-information variable env)
 
-      ((c::cmp-env-search-symbol-macro variable env)
-       (values
-	:symbol-macro
-	t
-	nil))
+      (values type local (append decl extra)))))
 
-      ((nth-value 1 (macroexpand variable env))
-       (values
-	:symbol-macro
-	nil
-	nil))
+(defun native-var-information (variable env)
+  (acond
+    ((c::cmp-env-search-var variable env)
+     (if (c::var-p it)
+	 (values
+	  (var-kind it)
+	  t
+	  (list
+	   (cons 'type (c::var-type it))
+	   (cons 'ignore (var-ignorable? it))))
 
-      ((constantp variable env)
-       (global-var-info :constant variable env))
+	 (values
+	  (local-var-kind variable env)
+	  t
+	  (list
+	   (cons 'type (c::variable-type-in-env variable env))))))
 
-      ((sys:specialp variable)
-       (global-var-info :special variable env))
+    ((c::cmp-env-search-symbol-macro variable env)
+     (values
+      :symbol-macro
+      t
+      nil))
 
-      (t
-       (values nil nil nil)))))
+    ((nth-value 1 (macroexpand variable env))
+     (values
+      :symbol-macro
+      nil
+      nil))
+
+    ((constantp variable env)
+     (global-var-info :constant variable env))
+
+    ((sys:specialp variable)
+     (global-var-info :special variable env))
+
+    (t
+     (values nil nil nil))))
 
 (defun local-var-kind (var env)
   "Determine the kind (lexical, special, etc) of a local variable in
@@ -113,27 +121,35 @@
 (defun function-information (function &optional env)
   "Return information about the function FUNCTION in the environment ENV."
 
-  (let ((env (or env c::*cmp-env-root*)))
-    (cond
-      ((and (symbolp function)
-	    (special-operator-p function))
+  (let ((extra (function-binding function (get-environment env)))
+	(env (or env c::*cmp-env-root*)))
 
-       (values :special-form nil nil))
+    (multiple-value-bind (type local decl)
+	(native-function-information function env)
 
-      ((c::cmp-env-search-macro function env)
-       (values :macro t	nil))
+      (values type local (append decl extra)))))
 
-      ((c::cmp-env-search-function function env)
-       (function-info function t env))
+(defun native-function-information (function env)
+  (cond
+    ((and (symbolp function)
+	  (special-operator-p function))
 
-      ((macro-function function env)
-       (values :macro nil nil))
+     (values :special-form nil nil))
 
-      ((fboundp function)
-       (function-info function nil env))
+    ((c::cmp-env-search-macro function env)
+     (values :macro t	nil))
 
-      (t
-       (values nil nil nil)))))
+    ((c::cmp-env-search-function function env)
+     (function-info function t env))
+
+    ((macro-function function env)
+     (values :macro nil nil))
+
+    ((fboundp function)
+     (function-info function nil env))
+
+    (t
+     (values nil nil nil))))
 
 (defun function-info (function local env)
   (values
@@ -188,13 +204,28 @@
 	 (compilation-speed 1))))
 
     (declaration
-     si:*alien-declarations*)))
+     si:*alien-declarations*)
+
+    (otherwise
+     (let ((ext-env (get-environment env)))
+       (declaration-info name ext-env)))))
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
+  "Defines a handler function for the a user-defined declaration."
 
-  ;; TODO: Implement this
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (declaim (declaration ,decl-name))
+     (setf (declaration-function ',decl-name)
+	   (lambda (,arg-var ,env-var)
+	     (declare (ignorable ,env-var))
+	     ,@body))
 
-  `(declaim (declaration ,decl-name)))
+     #+ccl (ccl:define-declaration ,decl-name (,arg-var)
+       (let (,env-var)
+	 (declare (ignorable ,env-var))
+	 ,@body))
+
+     ',decl-name))
 
 
 ;;; Augment Environment
