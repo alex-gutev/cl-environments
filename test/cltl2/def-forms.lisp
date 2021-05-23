@@ -91,7 +91,9 @@
 (test defmacro
   "Test extracting environment information in DEFMACRO"
 
-  (is (info= '(:lexical t ((ignore . t))) (test-macro 'x))))
+  (is (info= #-ecl '(:lexical t ((ignore . t)))
+	     #+ecl '(:lexical t nil)
+	     (test-macro 'x))))
 
 (test defgeneric
   "Test extracting environment information in DEFGENERIC"

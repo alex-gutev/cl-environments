@@ -100,7 +100,7 @@
     (is (info= '(:symbol-macro t nil)
 	       (info variable global-symbol-macro)))))
 
-(test var-shadow-symbol-macro
+(test (var-shadow-symbol-macro :compile-at :run-time)
   "Test shadowing of symbol macros with lexical variables"
 
   (symbol-macrolet ((sym-macro "macro"))

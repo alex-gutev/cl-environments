@@ -46,7 +46,7 @@
 (defmacro test-macro (form)
   form)
 
-(test function-types
+(test (function-types :compile-at :run-time)
   "Test extracting function information"
 
   (labels ((inc (a)
@@ -63,11 +63,11 @@
 	     (notinline global-fn))
 
     (is (info=
-	 #-cmucl
+	 #-(or cmucl ecl)
 	 '(:function t ((ftype . (function (integer) integer))
 			(dynamic-extent . t)))
 
-	 #+cmucl
+	 #+(or cmucl ecl)
 	 '(:function t ((ftype . (function (integer) integer))))
 
 	 (info function inc)))
@@ -102,7 +102,7 @@
 	 '(nil nil nil)
 	 (info function not-a-function)))))
 
-(test shadowing
+(test (shadowing :compile-at :run-time)
   "Test lexical shadowing of functions"
 
   (labels ((f2 (a b)
@@ -136,7 +136,7 @@
 	  (f1 1)
 
 	(is-every info=
-	  ('(:lexical t ((type . integer) (ignore . t))) info-x)
+	  ('(:lexical t ((type . integer) #-ecl(ignore . t))) info-x)
 	  ('(:function t nil) info-f2)
 	  ('(:function t nil) info-global-fn)))
 
@@ -153,7 +153,7 @@
       	   (info function f2)))
 
       (is (info=
-	   #-(or sbcl ccl) '(:function t ((ignore . t)))
-	   #+(or sbcl ccl) '(:function t nil)
+	   #-(or sbcl ccl ecl) '(:function t ((ignore . t)))
+	   #+(or sbcl ccl ecl) '(:function t nil)
 
 	   (info function global-fn))))))

@@ -382,23 +382,7 @@
 (defun enclose (lambda-expression &optional env)
   "Compile a lambda expression in a given environment ENV."
 
-  (flet ((walk-form (subform context env)
-	   (declare (ignore context))
-
-	   ;; Expand symbol-macros since WALKER:MACROEXPAND-ALL does
-	   ;; not.
-
-	   (typecase subform
-	     (symbol
-	      (macroexpand-1 subform env))
-
-	     (otherwise
-	      subform))))
-    (compile
-     nil
-     (walker:macroexpand-all
-      (walker:walk-form lambda-expression env #'walk-form)
-      env))))
+  (si:eval-with-env lambda-expression env nil env))
 
 (defun enclose-macro (name lambda-list body &optional env)
   "Compile a local macro definition in a given environment ENV."

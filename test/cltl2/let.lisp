@@ -40,7 +40,7 @@
 
 (defvar *global-var* "hello world")
 
-(test let-binding-types
+(test (let-binding-types :compile-at :run-time)
   (let ((x 1)
 	(y "hello"))
     (declare (type integer x)
@@ -62,7 +62,7 @@
     	 '(nil nil nil)
     	 (info variable z)))))
 
-(test let-binding-special
+(test (let-binding-special :compile-at :run-time)
   (let ((dvar (+ 1 2))
 	(lvar (+ 2 3))
 	(*global-var* "bye"))
@@ -71,7 +71,7 @@
 
     (is (info=
 	 ;; SBCL does not recognize shadowed binding as local binding
-	 #-sbcl '(:special t ((type . number)))
+	 #-sbcl '(:special t (#-ecl (type . number)))
 	 #+sbcl '(:special nil ((type . number)))
 
 	 (info variable dvar)))
@@ -86,21 +86,23 @@
 
 	 (info variable *global-var*)))))
 
-(test let-binding-dynamic-extent
+(test (let-binding-dynamic-extent :compile-at :run-time)
   (let ((func (lambda (a b) (+ a b))))
     (declare (dynamic-extent func)
 	     (type (function (number number) number) func))
 
     (is (info=
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
-	 #-cmucl '(:lexical t ((dynamic-extent . t)
+	 ;; ECL ignores DYNAMIC-EXTENT entirely
+
+	 #-(or cmucl ecl) '(:lexical t ((dynamic-extent . t)
 			       (type . (function (number number) number))))
 
-	 #+cmucl '(:lexical t ((type . (function (number number) number))))
+	 #+(or cmucl ecl) '(:lexical t ((type . (function (number number) number))))
 
 	 (info variable func)))))
 
-(test let-info-in-init-form
+(test (let-info-in-init-form :compile-at :run-time)
   (let ((outer-var (* 8 7)))
     (declare (type integer outer-var))
 
@@ -129,8 +131,10 @@
 	   ;; Not recognized as local binding on SBCL, and DYNAMIC-EXTENT
 	   ;; declaration discarded on SBCL and CMUCL
 
-	   #-(or sbcl cmucl) '(:special t ((dynamic-extent . t) (type . string)))
+	   ;; ECL does not record the types of local special variables
+
+	   #-(or sbcl cmucl ecl) '(:special t ((dynamic-extent . t) (type . string)))
 	   #+sbcl '(:special nil ((type . string)))
-	   #+cmucl '(:special t ((type . string)))
+	   #+(or cmucl ecl) '(:special t (#-ecl (type . string)))
 
 	   (info variable outer-var))))))

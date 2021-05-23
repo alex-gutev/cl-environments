@@ -39,7 +39,7 @@
 
 (in-suite special-forms)
 
-(test block
+(test (block :compile-at :run-time)
   "Accessing environment information in BLOCK forms"
 
   (is
@@ -54,7 +54,7 @@
 	  (1+ x)
 	  (return-from x (info variable x))))))))
 
-(test catch
+(test (catch :compile-at :run-time)
   "Accessing environment information in CATCH forms"
 
   (is
@@ -69,7 +69,7 @@
 	  (1+ x)
 	  (throw 'x (info variable x))))))))
 
-(test eval-when
+(test (eval-when :compile-at :run-time)
   "Accessing environment information in CATCH forms"
 
   (is
@@ -82,7 +82,7 @@
 	  (declare (ignore x))
 	  (info variable x)))))))
 
-(test if
+(test (if :compile-at :run-time)
   "Accessing environment information in IF forms"
 
   (is
@@ -107,7 +107,7 @@
 	   (declare (ignore var))
 	   (info variable var)))))))
 
-(test locally
+(test (locally :compile-at :run-time)
   "Accessing environment information in LOCALLY forms"
 
   (is (subsetp
@@ -117,7 +117,7 @@
 
        :test #'equal)))
 
-(test multiple-value-call
+(test (multiple-value-call :compile-at :run-time)
   "Accessing environment information in MULTIPLE-VALUE-CALL forms"
 
   (is
@@ -131,7 +131,7 @@
 
 	  (info variable x)))))))
 
-(test multiple-value-prog1
+(test (multiple-value-prog1 :compile-at :run-time)
   "Accessing environment information in MULTIPLE-VALUE-PROG1 forms"
 
   (is
@@ -145,7 +145,7 @@
 
 	    (info variable z)))))))
 
-(test progn
+(test (progn :compile-at :run-time)
   "Accessing environment information in PROGN forms"
 
   (let (info-a info-b)
@@ -165,7 +165,7 @@
     (is (info= '(:lexical t ((type . integer))) info-a))
     (is (info= '(:lexical t ((type . string))) info-b))))
 
-(test progv
+(test (progv :compile-at :run-time)
   "Accessing environment information in PROGV forms"
 
   (is
@@ -179,7 +179,7 @@
 
 	  (info variable z)))))))
 
-(test setq
+(test (setq :compile-at :run-time)
   "Accessing environment information in SETQ forms"
 
   (let (info1 info2)
@@ -198,7 +198,7 @@
       ('(:lexical t ((ignore . t))) info1)
       ('(:lexical t ((type . integer))) info2))))
 
-(test tagbody
+(test (tagbody :compile-at :run-time)
   "Accessing environment information in TAGBODY forms"
 
   (is
@@ -221,7 +221,7 @@
 	       (declare (type string z))
 	       (info variable z)))))))))
 
-(test the
+(test (the :compile-at :run-time)
   "Accessing environment information in THE forms"
 
   (is
@@ -235,7 +235,7 @@
 
 	     (info variable z)))))))
 
-(test unwind-protect
+(test (unwind-protect :compile-at :run-time)
   "Accessing environment information in UNWIND-PROTECT forms"
 
   (is

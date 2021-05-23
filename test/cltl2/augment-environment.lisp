@@ -435,7 +435,7 @@ in augmented environment."
 
 ;;; Declaration Information
 
-(test augmented-variable-information
+(test (augmented-variable-information :compile-at :run-time)
   "Test VARIABLE-INFORMATION on augmented environment."
 
   (is
@@ -448,12 +448,12 @@ in augmented environment."
     (let ((x 1) (y 2))
       (declare (ignorable x y))
       (in-lexical-environment (env)
-	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
+	(let ((env (augment-environment env :declare '((special y) (type integer x y)))))
 	  (variable-information 'x env))))))
 
   (is
    (info=
-    #-(or sbcl ccl cmucl)
+    #-(or sbcl ccl cmucl ecl)
     '(:special t ((type . integer)))
 
     ;; CCL does not recognize Y as a local binding for some reason.
@@ -466,7 +466,7 @@ in augmented environment."
 
     ;; CMUCL does not add the type declarations to the augmented
     ;; environment
-    #+cmucl
+    #+(or cmucl ecl)
     '(:special t nil)
 
     (let ((x 1) (y 2))
@@ -531,7 +531,7 @@ in augmented environment."
        (let ((env (augment-environment env :declare '((optimize (speed 3) (safety 0) (space 1))))))
 	 (declaration-information 'optimize env)))))))
 
-(test augment-variable-keep-information
+(test (augment-variable-keep-information :compile-at :run-time)
   "Test that augmenting an environment with variables does not replace existing information."
 
   (is
@@ -547,7 +547,7 @@ in augmented environment."
 		    :declare '((type integer y) (special y)))))
 	  (variable-information 'x env)))))))
 
-(test augment-function-keep-information
+(test (augment-function-keep-information :compile-at :run-time)
   "Test that augmenting an environment with functions does not replace existing information."
 
   (is
@@ -631,11 +631,11 @@ in augmented environment."
 		:declare '((type string y)))))
 
     (is (info=
-	 #-(or cmucl sbcl) '(:special t ((type . integer)))
+	 #-(or cmucl sbcl ecl) '(:special t ((type . integer)))
 
 	 ;; CMUCL does not augment the environment with type
 	 ;; information
-	 #+cmucl '(:special t nil)
+	 #+(or cmucl ecl) '(:special t nil)
 
 	 ;; SBCL neither records the special variable as a local
 	 ;; variable nor augments the environment with type

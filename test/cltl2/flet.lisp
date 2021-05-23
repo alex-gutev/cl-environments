@@ -46,7 +46,7 @@
 (defmacro test-macro (form)
   form)
 
-(test function-types
+(test (function-types :compile-at :run-time)
   "Test extracting function information"
 
   (flet ((inc (a)
@@ -64,10 +64,12 @@
 
     (is (info=
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
-	 #-cmucl '(:function t ((ftype . (function (integer) integer))
+	 ;; ECL ignores DYNAMIC-EXTENT entirely
+
+	 #-(or cmucl ecl) '(:function t ((ftype . (function (integer) integer))
 				(dynamic-extent . t)))
 
-	 #+cmucl '(:function t ((ftype . (function (integer) integer))))
+	 #+(or cmucl ecl) '(:function t ((ftype . (function (integer) integer))))
 
 	 (info function inc)))
 
@@ -102,7 +104,7 @@
 	 '(nil nil nil)
 	 (info function not-a-function)))))
 
-(test shadowing
+(test (shadowing :compile-at :run-time)
   "Test lexical shadowing of functions"
 
   (flet ((f2 (a b)
@@ -136,14 +138,19 @@
 	  (f1 1)
 
 	(is-every info=
-	  ('(:lexical t ((type . integer) (ignore . t))) info-x)
+	  #-ecl ('(:lexical t ((type . integer) (ignore . t))) info-x)
+
+	  ;; ECL does not recognize IGNORE declarations referring to
+	  ;; function argument variables.
+
+	  #+ecl ('(:lexical t ((type . integer))) info-x)
 
 	  ('(:function t ((ftype . (function (number number) number))
       			  (inline . inline)))
 	    info-f2)
 
-	  #-ccl (info-global-fn '(:function nil ((ftype . (function (integer integer integer) number)))))
-	  #+ccl (info-global-fn '(:function nil nil))))
+	  #-ccl ('(:function nil ((ftype . (function (integer integer integer) number)))) info-global-fn)
+	  #+ccl ('(:function nil nil) info-global-fn)))
 
       (multiple-value-bind (info-a info-b info-f1)
 	  (f2 1 2)
@@ -158,7 +165,7 @@
       	   (info function f2)))
 
       (is (info=
-	   #-(or sbcl ccl cmucl) '(:function t ((ignore . t)))
-	   #+(or sbcl ccl cmucl) '(:function t nil)
+	   #-(or sbcl ccl cmucl ecl) '(:function t ((ignore . t)))
+	   #+(or sbcl ccl cmucl ecl) '(:function t nil)
 
 	   (info function global-fn))))))

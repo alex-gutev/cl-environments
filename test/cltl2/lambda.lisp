@@ -38,7 +38,7 @@
 
 (in-suite lambda-forms)
 
-(test lambda-arg-information
+(test (lambda-arg-information :compile-at :run-time)
   "Test that lambda arguments are added to environment"
 
   (let ((f (lambda (x)
@@ -63,7 +63,7 @@
 	('(:lexical t nil) info-ep)
 	('(:lexical t nil) info-f)))))
 
-(test lambda-closure
+(test (lambda-closure :compile-at :run-time)
   "Test information of variables in LAMBDA closure"
 
   (let ((x 1)
