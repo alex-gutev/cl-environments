@@ -56,7 +56,7 @@
 		 (:module
 		  "partial"
 		  :serial t
-		  :if-feature (:or :ccl :cmucl)
+		  :if-feature (:or :ccl :cmucl :ecl)
 		  :components
 		  ((:file "../full/package")
 		   (:file "../full/util")
@@ -69,14 +69,16 @@
 		   (:file "def-forms")
 		   (:file "../full/special-forms")
 		   (:file "special-forms")
-		   (:file "cltl2-interface")
+		   (:file "cltl2-interface"
+			  :if-feature (:or :ccl :cmucl))
+		   (:file "ecl" :if-feature :ecl)
 		   (:file "../full/hook")
 		   (:file "../full/cl-overrides")))
 
 		 (:module
 		  "full"
 		  :serial t
-		  :if-feature (:not (:or :ccl :sbcl :cmucl :allegro :lispworks))
+		  :if-feature (:not (:or :ccl :sbcl :cmucl :ecl :allegro :lispworks))
 		  :components
 		  ((:file "package")
 		   (:file "util")
@@ -117,6 +119,7 @@
 		:components
 		((:module
 		  "cltl2"
+		  :serial t
 		  :components
 		  ((:file "test")
 		   (:file "let")

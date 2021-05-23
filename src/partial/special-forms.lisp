@@ -37,3 +37,15 @@
 (defwalker ccl::compiler-let (args)
   (match-form (bindings . body) args
     (cons bindings (enclose-forms body))))
+
+
+;;; ECL Fixes
+
+#+ecl
+(defwalker multiple-value-bind (args)
+  "ECL has a buggy macroexpansion for MULTIPLE-VALUE-BIND which
+   results in an error at runtime if more/less values are returned
+   than expected."
+
+  (match-form ((&rest vars) form . body) args
+    `(,vars ,(enclose-form form) ,@(walk-body body nil))))
