@@ -108,7 +108,8 @@
 	       (info variable sym-macro)))
 
     (let ((sym-macro 1))
-      (declare (type integer sym-macro))
+      (declare (type integer sym-macro)
+	       (ignorable sym-macro))
 
       (is (info= '(:lexical t ((type . integer)))
 		 (info variable sym-macro))))))

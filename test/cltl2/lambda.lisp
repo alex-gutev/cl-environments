@@ -52,8 +52,10 @@
 (test (lambda-optional-args :compile-at :run-time)
   "Test LAMBDA form with all argument types"
 
+  #+sbcl (declare (optimize (sb-ext:inhibit-warnings 3)))
+
   (let ((f (lambda (a &optional (b (info variable a)) c &rest d &key (e (info variable d) ep) ((:argf f) (info variable ep)) g &allow-other-keys &aux (h (info variable f)))
-	     (declare (ignore a b c d e ep f g h))
+	     (declare (ignorable a b c d e ep f g h))
 	     (values b e f h))))
 
     (multiple-value-bind (info-a info-d info-ep info-f) (funcall f 1)
@@ -68,10 +70,12 @@
 
   (let ((x 1)
 	(y 2))
-    (declare (type integer x y))
+    (declare (type integer x y)
+	     (ignorable x y))
 
     (let ((f (lambda (y)
-	       (declare (type number y))
+	       (declare (type number y)
+			(ignorable y))
 
 	       (values
 		(info variable x)

@@ -56,7 +56,8 @@
 	   (+ a b)))
 
     (declare (ftype (function (integer) integer) inc)
-	     (ftype (function (number number) number) add))
+	     (ftype (function (number number) number) add)
+	     (ignorable #'inc #'add))
 
     (declare (dynamic-extent #'inc)
 	     (inline add)
@@ -110,7 +111,8 @@
   (flet ((f2 (a b)
 	   (+ a b)))
     (declare (ftype (function (number number) number) f2)
-	     (inline f2))
+	     (inline f2)
+	     (ignorable #'f2))
 
     (flet ((f1 (x)
 	     (declare (type integer x)
@@ -132,7 +134,8 @@
 	   (global-fn (x) x))
 
       (declare (notinline f2)
-	       (ignore #'global-fn))
+	       (ignore #'global-fn)
+	       (ignorable #'f1 #'f2))
 
       (multiple-value-bind (info-x info-f2 info-global-fn)
 	  (f1 1)

@@ -44,7 +44,8 @@
   (let* ((x 1)
 	 (y "hello"))
     (declare (type integer x)
-	     (type string y))
+	     (type string y)
+	     (ignorable x y))
 
     (is (info=
 	 '(:lexical t ((type . integer)))
@@ -67,7 +68,8 @@
 	 (lvar (+ 2 3))
 	 (*global-var* "bye"))
     (declare (special dvar)
-	     (type number lvar dvar))
+	     (type number lvar dvar)
+	     (ignorable lvar))
 
     (is (info=
 	 #-sbcl '(:special t (#-ecl (type . number)))
@@ -88,7 +90,8 @@
 (test (let*-binding-dynamic-extent :compile-at :run-time)
   (let* ((func (lambda (a b) (+ a b))))
     (declare (dynamic-extent func)
-	     (type (function (number number) number) func))
+	     (type (function (number number) number) func)
+	     (ignorable func))
 
     (is (info=
 	 ;; CMUCL ignores DYNAMIC-EXTENT here
@@ -101,7 +104,8 @@
 
 (test (let*-info-in-init-form :compile-at :run-time)
   (let ((outer-var (* 8 7)))
-    (declare (type integer outer-var))
+    (declare (type integer outer-var)
+	     (ignorable outer-var))
 
     (let* ((a (progn
 		(is (info=
@@ -122,7 +126,8 @@
 
       (declare (special outer-var)
 	       (type string outer-var)
-	       (dynamic-extent outer-var))
+	       (dynamic-extent outer-var)
+	       (ignorable a b))
 
       (is (info=
 	   #-(or sbcl cmucl ecl) '(:special t ((dynamic-extent . t) (type . string)))

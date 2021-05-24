@@ -85,6 +85,8 @@
 (test (if :compile-at :run-time)
   "Accessing environment information in IF forms"
 
+  #+sbcl (declare (optimize (sb-ext:inhibit-warnings 3)))
+
   (is
    (info=
     '(:lexical t ((ignore . t)))
@@ -154,11 +156,13 @@
      (progn
        (setf info-a
 	     (cl:let ((a 1))
-	       (declare (type integer a))
+	       (declare (type integer a)
+			(ignorable a))
 	       (info variable a)))
 
        (cl:let ((z "hello"))
-	 (declare (type string z))
+	 (declare (type string z)
+		  (ignorable z))
 
 	 (info variable z))))
 
@@ -191,7 +195,8 @@
 
      info2
      (cl:let ((var2 123))
-       (declare (type integer var2))
+       (declare (type integer var2)
+		(ignorable var2))
        (info variable var2)))
 
     (is-every info=
@@ -200,6 +205,8 @@
 
 (test (tagbody :compile-at :run-time)
   "Accessing environment information in TAGBODY forms"
+
+  #+sbcl (declare (optimize (sb-ext:inhibit-warnings 3)))
 
   (is
    (info=
@@ -218,7 +225,8 @@
 	 tag3
 	   (return
 	     (cl:let ((z "hello"))
-	       (declare (type string z))
+	       (declare (type string z)
+			(ignorable z))
 	       (info variable z)))))))))
 
 (test (the :compile-at :run-time)

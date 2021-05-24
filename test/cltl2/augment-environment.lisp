@@ -158,8 +158,6 @@
 
     (in-lexical-environment (env)
       (flet ((macro1 (form env)
-	       (declare (ignore env))
-
 	       (destructuring-bind (name macro thing) form
 		 (declare (ignore name))
 		 (macroexpand `(,macro (pprint ,thing)) env)))
@@ -240,8 +238,6 @@ environment within MACROLET."
 
       (in-lexical-environment (env)
 	(flet ((macro1 (form env)
-		 (declare (ignore env))
-
 		 (destructuring-bind (name thing) form
 		   (declare (ignore name))
 		   (macroexpand `(macro2 (wrap ,thing)) env))))
@@ -497,6 +493,8 @@ in augmented environment."
     #+sbcl '(:function t nil)
 
     (flet ((add (a b) (+ a b)))
+      (declare (ignorable #'add))
+
       (in-lexical-environment (env)
 	(let ((env (augment-environment
 		    env
@@ -539,7 +537,8 @@ in augmented environment."
     '(:lexical t ((type . integer)))
 
     (let ((x 1))
-      (declare (type integer x))
+      (declare (type integer x) (ignorable x))
+
       (in-lexical-environment (env)
 	(let ((env (augment-environment
 		    env
@@ -550,12 +549,15 @@ in augmented environment."
 (test (augment-function-keep-information :compile-at :run-time)
   "Test that augmenting an environment with functions does not replace existing information."
 
+  #+sbcl (declare (optimize (sb-ext:inhibit-warnings 3)))
+
   (is
    (info=
     '(:function t ((ftype . (function (number number) number))))
 
     (flet ((add (a b) (+ a b)))
-      (declare (ftype (function (number number) number) add))
+      (declare (ftype (function (number number) number) add)
+	       (ignorable #'add))
 
       (in-lexical-environment (env)
 	(let ((env (augment-environment
@@ -650,6 +652,8 @@ in augmented environment."
 
 (test (augment-augmented-function :compile-at :run-time)
   "Test augmenting a function augmented environment."
+
+  #+sbcl (declare (optimize (sb-ext:inhibit-warnings 3)))
 
   (let* ((env1 (augment-environment
 		nil
@@ -808,7 +812,8 @@ in augmented environment."
   "Test ENCLOSE-MACRO with &ENVIRONMENT parameter."
 
   (let ((var-x 1) (var-y 3))
-    (declare (special var-y))
+    (declare (special var-y)
+	     (ignorable var-x))
 
     (is (equal
 	 '((:lexical :special nil))
