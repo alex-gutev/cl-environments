@@ -115,7 +115,7 @@
 
   (is (info= '(:lexical t ((type . null))) *test-var*)))
 
-(test declaim
+(test (declaim :compile-at :run-time)
   "Test that global declarations are added to environment"
 
   ;; Fails on CMUCL, where the native DECLARATION-INFORMATION function
@@ -124,7 +124,7 @@
   (is (member 'my-declaration
 	      (first (info declaration declaration)))))
 
-(test global-definitions
+(test (global-definitions :compile-at :run-time)
   "Test that global definitions added to environment"
 
   (is (info= '(:function nil nil)

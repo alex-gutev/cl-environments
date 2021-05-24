@@ -75,7 +75,7 @@
 
 ;;; Macro Augmented Environment Tests
 
-(test macroexpand-1
+(test (macroexpand-1 :compile-at :run-time)
   "Test MACROEXPAND-1 in an augmented environment with AUGMENT-ENVIRONMNT."
 
   (is
@@ -91,7 +91,7 @@
 	(let ((env (augment-environment env :macro (list (list 'test-macro #'macro-fn)))))
 	  (macroexpand-1 '(test-macro (+ 1 2)) env)))))))
 
-(test macroexpand-1-multiple
+(test (macroexpand-1-multiple :compile-at :run-time)
   "Test MACROEXPAND-1 in an environment augmented with multiple macros."
 
   (is
@@ -120,7 +120,7 @@
 
 	  (macroexpand-1 '(macro1 "Hello World") env)))))))
 
-(test macroexpand
+(test (macroexpand :compile-at :run-time)
   "Test MACROEXPAND in an environment augmented with multiple macros."
 
   (is
@@ -149,7 +149,7 @@
 
 	  (macroexpand '(macro1 "Hello World") env)))))))
 
-(test macroexpand-1-explicit-macroexpand
+(test (macroexpand-1-explicit-macroexpand :compile-at :run-time)
   "Test MACROEXPAND-1 in an environment on macro which calls MACROEXPAND."
 
   (is
@@ -178,7 +178,7 @@
 
 	  (macroexpand-1 '(macro1 macro2 "Hello World") env)))))))
 
-(test macroexpand-global-macro
+(test (macroexpand-global-macro :compile-at :run-time)
   "Test macroexpansion of global macros in augmented environment."
 
   (is
@@ -203,7 +203,7 @@
 
 ;;; Macro Augmented Environment within MACROLET
 
-(test macroexpand-in-macrolet
+(test (macroexpand-in-macrolet :compile-at :run-time)
   "Test macroexpansion in augmented environment within MACROLET."
 
   (is
@@ -227,7 +227,7 @@
 
 	    (macroexpand '(macro1 (+ 4 5)) env))))))))
 
-(test macroexpand-in-macrolet-explicit-macroexpand
+(test (macroexpand-in-macrolet-explicit-macroexpand :compile-at :run-time)
   "Test macroexpansion, of macro which calls MACROEXPAND, in augmented
 environment within MACROLET."
 
@@ -252,7 +252,7 @@ environment within MACROLET."
 
 	    (macroexpand-1 '(macro1 (+ 4 5)) env))))))))
 
-(test macroexpand-macrolet
+(test (macroexpand-macrolet :compile-at :run-time)
   "Test macroexpansion of a MACROLET macro in augmented environment."
 
   (is
@@ -275,7 +275,7 @@ environment within MACROLET."
 
 	    (macroexpand '(macro1 (+ 10 5)) env))))))))
 
-(test macroexpand-macrolet-with-macroexpand
+(test (macroexpand-macrolet-with-macroexpand :compile-at :run-time)
   "Test macroexpansion of a MACROLET macro, which calls MACROEXPAND,
 in augmented environment."
 
@@ -302,7 +302,7 @@ in augmented environment."
 
 ;;; Symbol Macro Augmented Environment Tests
 
-(test symbol-macroexpand-1
+(test (symbol-macroexpand-1 :compile-at :run-time)
   "Test MACROEXPAND-1 in symbol-macro augmented environment."
 
   (is
@@ -313,7 +313,7 @@ in augmented environment."
       (let ((env (augment-environment env :symbol-macro '((greeting "Hello World")))))
 	(macroexpand-1 'greeting env))))))
 
-(test symbol-macroexpand-1-multiple
+(test (symbol-macroexpand-1-multiple :compile-at :run-time)
   "Test MACROEXPAND-1 in augmented environment with multiple symbol-macros."
 
   (is
@@ -328,7 +328,7 @@ in augmented environment."
 
 	(macroexpand-1 'symmacro env))))))
 
-(test symbol-macroexpand
+(test (symbol-macroexpand :compile-at :run-time)
   "Test MACROEXPAND in symbol-macro augmented environment."
 
   (is
@@ -343,7 +343,7 @@ in augmented environment."
 
 	(macroexpand 'symmacro env))))))
 
-(test global-symbol-macroexpand
+(test (global-symbol-macroexpand :compile-at :run-time)
   "Test MACROEXPAND of global symbol-macro in symbol-macro augmented environment."
 
   (is
@@ -354,7 +354,7 @@ in augmented environment."
       (let ((env (augment-environment env :symbol-macro '((local-macro a-global-symbol-macro)))))
 	(macroexpand 'local-macro env))))))
 
-(test macroexpand-symbol-macro-and-macro
+(test (macroexpand-symbol-macro-and-macro :compile-at :run-time)
   "Test MACROEXPAND in augmented environment with macros and symbol-macros."
 
   (is
@@ -379,7 +379,7 @@ in augmented environment."
 
 	  (macroexpand 'symmacro env)))))))
 
-(test macroexpand-in-symbol-macrolet
+(test (macroexpand-in-symbol-macrolet :compile-at :run-time)
   "Test MACROEXPAND in augmented environment within SYMBOL-MACROLET"
 
   (is
@@ -393,7 +393,7 @@ in augmented environment."
 	(let ((env (augment-environment env :symbol-macro '((the-greetings greetings)))))
 	  (macroexpand 'the-greetings env)))))))
 
-(test macroexpand-symbol-macrolet
+(test (macroexpand-symbol-macrolet :compile-at :run-time)
   "Test MACROEXPAND a SYMBOL-MACRO, defined with SYMBOL-MACROLET, in augmented environment."
 
   (is
@@ -410,7 +410,7 @@ in augmented environment."
 
 ;;; Shadowing Global Macros with local functions/variables
 
-(test shadow-global-macro
+(test (shadow-global-macro :compile-at :run-time)
   "Test shadowing of a global macro with local function."
 
   (is
@@ -421,7 +421,7 @@ in augmented environment."
       (let ((env (augment-environment env :function '(global-macro local-fn))))
 	(macroexpand '(global-macro (+ 1 2)) env))))))
 
-(test shadow-global-symbol-macro
+(test (shadow-global-symbol-macro :compile-at :run-time)
   "Test shadowing of a global symbol-macro with local variable."
 
   (is
@@ -475,7 +475,7 @@ in augmented environment."
 	(let ((env (augment-environment env :declare '((type integer x y) (special y)))))
 	  (variable-information 'y env)))))))
 
-(test augmented-variable-information-symbol-macro
+(test (augmented-variable-information-symbol-macro :compile-at :run-time)
   "Test VARIABLE-INFORMATION on symbol-macro augmented environment."
 
   (is
@@ -486,7 +486,7 @@ in augmented environment."
       (let ((env (augment-environment env :symbol-macro '((local-sym-macro (+ 1 2))))))
 	(variable-information 'local-sym-macro env))))))
 
-(test augmented-function-information
+(test (augmented-function-information :compile-at :run-time)
   "Test FUNCTION-INFORMATION on augmented environment."
 
   (is
@@ -503,7 +503,7 @@ in augmented environment."
 		    :declare '((ftype (function (number number) number) add)))))
 	  (function-information 'add env)))))))
 
-(test augmented-function-information-macro
+(test (augmented-function-information-macro :compile-at :run-time)
   "Test FUNCTION-INFORMATION on macro augmented environment."
 
   (is
@@ -521,7 +521,7 @@ in augmented environment."
 	(let ((env (augment-environment env :macro `((loc-macro1 ,#'macro)))))
 	  (function-information 'loc-macro1 env)))))))
 
-(test augmented-declaration-information
+(test (augmented-declaration-information :compile-at :run-time)
   (is
    (optimize=
     '((speed 3) (safety 0) (space 1))
@@ -567,7 +567,7 @@ in augmented environment."
 
 ;;; Augmenting Augmented Environments
 
-(test augment-augmented-macro
+(test (augment-augmented-macro :compile-at :run-time)
   "Test augmenting a macro augmented environment."
 
   (is
@@ -599,7 +599,7 @@ in augmented environment."
 
 	  (macroexpand-1 '(macro1 "Hello World") env2)))))))
 
-(test augment-augmented-symbol-macro
+(test (augment-augmented-symbol-macro :compile-at :run-time)
   "Test augmenting a symbol-macro augmented environment."
 
   (is
@@ -617,7 +617,7 @@ in augmented environment."
 
 	(macroexpand-1 'symmacro env2))))))
 
-(test augment-augmented-variable
+(test (augment-augmented-variable :compile-at :run-time)
   "Test augmenting a variable augmented environment."
 
   (let* ((env1 (augment-environment
@@ -648,7 +648,7 @@ in augmented environment."
 	 '(:lexical t ((type . string)))
 	 (multiple-value-list (variable-information 'y env2))))))
 
-(test augment-augmented-function
+(test (augment-augmented-function :compile-at :run-time)
   "Test augmenting a function augmented environment."
 
   (let* ((env1 (augment-environment
@@ -669,7 +669,7 @@ in augmented environment."
 	 '(:function t ((ftype . (function (string string) string))))
 	 (multiple-value-list (function-information 'f2 env2))))))
 
-(test augment-augmented-declaration
+(test (augment-augmented-declaration :compile-at :run-time)
   "Test augmenting a declaration augmented environment."
 
   (let* ((env1 (augment-environment
@@ -750,7 +750,7 @@ in augmented environment."
       (6 (funcall f 2 3))
       (1 (funcall f 0 0)))))
 
-(test enclose-lexical-environment
+(test (enclose-lexical-environment :compile-at :run-time)
   "Test ENCLOSE in lexical environment."
 
   (macrolet ((local-wrap (form)
@@ -766,7 +766,7 @@ in augmented environment."
 	('(:wrap 14) (funcall f 7))
 	('(:wrap 0) (funcall f 0))))))
 
-(test enclose-augmented-environment
+(test (enclose-augmented-environment :compile-at :run-time)
   "Test ENCLOSE in augmented environment."
 
   (macrolet ((local-mac (form)
@@ -804,7 +804,7 @@ in augmented environment."
 
       (funcall mac '(a-macro x (1 2) (pprint x) (fn x)) nil)))))
 
-(test enclose-macro-with-environment-parameter
+(test (enclose-macro-with-environment-parameter :compile-at :run-time)
   "Test ENCLOSE-MACRO with &ENVIRONMENT parameter."
 
   (let ((var-x 1) (var-y 3))
@@ -821,7 +821,7 @@ in augmented environment."
 
 	     (funcall mac '(info-mac variable var-x var-y var-z) env)))))))
 
-(test enclose-macro-lexical-environment
+(test (enclose-macro-lexical-environment :compile-at :run-time)
   "Test ENCLOSE-MACRO in a lexical environment."
 
   (macrolet ((local-pass (sym form)
@@ -839,7 +839,7 @@ in augmented environment."
 
 	     (funcall mac '(wrap-macro (* (+ 1 2) 3)) nil)))))))
 
-(test enclose-macro-augmented-environment
+(test (enclose-macro-augmented-environment :compile-at :run-time)
   "Test ENCLOSE-MACRO in an augmented environment."
 
   (macrolet ((local-wrap (sym form)

@@ -49,7 +49,7 @@
     (is (info= '(:lexical t ((ignore . t)))
 	       (funcall f 1)))))
 
-(test lambda-optional-args
+(test (lambda-optional-args :compile-at :run-time)
   "Test LAMBDA form with all argument types"
 
   (let ((f (lambda (a &optional (b (info variable a)) c &rest d &key (e (info variable d) ep) ((:argf f) (info variable ep)) g &allow-other-keys &aux (h (info variable f)))

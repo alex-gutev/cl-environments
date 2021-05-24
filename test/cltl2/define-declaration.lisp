@@ -103,7 +103,7 @@
 
 ;;; Tests
 
-(test variable-declarations
+(test (variable-declarations :compile-at :run-time)
   "Custom declarations applying to variables"
 
   (is
@@ -115,7 +115,7 @@
       (1+ x)
       (info variable x)))))
 
-(test function-declarations
+(test (function-declarations :compile-at :run-time)
   "Custom declarations applying to functions"
 
   (is
@@ -127,7 +127,7 @@
       (f 1)
       (info function f)))))
 
-(test other-declarations
+(test (other-declarations :compile-at :run-time)
   "Custom declarations neither applying to variables nor functions"
 
   (is
@@ -138,7 +138,7 @@
     '(foo1 foo2 bar3))))
 
 (test in-global-definitions
-  :descript "Test usage of custom declarations in global definitions"
+  "Test usage of custom declarations in global definitions"
 
   (multiple-value-bind (info1 info2)
       (test-function 1 2)
