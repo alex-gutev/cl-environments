@@ -54,7 +54,7 @@
 			:if-feature :lispworks)
 
 		 (:module
-		  "full"
+		  "walker"
 		  :serial t
 		  :if-feature (:not (:or :sbcl :allegro :lispworks))
 		  :components
