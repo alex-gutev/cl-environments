@@ -539,7 +539,7 @@
       (write "#.(make-instance 'cl-environments:environment)" :stream stream)
       (call-next-method)))
 
-#- (or clisp abcl)
+#-abcl
 (defmethod make-load-form ((object environment) &optional env)
   (make-load-form-saving-slots object :environment env))
 
@@ -561,20 +561,3 @@
 	      (alist-hash-table ',(hash-table-alist functions) :test #'eq))
 	(setf (slot-value ,object 'declarations)
 	      (alist-hash-table ',(hash-table-alist declarations) :test #'eq))))))
-
-;;; Clisp has a problem with serializing the DECL-FUNCTIONS
-;;; slot. These are cleared out since they are a copy of what's stored
-;;; in the global environment anyway.
-
-#+clisp
-(defmethod make-load-form ((object environment) &optional env)
-  (declare (ignore env))
-
-  (with-slots (variables functions declarations) object
-    (values
-     `(make-instance 'environment)
-
-     `(progn
-	(setf (slot-value ,object 'variables) ',variables)
-	(setf (slot-value ,object 'functions) ',functions)
-	(setf (slot-value ,object 'declarations) ',declarations)))))
