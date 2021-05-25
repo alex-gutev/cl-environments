@@ -23,17 +23,19 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments.cltl2)
-
 ;;;; Code-walkers for forms which modify the global environment such
 ;;;; as global function, variable, macro definition forms and
 ;;;; global declaration (DECLAIM) forms.
 
-;;; DEFUN
+(in-package :cl-environments.cltl2)
+
+
+;;; Functions
 
 (defwalker cl:defun (args)
   "Walks DEFUN forms, adds the function to the global environment."
 
+  #+cl-environments-full
   (walk-global-function args :function)
 
   (match-form (name . def) args
@@ -49,6 +51,7 @@
   "Walks DEFGENERIC forms, adds the function to the global
    environment."
 
+  #+cl-environments-full
   (walk-global-function args :function)
 
   (match-form (name lambda-list &rest options) args
@@ -63,14 +66,13 @@
 
 	       (_ option))))))
 
-
-
 ;;; DEFMETHOD
 
 (defwalker cl:defmethod (args)
   "Walks DEFMETHOD forms, adds the function to the global
    environment."
 
+  #+cl-environments-full
   (walk-global-function args :function)
 
   (match-form (name . def) args
@@ -100,14 +102,18 @@
 	  `(,@qualifiers ,lambda-list
 			 ,@ (walk-body body env t)))))))
 
-;;;; Variable Definitions
+
+;;; Variable Definitions
 
 (defwalker cl:defparameter (args)
   "Walks DEFPARAMETER forms. Adds the variable binding (of
    type :SPECIAL) to the global environment and walks the init-form."
 
   (match-form (name init-form . doc) args
+
+    #+cl-environments-full
     (add-global-variable name)
+
     (list* name (enclose-form init-form) doc)))
 
 (defwalker cl:defvar (args)
@@ -115,12 +121,14 @@
    the global environment and walks the init-form."
 
   (match-form (name . args) args
+
+    #+cl-environments-full
     (add-global-variable name)
+
     (cons name
 	  (destructuring-bind (&optional (init-form nil init-p) &rest doc) args
 	    (when init-p
 	      (cons (enclose-form init-form) doc))))))
-
 
 ;;;; Constant Definitions
 
@@ -129,11 +137,14 @@
    type :CONSTANT) to the global environment and walks the init-form."
 
   (match-form (name init-form . doc) args
+
+    #+cl-environments-full
     (add-global-variable name :constant)
+
     (list* name (enclose-form init-form) doc)))
 
-
-;;;; Macros
+
+;;; Macros
 
 ;;; DEFMACRO
 
@@ -141,6 +152,7 @@
   "Walks DEFMACRO forms, adds the the macro to the global
    environment."
 
+  #+cl-environments-full
   (walk-global-function args :macro)
 
   (match-form (name . def) args
@@ -150,6 +162,7 @@
 
 ;;; DEFINE-SYMBOL-MACRO
 
+#+cl-environments-full
 (defwalker cl:define-symbol-macro (args)
   "Walks DEFINE-SYMBOL-MACRO forms. Adds the symbol macro to the
    global environment."
@@ -158,7 +171,7 @@
     (add-global-variable name :symbol-macro)
     (list name form)))
 
-
+
 ;;; Global Declarations (DECLAIM)
 
 (defwalker cl:declaim (args)
@@ -172,25 +185,27 @@
 	(let ((*env* nil))
 	  (walk-declaration decl args *global-environment* t))))))
 
-
+
 ;;; Utility Functions
 
-(defun walk-global-function (args type)
-  "Walks a global function definition, where ARGS is the arguments
-   list of the DEFUN/DEFMACRO/etc form. Adds a function binding of
-   type TYPE to the global environment."
+#+cl-environments-full
+(progn
+  (defun walk-global-function (args type)
+    "Walks a global function definition, where ARGS is the arguments
+     list of the DEFUN/DEFMACRO/etc form. Adds a function binding of
+     type TYPE to the global environment."
 
-  (when (consp args)
-    (add-global-function (first args) type)))
+    (when (consp args)
+      (add-global-function (first args) type)))
 
-(defun add-global-function (sym &optional (type :function))
-  "Adds a function binding for the symbol SYM, of type TYPE to the
-   global environment."
+  (defun add-global-function (sym &optional (type :function))
+    "Adds a function binding for the symbol SYM, of type TYPE to the
+     global environment."
 
-  (ensure-function-type sym *global-environment* :binding-type type :local nil :global t))
+    (ensure-function-type sym *global-environment* :binding-type type :local nil :global t))
 
-(defun add-global-variable (sym &optional (type :special))
-  "Adds a variable binding for the symbol SYM, of type TYPE to the
-   global environment."
+  (defun add-global-variable (sym &optional (type :special))
+    "Adds a variable binding for the symbol SYM, of type TYPE to the
+     global environment."
 
-  (ensure-variable-type sym *global-environment* :binding-type type :local nil :global t))
+    (ensure-variable-type sym *global-environment* :binding-type type :local nil :global t)))

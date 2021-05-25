@@ -26,8 +26,11 @@
 (in-package :cl-environments.cltl2)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (pushnew :cl-environments-full *features*))
+  (pushnew #-(or ccl cmucl ecl) :cl-environments-full
+	   #+(or ccl cmucl ecl) :cl-environments-partial
+	   *features*))
 
+#-(or ccl cmucl ecl)
 (defconstant +walk-macros+
   '(cl:defun
     cl:defgeneric
@@ -37,5 +40,11 @@
     cl:defmacro
     cl:define-symbol-macro
     cl:declaim)
+
+  "List of macros which should be walked prior expansion.")
+
+#+(or ccl cmucl ecl)
+(defconstant +walk-macros+
+  '(cl:declaim)
 
   "List of macros which should be walked prior expansion.")

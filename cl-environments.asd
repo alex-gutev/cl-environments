@@ -54,31 +54,9 @@
 			:if-feature :lispworks)
 
 		 (:module
-		  "partial"
-		  :serial t
-		  :if-feature (:or :ccl :cmucl :ecl)
-		  :components
-		  ((:file "../full/package")
-		   (:file "../full/util")
-		   (:file "../full/walker")
-		   (:file "cl-environments")
-		   (:file "environment")
-		   (:file "declarations")
-		   (:file "lambda")
-		   (:file "let-forms")
-		   (:file "def-forms")
-		   (:file "../full/special-forms")
-		   (:file "special-forms")
-		   (:file "cltl2-interface"
-			  :if-feature (:or :ccl :cmucl))
-		   (:file "ecl" :if-feature :ecl)
-		   (:file "../full/hook")
-		   (:file "../full/cl-overrides")))
-
-		 (:module
 		  "full"
 		  :serial t
-		  :if-feature (:not (:or :ccl :sbcl :cmucl :ecl :allegro :lispworks))
+		  :if-feature (:not (:or :sbcl :allegro :lispworks))
 		  :components
 		  ((:file "package")
 		   (:file "util")
@@ -90,8 +68,18 @@
 		   (:file "let-forms")
 		   (:file "def-forms")
 		   (:file "special-forms")
-		   (:file "cltl2-interface")
-		   (:file "augment-environment")
+
+		   (:file "cltl2-interface"
+			  :if-feature (:not (:or :ccl :cmucl :ecl)))
+		   (:file "augment-environment"
+			  :if-feature (:not (:or :ccl :cmucl :ecl)))
+
+		   (:file "cltl2-interface.ccl-cmucl"
+			  :if-feature (:or :ccl :cmucl))
+
+		   (:file "cltl2-interface.ecl"
+			  :if-feature :ecl)
+
 		   (:file "hook")
 		   (:file "cl-overrides")))
 

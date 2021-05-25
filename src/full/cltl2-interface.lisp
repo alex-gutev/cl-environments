@@ -89,7 +89,7 @@
 
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (declaim (declaration ,decl-name))
-     (setf (declaration-function ',decl-name *global-environment*)
+     (setf (declaration-function ',decl-name)
 	   (lambda (,arg-var ,env-var)
 	     (declare (ignorable ,env-var))
 	     ,@body))

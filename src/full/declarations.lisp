@@ -47,9 +47,10 @@
     treated as global declarations, established by DECLAIM or
     PROCLAIM."))
 
-
+
 ;;; Type Declarations
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'type)) args ext-env &optional global)
   "Adds type information to the information list of the variables in ARGS."
 
@@ -58,6 +59,7 @@
   (match-form (type &rest vars) args
     (add-variables-info vars 'type type ext-env)))
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'ftype)) args ext-env &optional global)
   "Adds type information to the information list of the functions in ARGS."
 
@@ -66,9 +68,10 @@
   (match-form (type &rest fns) args
     (add-functions-info fns 'ftype type ext-env)))
 
-
+
 ;;; Special declarations
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'special)) args ext-env &optional global)
   "Changes the binding types of the variables in ARGS to :SPECIAL. If
    a variable does not exist in the environment a new variable with
@@ -81,9 +84,10 @@
 	 (rcurry #'ensure-special-variable ext-env))
      args)))
 
-
+
 ;;; Dynamic extent declarations
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'dynamic-extent)) args ext-env &optional global)
   "Adds (DYNAMIC-EXTENT . T) to the information list of the variables
    and functions in ARGS."
@@ -97,9 +101,10 @@
 	  ((satisfies symbolp)
 	   (add-variable-info arg 'dynamic-extent t ext-env)))))))
 
-
+
 ;;; Ignore declarations
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'ignore)) args ext-env &optional global)
   "Adds (IGNORE . T) to the information list of the variables in ARGS."
 
@@ -112,16 +117,17 @@
 	  ((satisfies symbolp)
 	   (add-variable-info arg 'ignore t ext-env)))))))
 
-
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'ignorable)) args ext-env &optional global)
   "Currently does nothing as IGNORABLE declarations are not mentioned
    in CLTL2."
 
   (declare (ignore args ext-env global)))
 
-
+
 ;;; Inlining declarations
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'inline)) args ext-env &optional global)
   "Adds (INLINE . INLINE) to the information list of the functions in ARGS."
 
@@ -129,6 +135,7 @@
   (check-list args
     (add-functions-info args 'inline 'inline ext-env)))
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'notinline)) args ext-env &optional global)
   "Adds (INLINE . NOTINLINE) to the information list of the functions in ARGS."
 
@@ -136,13 +143,13 @@
   (check-list args
     (add-functions-info args 'inline 'notinline ext-env)))
 
-
+
 ;;; Optimization declarations
-
 
 ;; Non-standard implementation-specific optimization qualities are
 ;; currently ignored completely.
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'optimize)) args ext-env &optional global)
   "Normalizes the optimization qualities (in ARGS) to a list of 6
    elements, one for each quality, of the form (QUALITY . PPRIORITY)
@@ -173,16 +180,16 @@
 	(setf (declaration-info 'optimize ext-env)
 	      (mapcar #'get-priority +optimize-qualities+))))))
 
-
+
 ;;; Non-standard and user-defined declarations
 
+#+cl-environments-full
 (defmethod walk-declaration ((decl (eql 'declaration)) args ext-env &optional global)
   "Adds the declaration to the list of valid declarations."
 
   (when global
     (check-list args
       (unionf (declaration-info 'declaration ext-env) args :test #'eq))))
-
 
 (defmethod walk-declaration (decl args ext-env &optional global)
   "If there is a declaration function, for DECL, (defined using
@@ -191,7 +198,7 @@
 
   (declare (ignore global))
 
-  (awhen (declaration-function decl ext-env)
+  (awhen (declaration-function decl)
     (multiple-value-call #'add-decl-info (funcall it args *env*) ext-env)))
 
 (defun add-decl-info (type info ext-env)

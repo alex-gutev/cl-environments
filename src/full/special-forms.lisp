@@ -23,12 +23,14 @@
 ;;;; FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
-(in-package :cl-environments.cltl2)
-
 ;;;; Code-walkers for the standard Common Lisp forms, which are not
 ;;;; macros, excluding the lexical binding forms (LET, FLET, etc)
 ;;;; which are implemented in let-forms.lisp.
 
+(in-package :cl-environments.cltl2)
+
+
+;;; Standard Common Lisp Special Forms
 
 ;;; Generic walker for special-forms which evaluate all arguments.
 
@@ -166,6 +168,7 @@
   (match-form (type form) args
     `(,type ,(enclose-form form))))
 
+
 ;;; Clisp specific special forms
 
 #+clisp
@@ -179,3 +182,30 @@
     (let ((ext-env (copy-environment (get-environment *env*))))
       (loop for (fn) in fns do (add-function fn ext-env))
       `(,fns ,@(walk-body body ext-env)))))
+
+
+;;; CCL specific special forms
+
+#+ccl
+(defwalker ccl::nfunction (args)
+  (match-form (name ('cl:lambda . _)) args
+    (list name (second (walk-list-form 'function (cdr args))))))
+
+#+ccl
+(defwalker ccl::compiler-let (args)
+  (match-form (bindings . body) args
+    (cons bindings (enclose-forms body))))
+
+
+;;; ECL special special forms
+
+#+ecl
+(defwalker multiple-value-bind (args)
+  "ECL has a buggy macroexpansion for MULTIPLE-VALUE-BIND which
+   results in an error at runtime if more/less values are returned
+   than expected."
+
+  (match-form ((&rest vars) form . body) args
+    (let ((env (copy-environment (get-environment *env*))))
+      (mapc (rcurry #'add-variable env) vars)
+      `(,vars ,(enclose-form form) ,@(walk-body body env nil)))))

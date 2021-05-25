@@ -25,7 +25,7 @@
 
 ;;;; Implements the VARIABLE-INFORMATION, FUNCTION-INFORMATION and
 ;;;; DECLARATION-INFORMATION FUNCTIONS as specified in Common Lisp the
-;;;; Language 2 (CLTL2)
+;;;; Language 2 (CLTL2) for CCL and CMUCL
 
 (in-package :cl-environments.cltl2)
 
