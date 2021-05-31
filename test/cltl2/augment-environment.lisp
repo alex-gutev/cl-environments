@@ -688,7 +688,10 @@ in augmented environment."
 			   (optimize (space 3) (safety 0))))))
 
     (is (info=
-	 '(:special t ((type . integer)))
+         ;; SBCL does not record the variable as a local variable
+	 #-sbcl '(:special t ((type . integer)))
+         #+sbcl '(:special nil ((type . integer)))
+
 	 (multiple-value-list (variable-information 'x env2))))
 
     (is (optimize=
