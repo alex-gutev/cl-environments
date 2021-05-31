@@ -36,7 +36,7 @@
 
 	:cl-environments.util)
 
-  (:shadow :define-declaration)
+  (:shadow :define-declaration :augment-environment)
 
   (:export :variable-information
 	   :function-information
@@ -100,6 +100,63 @@
        (declare (ignorable ,env-var))
        (let ((,arg-var (rest ,args)))
 	 ,@body))))
+
+;;; SBCL's AUGMENT-ENVIRONMENT errors out when augmenting an
+;;; environment with type information for a variable which is not
+;;; simultaneously present in the :VARIABLE argument, even if the
+;;; environment being augmented does contain a binding for the
+;;; variable.
+;;;
+;;; This wrapper function handles that case by adding variables, and
+;;; functions, appearing in type declarations to the :VARIABLE and
+;;; :FUNCTION lists.
+
+(defun augment-environment (env &key variable symbol-macro function macro declare)
+  (labels ((extract-var (decl)
+	     "Extract variable names from TYPE declarations."
+
+	     (match decl
+	       ((list* 'type _
+		       (guard vars
+			      (and (proper-list-p vars)
+				   (every #'symbolp vars))))
+		vars)))
+
+	   (function-name-p (name)
+	     (match name
+	       ((or (type symbol)
+		    (list 'cl:setf (type symbol)))
+		t)))
+
+	   (extract-func (decl)
+	     "Extract function names from FTYPE declarations."
+
+	     (match decl
+	       ((list* 'ftype _
+		       (guard fns
+			      (and (proper-list-p fns)
+				   (every #'function-name-p fns))))
+		fns)))
+
+           (decl-special-var (var)
+             (when (eq :special (variable-information var env))
+               `((special ,var)))))
+
+    (let ((decl-vars (set-difference (mappend #'extract-var declare)
+                                     symbol-macro))
+          (decl-fns (set-difference (mappend #'extract-func declare)
+                                    macro)))
+
+      (sb-cltl2:augment-environment
+       env
+       :variable (union decl-vars variable)
+
+       :function (union decl-fns function)
+
+       :symbol-macro symbol-macro
+       :macro macro
+       :declare (append (mappend #'decl-special-var decl-vars)
+                        declare)))))
 
 (defun enclose-macro (name lambda-list body &optional env)
   (enclose (parse-macro name lambda-list body env) env))
