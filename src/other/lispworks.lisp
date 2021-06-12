@@ -141,6 +141,8 @@
 (defmacro walk-environment (&body forms)
   `(progn ,@forms))
 
+(defmacro disable-walker (&body body)
+  `(progn ,@body))
 
 ;;; Reexport symbols in CL package
 

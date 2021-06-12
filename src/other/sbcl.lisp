@@ -206,6 +206,9 @@
 (defmacro walk-environment (&body forms)
   `(progn ,@forms))
 
+(defmacro disable-walker (&body body)
+  `(progn ,@body))
+
 
 (in-package :cl-environments-cl)
 

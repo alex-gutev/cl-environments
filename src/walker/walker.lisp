@@ -35,6 +35,14 @@
   `(progn
      ,@(enclose-forms body)))
 
+(defmacro disable-walker (&body body)
+  "Disable the code-walker for the forms in BODY.
+
+   Environment information will not be extracted."
+
+  `(symbol-macrolet ((disable-walker t))
+     ,@body))
+
 ;;; Code-Walker Macro
 
 (defmacro %walk-form (form &environment *env*)
@@ -42,7 +50,12 @@
    macro is used when FORM needs to be walked in an augmented
    environment."
 
-  (walk-form form))
+  (multiple-value-bind (walk expandedp)
+      (macroexpand 'disable-walker *env*)
+
+    (if (and expandedp walk)
+        form
+        (walk-form form))))
 
 (defun enclose-form (form)
   "Encloses FORM in the code-walker macro."
