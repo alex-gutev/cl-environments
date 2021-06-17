@@ -120,7 +120,16 @@
 		       (guard vars
 			      (and (proper-list-p vars)
 				   (every #'symbolp vars))))
-		vars)))
+		vars)
+
+	       ((list* (or 'ignore 'ignorable) things)
+		(remove-if #'listp things))
+
+	       ((list* 'dynamic-extent things)
+		(remove-if #'listp things))
+
+	       ((list* 'sb-int:truly-dynamic-extent things)
+		(remove-if #'listp things))))
 
 	   (function-name-p (name)
 	     (match name
@@ -136,7 +145,13 @@
 		       (guard fns
 			      (and (proper-list-p fns)
 				   (every #'function-name-p fns))))
-		fns)))
+		fns)
+
+	       ((list* (or 'ignore 'ignorable) things)
+		(remove-if #'symbolp things))
+
+	       ((list* 'dynamic-extent things)
+		(remove-if #'symbolp things))))
 
            (decl-special-var (var)
              (when (eq :special (variable-information var env))
