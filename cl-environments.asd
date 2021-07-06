@@ -90,10 +90,11 @@
 		  ((:file "package")
 		   (:file "types"))))))
 
-  :depends-on (:alexandria
-	       :anaphora
-	       :optima
-	       :collectors)
+  :depends-on (#:alexandria
+	       #:anaphora
+	       #:optima
+	       #:collectors
+               #+sbcl #:parse-declarations-1.0)
 
   :in-order-to ((asdf:test-op (asdf:test-op :cl-environments/test))))
 

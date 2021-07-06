@@ -33,6 +33,7 @@
 	:anaphora
 	:iterate
 	:optima
+        :tcr.parse-declarations-1.0
 
 	:cl-environments.util)
 
@@ -96,10 +97,20 @@
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
   (with-gensyms (args)
-    `(sb-cltl2:define-declaration ,decl-name (,args ,env-var)
-       (declare (ignorable ,env-var))
-       (let ((,arg-var (rest ,args)))
-	 (multiple-value-call #'wrap-declaration-result (progn ,@body))))))
+    (multiple-value-bind (forms decl docstring)
+        (parse-body body :documentation t)
+
+      (multiple-value-bind (decl-args decl-other)
+          (partition-declarations (list arg-var) decl)
+
+       `(sb-cltl2:define-declaration ,decl-name (,args ,env-var)
+          ,@(ensure-list docstring)
+          (declare (ignorable ,env-var))
+          ,@decl-other
+
+          (let ((,arg-var (rest ,args)))
+            ,@decl-args
+	    (multiple-value-call #'wrap-declaration-result (progn ,@forms))))))))
 
 (defun wrap-declaration-result (type value)
   "Wrap user-define declarations (TYPE = :DECLARE) in a list to
@@ -228,6 +239,48 @@
 
 (defmacro disable-walker (&body body)
   `(progn ,@body))
+
+;;; Parsing declarations
+
+;; From Serapeum / macro-tools.lisp
+
+;; Copyright (c) 2014 Paul M. Rodriguez
+
+;; Permission is hereby granted, free of charge, to any person obtaining
+;; a copy of this software and associated documentation files (the
+;; "Software"), to deal in the Software without restriction, including
+;; without limitation the rights to use, copy, modify, merge, publish,
+;; distribute, sublicense, and/or sell copies of the Software, and to
+;; permit persons to whom the Software is furnished to do so, subject to
+;; the following conditions:
+
+;; The above copyright notice and this permission notice shall be
+;; included in all copies or substantial portions of the Software.
+
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+;; EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+;; MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+;; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+;; LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+(defun partition-declarations (xs declarations &optional env)
+  "Split DECLARATIONS into those that do and do not apply to XS.
+Return two values, one with each set.
+
+Both sets of declarations are returned in a form that can be spliced
+directly into Lisp code:
+
+     (locally ,@(partition-declarations vars decls) ...)"
+  (let ((env2 (parse-declarations declarations env)))
+    (flet ((build (env)
+             (build-declarations 'declare env)))
+      (if (null xs)
+          (values nil (build env2))
+          (values
+           (build (filter-declaration-env env2 :affecting xs))
+           (build (filter-declaration-env env2 :not-affecting xs)))))))
 
 
 (in-package :cl-environments-cl)
