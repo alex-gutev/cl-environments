@@ -132,10 +132,10 @@
 
   (is
    (equal
-    (locally (declare (foobar-types foo1 foo2 bar3))
-      (first (info declaration foobar-types)))
+    '(foo1 foo2 bar3)
 
-    '(foo1 foo2 bar3))))
+    (locally (declare (foobar-types foo1 foo2 bar3))
+      (first (info declaration foobar-types))))))
 
 (test in-global-definitions
   "Test usage of custom declarations in global definitions"
