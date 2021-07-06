@@ -36,7 +36,7 @@
 
 	:cl-environments.util)
 
-  (:shadow :define-declaration :augment-environment)
+  (:shadow :define-declaration :declaration-information :augment-environment)
 
   (:export :variable-information
 	   :function-information
@@ -99,7 +99,27 @@
     `(sb-cltl2:define-declaration ,decl-name (,args ,env-var)
        (declare (ignorable ,env-var))
        (let ((,arg-var (rest ,args)))
-	 ,@body))))
+	 (multiple-value-call #'wrap-declaration-result (progn ,@body))))))
+
+(defun wrap-declaration-result (type value)
+  "Wrap user-define declarations (TYPE = :DECLARE) in a list to
+   silence errors due to SBCL bug."
+
+  (values
+   type
+   (case type
+     (:declare
+      (cons (car value) (list 'user-declaration (cdr value))))
+
+     (otherwise
+      value))))
+
+(defun declaration-information (name &optional env)
+  (match (sb-cltl2:declaration-information name env)
+    ((list 'user-declaration value)
+     value)
+
+    (value value)))
 
 ;;; SBCL's AUGMENT-ENVIRONMENT errors out when augmenting an
 ;;; environment with type information for a variable which is not
