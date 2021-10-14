@@ -24,7 +24,8 @@
 ;;;; OTHER DEALINGS IN THE SOFTWARE.
 
 (defpackage :cl-environments.cltl2
-  (:use :common-lisp)
+  (:use :common-lisp
+        :optima)
 
   (:import-from :cl-environments.util
                 :reexport-all-symbols)

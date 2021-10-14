@@ -26,6 +26,7 @@
 (defpackage :cl-environments.cltl2
   (:use :common-lisp
 	:alexandria
+        :optima
 	:hcl
 	:cl-environments.util)
 
