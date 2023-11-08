@@ -92,6 +92,14 @@
 
 (in-package :cl-environments.cltl2)
 
+;; SB-INT:TRULY-DYNAMIC-EXTENT has been removed on newer versions of
+;; SBCL. This form checks whether the symbol exists and if so adds a
+;; feature in order to be to check for its existence using #+
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (when (find-symbol "TRULY-DYNAMIC-EXTENT" :sb-int)
+    (pushnew :cl-environments-truly-dynamic-extent *features*)))
+
 
 ;; SBCL includes declaration name in arguments
 
@@ -159,6 +167,7 @@
 	       ((list* 'dynamic-extent things)
 		(remove-if #'listp things))
 
+	       #+cl-environments-truly-dynamic-extent
 	       ((list* 'sb-int:truly-dynamic-extent things)
 		(remove-if #'listp things))))
 
