@@ -191,7 +191,7 @@
 		(remove-if #'symbolp things))
 
 	       ((list* 'dynamic-extent things)
-		(remove-if #'symbolp things))))
+		(mapcar #'second (remove-if #'symbolp things)))))
 
            (decl-special-var (var)
              (when (eq :special (variable-information var env))
