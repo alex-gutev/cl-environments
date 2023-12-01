@@ -194,7 +194,8 @@
 		(mapcar #'second (remove-if #'symbolp things)))))
 
            (decl-special-var (var)
-             (when (eq :special (variable-information var env))
+             (when (and (not (eq :special (variable-information var)))
+                        (eq :special (variable-information var env)))
                `((special ,var)))))
 
     (let ((decl-vars (set-difference (mappend #'extract-var declare)
