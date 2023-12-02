@@ -88,3 +88,15 @@
 
       (is (info= '(:lexical t ((type . integer)))
 		 (info variable y))))))
+
+(test (lambda-with-docstring :compile-at :run-time)
+  "Test that LAMBDA's with docstrings are walked correctly"
+
+  (let ((f (lambda (x)
+	     "A docstring"
+
+	     (declare (ignore x))
+	     (info variable x))))
+
+    (is (info= '(:lexical t ((ignore . t)))
+	       (funcall f 1)))))
