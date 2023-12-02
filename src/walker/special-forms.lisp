@@ -87,7 +87,7 @@
 
   (match args
     ((list (list* 'cl:lambda expr))
-     (list (cons 'cl:lambda (walk-fn-def expr (get-environment *env*)))))
+     (list (cons 'cl:lambda (walk-fn-def expr (get-environment *env*) t))))
 
     #+clisp
     ((list name (and (list* 'cl:lambda _) expr))
