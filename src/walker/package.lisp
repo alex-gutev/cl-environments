@@ -61,7 +61,6 @@
 
   #+ccl
   (:import-from :ccl
-		:augment-environment
 		:enclose
 		:parse-macro)
 
