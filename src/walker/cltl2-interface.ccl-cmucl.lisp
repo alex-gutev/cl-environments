@@ -86,19 +86,23 @@
    which is added to the declarations list of the lexical
    environment."
 
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (declaim (declaration ,decl-name))
-     (setf (declaration-function ',decl-name)
-	   (lambda (,arg-var ,env-var)
-	     (declare (ignorable ,env-var))
-	     ,@body))
 
-     #+ccl (ccl:define-declaration ,decl-name (,arg-var)
-       (let (,env-var)
-	 (declare (ignorable ,env-var))
-	 ,@body))
+  (with-gensyms (args)
+    (declare (ignorable args))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (declaim (declaration ,decl-name))
+       (setf (declaration-function ',decl-name)
+	     (lambda (,arg-var ,env-var)
+	       (declare (ignorable ,env-var))
+	       ,@body))
 
-     ',decl-name))
+       #+ccl
+       (ccl:define-declaration ,decl-name (,args)
+         (let ((,arg-var (rest ,args)) ,env-var)
+	   (declare (ignorable ,env-var))
+	   ,@body))
+
+       ',decl-name)))
 
 (defmacro in-environment ((env-var &optional (environment env-var)) (&rest bindings) &body forms)
   (flet ((make-binding (binding)
