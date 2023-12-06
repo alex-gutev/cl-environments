@@ -156,3 +156,29 @@
   (is
    (info= '(:lexical t ((foo-type . stringfoo)))
 	  (test-generic "hello"))))
+
+(test (augment-environment-declarations :compile-at :run-time)
+  "Test custom declarations added using AUGMENT-ENVIRONMENT"
+
+  (let ((env (augment-environment
+              nil
+              :variable '(x)
+              :function '(fn1)
+              :declare '((foo-type some-foo x)
+                         (bar-type some-bar fn1)
+                         (foobar-types type1 type2)))))
+
+    (is
+     (info=
+      '(:lexical t ((foo-type . some-foo)))
+      (multiple-value-list (variable-information 'x env))))
+
+    (is
+     (info=
+      '(:function t ((bar-type . some-bar)))
+      (multiple-value-list (function-information 'fn1 env))))
+
+    (is
+     (equal
+      '(type1 type2)
+      (declaration-information 'foobar-types env)))))
