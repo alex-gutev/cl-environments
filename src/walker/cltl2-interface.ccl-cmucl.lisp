@@ -70,22 +70,18 @@
 
 #+ccl
 (defun augment-environment (env &key variable symbol-macro function macro declare)
-  (let-if ((ext-env (aprog1 (copy-environment (get-environment env))
-		      (walk-declarations `((cl:declare ,@declare)) it))
+  (when-let ((ext-env (copy-environment (get-environment env))))
+    (walk-declarations `((cl:declare ,@declare)) ext-env)
+    (pushnew (list *env-sym* ext-env) symbol-macro))
 
-		    env))
-	  declare
+  (cltl2-fn augment-environment
+	    env
+	    :variable variable
+	    :function function
+	    :macro macro
+	    :declare declare
 
-    (cltl2-fn augment-environment
-              env
-              :variable variable
-              :function function
-              :macro macro
-              :declare declare
-
-              :symbol-macro (if declare
-				(cons (list *env-sym* ext-env) symbol-macro)
-				symbol-macro))))
+	    :symbol-macro symbol-macro))
 
 (defmacro define-declaration (decl-name (arg-var &optional (env-var (gensym "ENV"))) &body body)
   "Defines a handler function for the user-defined declaration
