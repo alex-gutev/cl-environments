@@ -70,9 +70,10 @@
 
 #+ccl
 (defun augment-environment (env &key variable symbol-macro function macro declare)
-  (when-let ((ext-env (copy-environment (get-environment env))))
-    (walk-declarations `((cl:declare ,@declare)) ext-env)
-    (pushnew (list *env-sym* ext-env) symbol-macro :key #'ensure-car))
+  (when declare
+    (let ((ext-env (copy-environment (get-environment env))))
+      (walk-declarations `((cl:declare ,@declare)) ext-env)
+      (pushnew (list *env-sym* ext-env) symbol-macro :key #'ensure-car)))
 
   (cltl2-fn augment-environment
 	    env
