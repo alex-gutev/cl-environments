@@ -190,7 +190,13 @@
 	       ((list* (or 'ignore 'ignorable) things)
 		(remove-if #'symbolp things))
 
-	       ((list* 'dynamic-extent things)
+               ((list* (or 'inline 'notinline)
+                       (guard fns
+                              (and (proper-list-p fns)
+                                   (every #'function-name-p fns))))
+                fns)
+
+               ((list* 'dynamic-extent things)
 		(mapcar #'second (remove-if #'symbolp things)))))
 
            (decl-special-var (var)
