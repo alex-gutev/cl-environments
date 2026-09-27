@@ -28,9 +28,10 @@
 (in-package :cl-environments.cltl2)
 
 #+cl-environments-full
-(defconstant +optimize-qualities+
+(alexandria:define-constant +optimize-qualities+
   '(speed safety compilation-speed space debug)
-  "List of standardoptimization qualities.")
+  :test #'equal
+  :documentation "List of standardoptimization qualities.")
 
 #+cl-environments-full
 (defun initial-declarations ()
@@ -276,14 +277,15 @@
 
 #+cl-environments-full
 (progn
- (defconstant +global-special-vars+
+ (alexandria:define-constant +global-special-vars+
    '(cl:*macroexpand-hook*
      cl:*standard-output*
      cl:*standard-input*
 
      #+clisp custom:*evalhook*)
 
-   "List of predefined globally declared special variables, which
+   :test #'equal
+   :documentation "List of predefined globally declared special variables, which
     should not be rebound temporarily by SPECIALP. If one of the
     symbols in the list, is passed to SPECIALP, T is returned
     immediately.")

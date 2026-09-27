@@ -31,7 +31,7 @@
 	   *features*))
 
 #-(or ccl cmucl ecl)
-(defconstant +walk-macros+
+(alexandria:define-constant +walk-macros+
   '(cl:defun
     cl:defgeneric
     cl:defmethod
@@ -40,11 +40,11 @@
     cl:defmacro
     cl:define-symbol-macro
     cl:declaim)
-
-  "List of macros which should be walked prior expansion.")
+  :test #'equal
+  :documentation "List of macros which should be walked prior expansion.")
 
 #+(or ccl cmucl ecl)
-(defconstant +walk-macros+
+(alexandria:define-constant +walk-macros+
   '(cl:declaim)
-
-  "List of macros which should be walked prior expansion.")
+  :test #'equal
+  :documentation "List of macros which should be walked prior expansion.")
